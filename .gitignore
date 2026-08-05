@@ -48,3 +48,6 @@ llms.txt
 claude_code_docs_zh.zip
 download.sh
 dl_all.sh
+
+# ===== 点击统计 =====
+stats/

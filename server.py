@@ -54,6 +54,29 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.end_headers()
                 self.wfile.write(json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
+        elif self.path == "/api/click":
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+                raw = self.rfile.read(length)
+                data = json.loads(raw.decode("utf-8")) if raw else {}
+                os.makedirs(os.path.join(BASE, "stats"), exist_ok=True)
+                with open(os.path.join(BASE, "stats", "clicks.jsonl"), "a", encoding="utf-8") as f:
+                    record = {
+                        "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "target": data.get("target", ""),
+                        "page": data.get("page", ""),
+                        "ip": self.client_address[0],
+                        "ua": self.headers.get("User-Agent", "")
+                    }
+                    f.write(json.dumps(record, ensure_ascii=False) + "\n")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(json.dumps({"ok": True}).encode("utf-8"))
+            except Exception:
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(json.dumps({"ok": False}).encode("utf-8"))
         elif self.path == "/api/s1g/ask":
             try:
                 length = int(self.headers.get("Content-Length", 0))
@@ -129,18 +152,28 @@ def inject_s1g(html):
         return html
     css_tag = f"<style>{S1G_CSS}</style>"
     js_tag = f"<script>{S1G_JS}</script>"
+    click_js = (
+        '<script>'
+        'function trackClick(target){'
+        '  try{'
+        '    navigator.sendBeacon("/api/click", JSON.stringify({target:target, page:location.pathname}));'
+        '  }catch(e){}'
+        '}'
+        '</script>'
+    )
     footer = (
         '<div class="s1g-footer">'
         '<div class="s1g-footer-title">🐾 CLAUDE CODE 中文知识库</div>'
         '<div>本项目开源 · <a href="https://github.com/88514205-oss/claude-docs-zh" target="_blank" rel="noopener">'
         'GitHub: 88514205-oss/claude-docs-zh</a></div>'
         '<div style="font-size:12px;color:#666;margin-top:6px;">Powered by S1g 猫娘助手 (・ω・)</div>'
+        '<div style="font-size:12px;color:#666;margin-top:8px;">本站由 <a href="https://www.rainyun.com" target="_blank" rel="noopener" onclick="trackClick(\'rainyun\')" style="color:#a99dff;text-decoration:none;border-bottom:1px dotted #a99dff;">雨云</a> 提供计算服务</div>'
         '</div>'
     )
     if "</body>" in html:
-        html = html.replace("</body>", css_tag + js_tag + footer + "</body>", 1)
+        html = html.replace("</body>", css_tag + js_tag + click_js + footer + "</body>", 1)
     else:
-        html += css_tag + js_tag + footer
+        html += css_tag + js_tag + click_js + footer
     return html
 
 if __name__ == "__main__":
