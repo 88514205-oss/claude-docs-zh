@@ -146,6 +146,16 @@ def _load_s1g():
         with open(js_path, encoding="utf-8") as f:
             S1G_JS = f.read()
 
+def _load_footer_extra():
+    try:
+        with open(os.path.join(BASE, "config.json"), "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+            return cfg.get("footer_extra", "") or ""
+    except Exception:
+        return ""
+
+FOOTER_EXTRA = _load_footer_extra()
+
 def inject_s1g(html):
     """向HTML注入S1g猫娘桌宠 + GitHub页脚"""
     if S1G_JS is None:
@@ -166,8 +176,8 @@ def inject_s1g(html):
         '<div class="s1g-footer-title">🐾 CLAUDE CODE 中文知识库</div>'
         '<div>本项目开源 · <a href="https://github.com/88514205-oss/claude-docs-zh" target="_blank" rel="noopener">'
         'GitHub: 88514205-oss/claude-docs-zh</a></div>'
-        '<div style="font-size:12px;color:#666;margin-top:6px;">Powered by S1g 猫娘助手 (・ω・)</div>'
-        '<div class="s1g-rainyun">本站由 <a href="https://www.rainyun.com" target="_blank" rel="noopener" onclick="trackClick(\'rainyun\')">☁️ 雨云</a> 提供计算服务</div>'
+        '<div style="font-size:12px;color:#666;margin-top:6px;">Powered by S1g 猫娘助手 (・ω・)</div>' +
+        (FOOTER_EXTRA if FOOTER_EXTRA else '') +
         '</div>'
     )
     if "</body>" in html:

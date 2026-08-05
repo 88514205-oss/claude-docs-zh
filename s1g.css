@@ -180,13 +180,13 @@
 }
 .s1g-footer a:hover { color: var(--accent, #8b7cff); text-decoration: underline; }
 
-/* 雨云友情链接（醒目） */
-.s1g-rainyun {
+/* 页脚自定义链接（醒目） */
+.s1g-footer-link {
   margin-top: 10px;
   font-size: 13px;
   color: #a99dff;
 }
-.s1g-rainyun a {
+.s1g-footer-link a {
   display: inline-block;
   padding: 4px 14px;
   border: 1px solid rgba(169,157,255,0.5);
@@ -197,7 +197,7 @@
   text-decoration: none;
   transition: all 0.2s;
 }
-.s1g-rainyun a:hover {
+.s1g-footer-link a:hover {
   background: rgba(139,124,255,0.3);
   border-color: #a99dff;
   color: #fff;
