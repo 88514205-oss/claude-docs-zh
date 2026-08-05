@@ -1,0 +1,105 @@
+
+/* ===== 错误汇报 ===== */
+.btn-report { display:inline-flex; align-items:center; gap:4px; background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12.5px; transition:0.15s; }
+.btn-report:hover { color:var(--text); border-color:var(--accent); background:var(--card2); }
+.rpt-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:500; display:none; align-items:center; justify-content:center; padding:20px; }
+.rpt-overlay.show { display:flex; }
+.rpt-modal { background:var(--card); border:1px solid var(--accent); border-radius:16px; width:100%; max-width:460px; box-shadow:0 20px 60px rgba(0,0,0,0.7); overflow:hidden; }
+.rpt-head { display:flex; align-items:center; gap:8px; padding:16px 20px; border-bottom:1px solid var(--border); }
+.rpt-head .rpt-title { font-size:16px; font-weight:700; color:var(--text); flex:1; }
+.rpt-close { background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1; }
+.rpt-close:hover { color:var(--text); }
+.rpt-body { padding:18px 20px; }
+.rpt-field { margin-bottom:14px; }
+.rpt-field label { display:block; font-size:13px; color:var(--text2); margin-bottom:6px; }
+.rpt-field .rpt-page { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:13px; color:var(--accent2); word-break:break-all; }
+.rpt-field input, .rpt-field textarea { width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:14px; color:var(--text); font-family:inherit; resize:vertical; }
+.rpt-field input:focus, .rpt-field textarea:focus { outline:none; border-color:var(--accent); }
+.rpt-field textarea { min-height:90px; }
+.rpt-tip { font-size:12px; color:var(--muted); margin-top:4px; }
+.rpt-submit { width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px; font-size:15px; font-weight:600; cursor:pointer; transition:0.15s; }
+.rpt-submit:hover { background:var(--accent2); }
+.rpt-submit:disabled { opacity:0.5; cursor:not-allowed; }
+.rpt-ok { text-align:center; padding:30px 20px; }
+.rpt-ok .rpt-ok-icon { font-size:42px; margin-bottom:12px; }
+.rpt-ok .rpt-ok-title { font-size:17px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.rpt-ok .rpt-ok-desc { font-size:13px; color:var(--text2); }
+
+
+@@SPLIT@@
+
+
+<!-- 错误汇报弹窗 -->
+<div class="rpt-overlay" id="rptOverlay" onclick="if(event.target===this)closeRpt()">
+  <div class="rpt-modal">
+    <div class="rpt-head">
+      <span class="rpt-title"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9 9v-1a3 3 0 0 1 6 0v1" /> <path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /> <path d="M3 13l4 0" /> <path d="M17 13l4 0" /> <path d="M12 20l0 -6" /> <path d="M4 19l3.35 -2" /> <path d="M20 19l-3.35 -2" /> <path d="M4 7l3.75 2.4" /> <path d="M20 7l-3.75 2.4" /> </svg></span> 文档有误？向服务器汇报！</span>
+      <button class="rpt-close" onclick="closeRpt()">×</button>
+    </div>
+    <div class="rpt-body" id="rptForm">
+      <div class="rpt-field">
+        <label>问题页面</label>
+        <div class="rpt-page" id="rptPage"></div>
+      </div>
+      <div class="rpt-field">
+        <label>问题描述</label>
+        <textarea id="rptDesc" placeholder="请描述你发现的问题：哪个词错了？哪里跳转不对？内容过时了？"></textarea>
+      </div>
+      <div class="rpt-field">
+        <label>联系方式（选填）</label>
+        <input id="rptContact" type="text" placeholder="QQ号 / 邮箱等，方便反馈处理结果">
+      </div>
+      <div class="rpt-tip">提交后内容会发送到服务器 reports/ 目录，管理员会尽快处理喵~</div>
+      <button class="rpt-submit" id="rptBtn" onclick="submitRpt()">提交汇报</button>
+    </div>
+    <div class="rpt-ok" id="rptOk" style="display:none;">
+      <div class="rpt-ok-icon"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span></div>
+      <div class="rpt-ok-title">汇报成功！</div>
+      <div class="rpt-ok-desc">感谢主人的反馈，问题已记录到服务器</div>
+    </div>
+  </div>
+</div>
+
+
+@@SPLIT@@
+
+
+// ===== 错误汇报 =====
+function openRpt() {
+  var page = location.pathname.split('/').pop() || 'index.html';
+  document.getElementById('rptPage').textContent = page;
+  document.getElementById('rptDesc').value = '';
+  document.getElementById('rptContact').value = '';
+  document.getElementById('rptForm').style.display = '';
+  document.getElementById('rptOk').style.display = 'none';
+  document.getElementById('rptOverlay').classList.add('show');
+}
+function closeRpt() {
+  document.getElementById('rptOverlay').classList.remove('show');
+}
+function submitRpt() {
+  var desc = document.getElementById('rptDesc').value.trim();
+  if (!desc) { document.getElementById('rptDesc').focus(); return; }
+  var btn = document.getElementById('rptBtn');
+  btn.disabled = true; btn.textContent = '提交中...';
+  var payload = {
+    page: document.getElementById('rptPage').textContent,
+    desc: desc,
+    contact: document.getElementById('rptContact').value.trim(),
+    time: new Date().toLocaleString('zh-CN', {hour12:false}),
+    user_agent: navigator.userAgent
+  };
+  fetch('/api/report', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  }).then(function(r){ return r.json(); }).then(function(d) {
+    btn.disabled = false; btn.textContent = '提交汇报';
+    document.getElementById('rptForm').style.display = 'none';
+    document.getElementById('rptOk').style.display = 'block';
+    setTimeout(closeRpt, 1800);
+  }).catch(function(e) {
+    btn.disabled = false; btn.textContent = '提交汇报';
+    alert('汇报失败，请重试：' + e);
+  });
+}

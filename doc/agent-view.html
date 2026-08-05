@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f1117">
+<title>使用 agent view 管理多个代理 - Claude Code 知识库</title>
+<style>
+:root {
+  --bg: #0f1117; --bg2: #16181f; --card: #1b1e26; --card2: #20242e;
+  --border: #2a2e3a; --text: #e2e4ea; --text2: #9aa0ad; --muted: #6b7280;
+  --accent: #8b7cff; --accent2: #a99dff; --code-bg: #0c0e13;
+  --kw-bg: rgba(139,124,255,0.15); --kw-hover: rgba(139,124,255,0.28);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { scroll-behavior:smooth; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); }
+.icon { display:inline-flex; vertical-align:-0.2em; width:1.1em; height:1.1em; margin-right:6px; }
+.icon svg { width:100%; height:100%; }
+.progress-bar { position:fixed; top:0; left:0; height:3px; background:var(--accent); width:0%; z-index:300; transition:width 0.1s linear; }
+.topbar { position:fixed; top:0; left:0; right:0; z-index:200; background:rgba(22,24,31,0.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 12px; height:52px; }
+.topbar .tb-home { display:flex; align-items:center; color:var(--text2); text-decoration:none; font-size:14px; padding:6px 10px; border-radius:8px; }
+.topbar .tb-home:hover { color:var(--text); background:var(--card2); }
+.topbar .tb-title { flex:1; text-align:center; font-size:15px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 10px; }
+.topbar .tb-toc { background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:13px; display:flex; align-items:center; }
+.topbar .tb-toc:hover { color:var(--text); border-color:var(--accent); }
+.reader { display:flex; padding-top:52px; min-height:100vh; }
+.toc-side { width:240px; flex-shrink:0; position:sticky; top:52px; height:calc(100vh - 52px); overflow-y:auto; padding:20px 12px; border-right:1px solid var(--border); background:var(--bg); display:none; }
+.toc-side h3 { font-size:13px; color:var(--muted); margin-bottom:10px; padding-left:8px; letter-spacing:1px; }
+.toc-side a { display:block; color:var(--text2); text-decoration:none; padding:6px 8px; border-radius:6px; font-size:13px; line-height:1.5; border-left:2px solid transparent; }
+.toc-side a:hover { color:var(--text); background:var(--card2); border-left-color:var(--accent); }
+.toc-drawer { position:fixed; top:0; right:-300px; width:280px; max-width:85vw; height:100vh; background:var(--bg2); z-index:250; transition:right 0.25s ease; overflow-y:auto; padding:70px 16px 30px; border-left:1px solid var(--border); }
+.toc-drawer.open { right:0; }
+.toc-drawer h3 { font-size:14px; color:var(--muted); margin-bottom:12px; }
+.toc-drawer a { display:block; color:var(--text2); text-decoration:none; padding:8px 6px; border-radius:6px; font-size:14px; line-height:1.5; }
+.toc-drawer a:hover { color:var(--text); background:var(--card2); }
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:240; display:none; }
+.overlay.show { display:block; }
+.article { flex:1; max-width:760px; margin:0 auto; padding:40px 24px 80px; min-width:0; }
+.article h1 { font-size:26px; margin-bottom:6px; line-height:1.4; }
+.article .doc-meta { color:var(--muted); font-size:13px; margin-bottom:28px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+.article h2 { font-size:21px; margin:36px 0 14px; color:var(--text); line-height:1.4; }
+.article h3 { font-size:18px; margin:28px 0 12px; color:var(--text); }
+.article h4 { font-size:16px; margin:22px 0 10px; color:var(--accent2); }
+.article p { font-size:16.5px; line-height:1.95; margin:14px 0; color:var(--text); }
+.article li { margin-left:24px; line-height:1.9; font-size:16px; color:var(--text); }
+.article a { color:#a78bfa; text-decoration:underline; text-underline-offset:3px; transition:color 0.15s; }
+.article a:hover { color:#c4b5fd; }
+.article a:visited { color:#a78bfa; }
+.article a.kw { color:#c4b5fd; text-decoration:none; }
+.article blockquote { border-left:4px solid var(--accent); padding:10px 16px; background:rgba(139,124,255,0.08); margin:16px 0; color:var(--text2); font-size:15px; border-radius:0 8px 8px 0; }
+.article pre { background:var(--code-bg); color:#d5d8e0; padding:16px 18px; border-radius:10px; overflow-x:auto; -webkit-overflow-scrolling:touch; font-size:13.5px; line-height:1.7; margin:16px 0; white-space:pre; border:1px solid var(--border); }
+.article code { font-family:"JetBrains Mono",Consolas,monospace; }
+.article .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; margin:16px 0; border-radius:8px; border:1px solid var(--border); }
+.article table { width:100%; border-collapse:collapse; font-size:14px; min-width:420px; }
+.article th, .article td { border-bottom:1px solid var(--border); padding:9px 12px; text-align:left; color:var(--text); line-height:1.7; }
+.article th { background:var(--card2); color:var(--accent2); }
+.kw { color:#c4b5fd; background:var(--kw-bg); border-bottom:1px dashed var(--accent); padding:1px 4px; border-radius:4px; text-decoration:none; cursor:pointer; font-weight:500; transition:all 0.15s; }
+.kw:hover { background:var(--kw-hover); color:#fff; }
+.pager { max-width:760px; margin:0 auto; padding:0 24px 60px; display:flex; gap:12px; }
+.pager a { flex:1; display:block; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 18px; text-decoration:none; transition:0.2s; }
+.pager a:hover { border-color:var(--accent); transform:translateY(-2px); }
+.pager .dir { font-size:12px; color:var(--muted); display:block; margin-bottom:6px; }
+.pager .ptitle { font-size:15px; color:var(--text); font-weight:600; display:block; }
+.pager a.next { text-align:right; }
+.pager a:empty { display:none; }
+.scroll-top { position:fixed; right:16px; bottom:20px; width:44px; height:44px; border-radius:50%; background:var(--card2); color:var(--text); border:1px solid var(--border); box-shadow:0 3px 12px rgba(0,0,0,0.4); display:none; z-index:90; align-items:center; justify-content:center; cursor:pointer; }
+.scroll-top.show { display:flex; }
+.scroll-top .icon { margin:0; width:1.4em; height:1.4em; }
+
+.hamburger { background:none; border:none; color:var(--text); cursor:pointer; padding:8px; line-height:1; display:inline-flex; align-items:center; }
+.topbar .logo { display:flex; align-items:center; font-weight:700; font-size:15px; color:var(--text); flex-shrink:0; }
+.topbar .logo .icon { color:var(--accent); }
+.drawer { position:fixed; top:0; left:0; bottom:0; width:250px; background:var(--bg2); color:var(--text); z-index:250; transform:translateX(-100%); transition:transform 0.25s ease; overflow-y:auto; padding-top:60px; border-right:1px solid var(--border); }
+.drawer.open { transform:translateX(0); }
+.drawer nav a { display:flex; align-items:center; padding:12px 20px; color:var(--text2); text-decoration:none; font-size:15px; }
+.drawer nav a:hover, .drawer nav a:active { color:var(--text); background:var(--card2); }
+.drawer a { display:block; color:var(--text2); text-decoration:none; padding:7px 20px; font-size:13.5px; line-height:1.5; }
+.drawer a:hover { color:var(--text); background:var(--card2); }
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:240; display:none; }
+.overlay.show { display:block; }
+
+
+/* ===== MDX组件样式 ===== */
+.card-group { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin:16px 0; }
+.mg-card { display:flex; align-items:flex-start; gap:10px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; text-decoration:none; transition:0.2s; }
+.mg-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+.mg-icon { font-size:20px; flex-shrink:0; color:var(--accent); }
+.mg-card-title { font-size:14px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.mg-card-desc { font-size:12.5px; color:var(--text2); line-height:1.5; }
+.callout { border-left:4px solid var(--accent); padding:10px 16px; margin:14px 0; border-radius:0 8px 8px 0; font-size:14.5px; line-height:1.7; color:var(--text2); }
+.callout-tip { border-left-color:#4caf50; background:rgba(76,175,80,0.08); }
+.callout-note { border-left-color:#42a5f5; background:rgba(66,165,245,0.08); }
+.callout-warning { border-left-color:#ff9800; background:rgba(255,152,0,0.08); }
+.callout-info { border-left-color:#8b7cff; background:rgba(139,124,255,0.08); }
+.steps { list-style:none; counter-reset:step; margin:16px 0; padding:0; }
+.steps > li { position:relative; padding:0 0 16px 44px; margin:0; }
+.steps > li::before { counter-increment:step; content:counter(step); position:absolute; left:0; top:2px; width:28px; height:28px; border-radius:50%; background:var(--accent); color:#fff; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.step-title { font-weight:600; color:var(--text); margin-bottom:6px; font-size:15px; }
+.tabs { margin:16px 0; }
+.tab-item { background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:10px; overflow:hidden; }
+.tab-label { padding:9px 14px; font-size:13px; font-weight:600; color:var(--accent2); background:var(--card2); border-bottom:1px solid var(--border); }
+.tab-body { padding:12px 14px; }
+.acc-group { margin:16px 0; }
+.acc { background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; overflow:hidden; }
+.acc summary { padding:12px 16px; cursor:pointer; font-size:14px; font-weight:600; color:var(--text); }
+.acc summary:hover { background:var(--card2); }
+.acc[open] summary { border-bottom:1px solid var(--border); }
+.article kbd { background:var(--card2); border:1px solid var(--border); border-bottom-width:2px; border-radius:5px; padding:1px 7px; font-size:12px; font-family:inherit; color:var(--text); }
+
+
+.dot { display:inline-block; width:0.85em; height:0.85em; border-radius:50%; vertical-align:-0.1em; margin:0 2px; }
+.dot-red { background:#f03e3e; }
+.dot-yellow { background:#f59f00; }
+.dot-purple { background:#9c36b5; }
+
+@media (min-width: 1024px) { .toc-side { display:block; } .tb-toc { display:none; } }
+@media (max-width: 1023px) { .article { padding:32px 18px 60px; } .article p { font-size:16px; } }
+
+
+/* ===== 关键词弹窗 ===== */
+.kw-panel { position:fixed; left:0; top:50%; transform:translate(-110%,-50%); z-index:400; background:var(--card); border:1px solid var(--accent); border-left:none; border-radius:0 16px 16px 0; box-shadow:0 8px 40px rgba(0,0,0,0.6); transition:transform 0.35s cubic-bezier(0.22,1,0.36,1); max-height:70vh; display:flex; flex-direction:column; }
+.kw-panel.open { transform:translate(0,-50%); }
+.kw-panel .kwp-head { display:flex; align-items:center; gap:8px; padding:14px 18px 10px; border-bottom:1px solid var(--border); }
+.kw-panel .kwp-badge { background:var(--kw-bg); color:var(--accent2); font-size:12px; font-weight:700; padding:3px 10px; border-radius:10px; flex-shrink:0; }
+.kw-panel .kwp-title { font-size:15px; font-weight:600; color:var(--text); flex:1; line-height:1.4; }
+.kw-panel .kwp-close { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:0 4px; line-height:1; flex-shrink:0; }
+.kw-panel .kwp-close:hover { color:var(--text); }
+.kw-panel .kwp-body { padding:14px 18px; overflow-y:auto; flex:1; }
+.kw-panel .kwp-desc { font-size:14px; line-height:1.8; color:var(--text2); }
+.kw-panel .kwp-link { display:inline-flex; align-items:center; margin-top:12px; color:var(--accent2); text-decoration:none; font-size:13px; font-weight:600; }
+.kw-panel .kwp-link:hover { color:var(--accent); }
+.kw-panel .kwp-bar-wrap { height:4px; background:var(--card2); border-radius:0 0 16px 0; overflow:hidden; flex-shrink:0; }
+.kw-panel .kwp-bar { height:100%; width:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:0 0 16px 0; }
+/* ===== 错误汇报 ===== */
+.btn-report { display:inline-flex; align-items:center; gap:4px; background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12.5px; transition:0.15s; }
+.btn-report:hover { color:var(--text); border-color:var(--accent); background:var(--card2); }
+.rpt-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:500; display:none; align-items:center; justify-content:center; padding:20px; }
+.rpt-overlay.show { display:flex; }
+.rpt-modal { background:var(--card); border:1px solid var(--accent); border-radius:16px; width:100%; max-width:460px; box-shadow:0 20px 60px rgba(0,0,0,0.7); overflow:hidden; }
+.rpt-head { display:flex; align-items:center; gap:8px; padding:16px 20px; border-bottom:1px solid var(--border); }
+.rpt-head .rpt-title { font-size:16px; font-weight:700; color:var(--text); flex:1; }
+.rpt-close { background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1; }
+.rpt-close:hover { color:var(--text); }
+.rpt-body { padding:18px 20px; }
+.rpt-field { margin-bottom:14px; }
+.rpt-field label { display:block; font-size:13px; color:var(--text2); margin-bottom:6px; }
+.rpt-field .rpt-page { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:13px; color:var(--accent2); word-break:break-all; }
+.rpt-field input, .rpt-field textarea { width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:14px; color:var(--text); font-family:inherit; resize:vertical; }
+.rpt-field input:focus, .rpt-field textarea:focus { outline:none; border-color:var(--accent); }
+.rpt-field textarea { min-height:90px; }
+.rpt-tip { font-size:12px; color:var(--muted); margin-top:4px; }
+.rpt-submit { width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px; font-size:15px; font-weight:600; cursor:pointer; transition:0.15s; }
+.rpt-submit:hover { background:var(--accent2); }
+.rpt-submit:disabled { opacity:0.5; cursor:not-allowed; }
+.rpt-ok { text-align:center; padding:30px 20px; }
+.rpt-ok .rpt-ok-icon { font-size:42px; margin-bottom:12px; }
+.rpt-ok .rpt-ok-title { font-size:17px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.rpt-ok .rpt-ok-desc { font-size:13px; color:var(--text2); }
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar"></div>
+<header class="topbar">
+  <span class="logo"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6l0 13" /> <path d="M12 6l0 13" /> <path d="M21 6l0 13" /> </svg></span>Claude Code 知识库</span>
+  <div class="tb-title">使用 agent view 管理多个代理</div>
+  <button class="hamburger" onclick="toggleDrawer()" aria-label="菜单"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M4 6l16 0" /> <path d="M4 12l16 0" /> <path d="M4 18l16 0" /> </svg></span></button>
+</header>
+<aside class="drawer" id="drawer">
+  <nav>
+    <a href="../index.html" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l-2 0l9 -9l9 9l-2 0" /> <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /> <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /> </svg></span>返回首页</a>
+    <a href="../index.html#index" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>文档索引</a>
+    <a href="../index.html#manual" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M19 4v16h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12" /> <path d="M19 16h-12a2 2 0 0 0 -2 2" /> <path d="M9 8h6" /> </svg></span>入门手册</a>
+    <a href="../index.html#docs" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>全部文档</a>
+    <a href="#" onclick="closeDrawer();openRpt()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9 9v-1a3 3 0 0 1 6 0v1" /> <path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /> <path d="M3 13l4 0" /> <path d="M17 13l4 0" /> <path d="M12 20l0 -6" /> <path d="M4 19l3.35 -2" /> <path d="M20 19l-3.35 -2" /> <path d="M4 7l3.75 2.4" /> <path d="M20 7l-3.75 2.4" /> </svg></span>文档有误？汇报</a>
+  </nav>
+  <div style="margin:14px 20px 6px;font-size:12px;color:var(--muted);letter-spacing:1px;">本文目录</div>
+  <a href="#sec-agent-view-1" style="padding-left:0px;font-size:13px;">使用 agent view 管理多个代理</a>
+<a href="#sec-agent-view-2" style="padding-left:14px;font-size:13.5px;">快速开始</a>
+<a href="#sec-agent-view-3" style="padding-left:14px;font-size:13.5px;">使用 agent view 监控会话</a>
+<a href="#sec-agent-view-4" style="padding-left:28px;font-size:13px;">读取会话状态</a>
+<a href="#sec-agent-view-5" style="padding-left:28px;font-size:13px;">行摘要</a>
+<a href="#sec-agent-view-6" style="padding-left:28px;font-size:13px;">拉取请求状态</a>
+<a href="#sec-agent-view-7" style="padding-left:28px;font-size:13px;">窥视和回复</a>
+<a href="#sec-agent-view-8" style="padding-left:28px;font-size:13px;">附加到会话</a>
+<a href="#sec-agent-view-9" style="padding-left:28px;font-size:13px;">组织列表</a>
+<a href="#sec-agent-view-10" style="padding-left:28px;font-size:13px;">过滤会话</a>
+<a href="#sec-agent-view-11" style="padding-left:28px;font-size:13px;">快捷键</a>
+<a href="#sec-agent-view-12" style="padding-left:14px;font-size:13.5px;">调度新代理</a>
+<a href="#sec-agent-view-13" style="padding-left:28px;font-size:13px;">从 agent view</a>
+<a href="#sec-agent-view-14" style="padding-left:42px;font-size:13px;">调度到特定目录</a>
+<a href="#sec-agent-view-15" style="padding-left:28px;font-size:13px;">从会话内部</a>
+<a href="#sec-agent-view-16" style="padding-left:28px;font-size:13px;">从你的 shell</a>
+<a href="#sec-agent-view-17" style="padding-left:42px;font-size:13px;">运行 shell 命令</a>
+<a href="#sec-agent-view-18" style="padding-left:28px;font-size:13px;">文件编辑如何隔离</a>
+<a href="#sec-agent-view-19" style="padding-left:28px;font-size:13px;">设置模型</a>
+<a href="#sec-agent-view-20" style="padding-left:28px;font-size:13px;">权限模式、模型和工作量</a>
+<a href="#sec-agent-view-21" style="padding-left:28px;font-size:13px;">Settings、plugins 和 MCP servers</a>
+<a href="#sec-agent-view-22" style="padding-left:14px;font-size:13.5px;">从 shell 管理会话</a>
+<a href="#sec-agent-view-23" style="padding-left:14px;font-size:13.5px;">后台会话如何被托管</a>
+<a href="#sec-agent-view-24" style="padding-left:28px;font-size:13px;">监督进程</a>
+<a href="#sec-agent-view-25" style="padding-left:28px;font-size:13px;">状态存储位置</a>
+<a href="#sec-agent-view-26" style="padding-left:28px;font-size:13px;">关闭 agent view</a>
+<a href="#sec-agent-view-27" style="padding-left:14px;font-size:13.5px;">故障排除</a>
+<a href="#sec-agent-view-28" style="padding-left:28px;font-size:13px;">`claude agents` 列出子代理而不是打开代理视图</a>
+<a href="#sec-agent-view-29" style="padding-left:28px;font-size:13px;">Agent view 打开时没有会话</a>
+<a href="#sec-agent-view-30" style="padding-left:28px;font-size:13px;">后台化显示 `Background this session?` 对话</a>
+<a href="#sec-agent-view-31" style="padding-left:28px;font-size:13px;">提示被拒绝，因为太短</a>
+<a href="#sec-agent-view-32" style="padding-left:28px;font-size:13px;">会话在关闭后显示为已失败</a>
+<a href="#sec-agent-view-33" style="padding-left:28px;font-size:13px;">打开会话说对话已经打开</a>
+<a href="#sec-agent-view-34" style="padding-left:28px;font-size:13px;">会话在启动前失败，并显示 `possibly low memory` 注记</a>
+<a href="#sec-agent-view-35" style="padding-left:28px;font-size:13px;">Agent view 说后台服务没有响应</a>
+<a href="#sec-agent-view-36" style="padding-left:28px;font-size:13px;">后台调度失败，出现 `Could not resolve authentication method`</a>
+<a href="#sec-agent-view-37" style="padding-left:28px;font-size:13px;">后台会话无法在 macOS 上读取 Desktop、Documents 或 Downloads</a>
+<a href="#sec-agent-view-38" style="padding-left:28px;font-size:13px;">后台会话无法在 macOS 上访问本地网络主机</a>
+<a href="#sec-agent-view-39" style="padding-left:28px;font-size:13px;">附加后会话响应缓慢</a>
+<a href="#sec-agent-view-40" style="padding-left:28px;font-size:13px;">`.claude/worktrees/` 填满了</a>
+<a href="#sec-agent-view-41" style="padding-left:14px;font-size:13.5px;">限制</a>
+<a href="#sec-agent-view-42" style="padding-left:14px;font-size:13.5px;">相关资源</a>
+<a href="#sec-agent-view-43" style="padding-left:14px;font-size:13.5px;">版本历史</a>
+</aside>
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+
+<div class="reader">
+  <aside class="toc-side">
+    <h3>本文目录</h3>
+    <a href="#sec-agent-view-1" style="padding-left:0px;font-size:13px;">使用 agent view 管理多个代理</a>
+<a href="#sec-agent-view-2" style="padding-left:14px;font-size:13.5px;">快速开始</a>
+<a href="#sec-agent-view-3" style="padding-left:14px;font-size:13.5px;">使用 agent view 监控会话</a>
+<a href="#sec-agent-view-4" style="padding-left:28px;font-size:13px;">读取会话状态</a>
+<a href="#sec-agent-view-5" style="padding-left:28px;font-size:13px;">行摘要</a>
+<a href="#sec-agent-view-6" style="padding-left:28px;font-size:13px;">拉取请求状态</a>
+<a href="#sec-agent-view-7" style="padding-left:28px;font-size:13px;">窥视和回复</a>
+<a href="#sec-agent-view-8" style="padding-left:28px;font-size:13px;">附加到会话</a>
+<a href="#sec-agent-view-9" style="padding-left:28px;font-size:13px;">组织列表</a>
+<a href="#sec-agent-view-10" style="padding-left:28px;font-size:13px;">过滤会话</a>
+<a href="#sec-agent-view-11" style="padding-left:28px;font-size:13px;">快捷键</a>
+<a href="#sec-agent-view-12" style="padding-left:14px;font-size:13.5px;">调度新代理</a>
+<a href="#sec-agent-view-13" style="padding-left:28px;font-size:13px;">从 agent view</a>
+<a href="#sec-agent-view-14" style="padding-left:42px;font-size:13px;">调度到特定目录</a>
+<a href="#sec-agent-view-15" style="padding-left:28px;font-size:13px;">从会话内部</a>
+<a href="#sec-agent-view-16" style="padding-left:28px;font-size:13px;">从你的 shell</a>
+<a href="#sec-agent-view-17" style="padding-left:42px;font-size:13px;">运行 shell 命令</a>
+<a href="#sec-agent-view-18" style="padding-left:28px;font-size:13px;">文件编辑如何隔离</a>
+<a href="#sec-agent-view-19" style="padding-left:28px;font-size:13px;">设置模型</a>
+<a href="#sec-agent-view-20" style="padding-left:28px;font-size:13px;">权限模式、模型和工作量</a>
+<a href="#sec-agent-view-21" style="padding-left:28px;font-size:13px;">Settings、plugins 和 MCP servers</a>
+<a href="#sec-agent-view-22" style="padding-left:14px;font-size:13.5px;">从 shell 管理会话</a>
+<a href="#sec-agent-view-23" style="padding-left:14px;font-size:13.5px;">后台会话如何被托管</a>
+<a href="#sec-agent-view-24" style="padding-left:28px;font-size:13px;">监督进程</a>
+<a href="#sec-agent-view-25" style="padding-left:28px;font-size:13px;">状态存储位置</a>
+<a href="#sec-agent-view-26" style="padding-left:28px;font-size:13px;">关闭 agent view</a>
+<a href="#sec-agent-view-27" style="padding-left:14px;font-size:13.5px;">故障排除</a>
+<a href="#sec-agent-view-28" style="padding-left:28px;font-size:13px;">`claude agents` 列出子代理而不是打开代理视图</a>
+<a href="#sec-agent-view-29" style="padding-left:28px;font-size:13px;">Agent view 打开时没有会话</a>
+<a href="#sec-agent-view-30" style="padding-left:28px;font-size:13px;">后台化显示 `Background this session?` 对话</a>
+<a href="#sec-agent-view-31" style="padding-left:28px;font-size:13px;">提示被拒绝，因为太短</a>
+<a href="#sec-agent-view-32" style="padding-left:28px;font-size:13px;">会话在关闭后显示为已失败</a>
+<a href="#sec-agent-view-33" style="padding-left:28px;font-size:13px;">打开会话说对话已经打开</a>
+<a href="#sec-agent-view-34" style="padding-left:28px;font-size:13px;">会话在启动前失败，并显示 `possibly low memory` 注记</a>
+<a href="#sec-agent-view-35" style="padding-left:28px;font-size:13px;">Agent view 说后台服务没有响应</a>
+<a href="#sec-agent-view-36" style="padding-left:28px;font-size:13px;">后台调度失败，出现 `Could not resolve authentication method`</a>
+<a href="#sec-agent-view-37" style="padding-left:28px;font-size:13px;">后台会话无法在 macOS 上读取 Desktop、Documents 或 Downloads</a>
+<a href="#sec-agent-view-38" style="padding-left:28px;font-size:13px;">后台会话无法在 macOS 上访问本地网络主机</a>
+<a href="#sec-agent-view-39" style="padding-left:28px;font-size:13px;">附加后会话响应缓慢</a>
+<a href="#sec-agent-view-40" style="padding-left:28px;font-size:13px;">`.claude/worktrees/` 填满了</a>
+<a href="#sec-agent-view-41" style="padding-left:14px;font-size:13.5px;">限制</a>
+<a href="#sec-agent-view-42" style="padding-left:14px;font-size:13.5px;">相关资源</a>
+<a href="#sec-agent-view-43" style="padding-left:14px;font-size:13.5px;">版本历史</a>
+  </aside>
+
+  <main class="article">
+    <blockquote>## Documentation Index</blockquote>
+<blockquote>Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt</blockquote>
+<blockquote>Use this file to discover all available pages before exploring further.</blockquote>
+
+<h2 id="sec-agent-view-1">使用 agent view 管理多个代理</h2>
+
+<blockquote>从一个屏幕调度和管理多个 Claude Code 会话。Agent view 显示每个会话正在做什么以及哪些会话需要你的输入。</blockquote>
+
+<p><a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> view 通过 `claude agents` 打开，是所有<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>的一个屏幕：什么正在运行、什么需要你的输入、什么已完成。调度新<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，一目了然地查看它们的状态而不是滚动浏览记录，只在需要时才介入。每个<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>都是一个完整的 Claude Code 对话，在没有终端连接的情况下继续运行，所以你可以随时打开它、回复并离开。</p>
+
+<p>&lt;img src=&quot;https://mintcdn.com/claude-code/1B48Qz2Z9hac4SLG/images/agent-view-light.png?fit=max&amp;auto=format&amp;n=1B48Qz2Z9hac4SLG&amp;q=85&amp;s=7a186c96ed47d6700d084d77e786be65&quot; className=&quot;dark:hidden&quot; alt=&quot;终端中的 <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> view：标题显示 Claude Code v2.1.140、模型、工作目录和摘要计数。<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>分组在&#x27;需要输入&#x27;、&#x27;正在工作&#x27;和&#x27;已完成&#x27;下，底部有调度输入和键盘提示页脚。&quot; width=&quot;1772&quot; height=&quot;780&quot; data-path=&quot;images/agent-view-light.png&quot; /&gt;</p>
+
+<p>&lt;img src=&quot;https://mintcdn.com/claude-code/1B48Qz2Z9hac4SLG/images/agent-view-dark.png?fit=max&amp;auto=format&amp;n=1B48Qz2Z9hac4SLG&amp;q=85&amp;s=a5bed7434bae368faea3a8f023b52aa2&quot; className=&quot;hidden dark:block&quot; alt=&quot;终端中的 <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> view：标题显示 Claude Code v2.1.140、模型、工作目录和摘要计数。<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>分组在&#x27;需要输入&#x27;、&#x27;正在工作&#x27;和&#x27;已完成&#x27;下，底部有调度输入和键盘提示页脚。&quot; width=&quot;1772&quot; height=&quot;780&quot; data-path=&quot;images/agent-view-dark.png&quot; /&gt;</p>
+
+<p>当你有多个独立任务 Claude 可以在不需要你观看每一步的情况下处理时，使用 agent view。调度一个 bug 修复、一个拉取请求审查和一个不稳定测试调查作为三行，在另一个窗口中继续工作，当一行显示它需要你或有结果时检查回来。</p>
+
+<p>当你想在任何代理的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中更直接地工作时，附加到该行以进入完整对话。</p>
+
+<p>要比较 agent view 与 subagents、agent teams 和 worktrees，请参阅 <a class="kw" onclick="showKw('并行运行代理')" title="点击查看解释">并行运行代理</a>。</p>
+
+<div class="callout callout-note">
+<p>  <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> view 是研究预览版，需要 Claude Code v2.1.139 或更高版本。使用 `claude --version` 检查你的版本。随着功能的发展，界面和<a class="kw" onclick="showKw('快捷键')" title="点击查看解释">快捷键</a>可能会改变。</p>
+</div>
+
+<p>本页涵盖：</p>
+
+<p>* <a class="kw" onclick="showKw('快速开始')" title="点击查看解释">快速开始</a>：给 Claude 一个在后台处理的任务，检查它，并在需要时介入</p>
+<p>* <a class="kw" onclick="showKw('使用 agent view 监控会话')" title="点击查看解释">使用 agent view 监控会话</a>，包括状态图标、窥视和回复、附加、组织和<a class="kw" onclick="showKw('快捷键')" title="点击查看解释">快捷键</a></p>
+<p>* <a class="kw" onclick="showKw('调度新代理')" title="点击查看解释">调度新代理</a>，从 agent view、从<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>内部或从 shell</p>
+<p>* <a class="kw" onclick="showKw('从 shell 管理会话')" title="点击查看解释">从 shell 管理会话</a>，使用 `claude agents`、`claude attach` 和相关命令</p>
+<p>* <a class="kw" onclick="showKw('后台会话如何被托管')" title="点击查看解释">后台会话如何被托管</a>，由监督进程</p>
+
+<h3 id="sec-agent-view-2">快速开始</h3>
+
+<p>本演练涵盖核心 agent view 循环：调度一个任务，观看其行在 Claude 工作时更新，窥视以检查它并回复，以及附加到完整对话。你调度的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在关闭 agent view 后继续运行，所以你可以离开并稍后回到它。</p>
+
+<ol class="steps">
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;打开 agent view&lt;/div&gt;</p>
+<p>    从你的 shell，运行：</p>
+
+<p>    ```bash theme={null}</p>
+<p>    claude agents</p>
+<p>    ```</p>
+
+<p>    <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> view 打开，底部有一个输入框，当<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>启动时表格会填充。随时按 `Esc` 返回你的 shell。你的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在你离开时继续运行，下次打开 agent view 时会重新出现。</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;调度一个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>&lt;/div&gt;</p>
+<p>    输入描述任务的提示并按 `Enter`。一个新的<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>在该任务上启动并显示为一行，显示它是否正在工作、等待你或已完成。新<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>使用 agent view 标题中显示的模型和在该目录中运行 `claude` 时会获得的相同<a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a>。</p>
+
+<p>    你在此输入的每个提示都会启动自己的新<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。输入另一个提示并按 `Enter` 会启动第二个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，与第一个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>并行运行，而不是向其发送后续消息。你可以通过这种方式并行运行多个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。</p>
+
+<p>    每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>独立使用你的订阅配额，所以在一次调度多个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>之前，请查看<a class="kw" onclick="showKw('限制')" title="点击查看解释">限制</a>。</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;窥视和回复&lt;/div&gt;</p>
+<p>    用箭头键选择一行并按 `Space` 打开窥视面板。它显示<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的最近输出，或它正在等待的问题，而不是完整的记录。输入回复并按 `Enter` 发送，无需离开 agent view。</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;附加和分离&lt;/div&gt;</p>
+<p>    在一行上按 `Enter` 或 `→` 在你想要完整对话时附加。<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>接管终端，就像一个完整的交互式 Claude Code <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。在空提示上按 `←` 分离并返回表格。</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;将现有<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>引入&lt;/div&gt;</p>
+<p>    这一步需要一个运行中的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。如果你遵循了之前的步骤，你在此终端中没有打开的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，所以在另一个终端中打开一个常规 `claude` <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>并先向其发送一条消息。要将你已经打开的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>移入 agent view，在其中运行 `/bg`，或在空提示上按 `←` 以<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>并在一步中打开 agent view。<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>继续运行并显示为一行，与你调度的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>并排。</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;/ol&gt;</p>
+
+<p>你可以使用 `claude agents` 作为你的主要入口点而不是 `claude`：从 agent view 调度每个任务，当你想要完整对话时附加，按 `←` 返回表格。</p>
+
+<p>在常规 `claude` <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>内，提示页脚的 `←` 提示计算正在等待你的后台 agent 数量，例如 `← 2 agents`，当没有 agent 需要输入时返回 `← for agents`。超过 99 的计数显示为 `99+`。当终端获得焦点时，计数大约每十秒刷新一次，当焦点返回时立即刷新。当计数移动和 agent 完成时，它会短暂改变颜色，除非启用了<a class="kw" onclick="showKw('prefersReducedMotion 设置')" title="点击查看解释">prefersReducedMotion 设置</a>，并且在<a class="kw" onclick="showKw('屏幕阅读器模式')" title="点击查看解释">屏幕阅读器模式</a>中隐藏。在 <a class="kw" onclick="showKw('Amazon Bedrock、Google Cloud 的 Agent Platform 和 Microsoft Foundry')" title="点击查看解释">Amazon Bedrock、Google Cloud 的 Agent Platform 和 Microsoft Foundry</a> 上，提示保持其纯 `← for agents` 形式，没有计数。需要 Claude Code v2.1.205 或更高版本。</p>
+
+<h3 id="sec-agent-view-3">使用 agent view 监控会话</h3>
+
+<p>运行 `claude agents` 打开 agent view。它接管整个终端并列出按状态分组的每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，固定的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>和需要你的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在顶部。每行显示<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的名称、当前活动和其年龄，从<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>创建时开始计算；已完成的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的年龄冻结在运行花费的时间。</p>
+
+<p>名称用该<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中由 <a class="kw" onclick="showKw('/color')" title="点击查看解释">/color</a> <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>的颜色着色。从 v2.1.199 开始，当你用 `←` 或 `/background` <a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>时，颜色会保留。</p>
+
+<p>默认情况下，列表显示你启动的每个<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>，跨越所有项目。在一个存储库中工作的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>和在不同 worktree 中工作的另一个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>都会出现在这里，无论你从哪个目录打开 agent view。要将列表限制到一个项目，请传递 `--cwd`：</p>
+
+<pre><code>
+claude agents --cwd ~/projects/my-app
+</code></pre>
+
+<p>这只显示在该目录下启动的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。已<a class="kw" onclick="showKw('移入 worktree')" title="点击查看解释">移入 worktree</a> 到 `~/projects/my-app/.claude/worktrees/` 下的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>仍然算作属于 `~/projects/my-app`。</p>
+
+<p>你在其他终端中打开的交互式<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>不会出现，直到你<a class="kw" onclick="showKw('后台它们')" title="点击查看解释">后台它们</a>。<a class="kw" onclick="showKw('Subagents')" title="点击查看解释">Subagents</a> 和 <a class="kw" onclick="showKw('teammates')" title="点击查看解释">teammates</a> <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>生成的不会列为单独的行。</p>
+
+<pre><code>
+Pinned
+  ✽ clawd walk cycle          Drawing the walk-cycle sprite frames          3m
+
+Ready for review
+  ∙ jump physics              Opened PR with collision fix                 #2048  2h
+
+Needs input
+  ✻ power-up design           double jump or wall climb?                    1m
+
+Working
+  ✽ collision detection       Adding swept-AABB checks to CollisionSystem   2m
+  ✢ playtest level 3          run 12 · all checkpoints cleared           in 4m
+
+Completed
+  ✻ title screen              result: menu, options, and credits done       9m
+  ∙ sound effects             result: 14 SFX exported to assets/audio       4h
+  … 6 more
+</code></pre>
+
+<h4 id="sec-agent-view-4">读取会话状态</h4>
+
+<p>每行以一个图标开头，其颜色和动画显示<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的状态：</p>
+
+<div class='table-wrap'><table>
+<tr><th>状态</th><th>图标显示为</th><th>含义</th></tr>
+<tr><td>工作中</td><td>动画</td><td>Claude 正在积极运行工具或生成响应</td></tr>
+<tr><td>需要输入</td><td>黄色</td><td>Claude 等待你的特定问题或<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>决定</td></tr>
+<tr><td>空闲</td><td>暗淡</td><td><a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>没有任何事情要做，准备好接收你的下一个提示</td></tr>
+<tr><td>已完成</td><td>绿色</td><td>任务成功完成</td></tr>
+<tr><td>失败</td><td>红色</td><td>任务以错误结束</td></tr>
+<tr><td>已停止</td><td>灰色</td><td><a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>被 `Ctrl+X` 或 `claude stop` 停止</td></tr>
+</table></div>
+
+<p>另外，图标的形状显示底层进程是否正在运行：</p>
+
+<div class='table-wrap'><table>
+<tr><th>形状</th><th>含义</th></tr>
+<tr><td>`<span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873l-6.158 -3.245" /> </svg></span>` 或动画 `<span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873l-6.158 -3.245" /> </svg></span>`</td><td><a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>进程处于活跃状态并立即回复</td></tr>
+<tr><td>`∙`</td><td>进程已退出。你仍然可以窥视、回复或附加，Claude 从中断处重新启动</td></tr>
+<tr><td>`<span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873l-6.158 -3.245" /> </svg></span>`</td><td>一个 <a class="kw" onclick="showKw('/loop')" title="点击查看解释">/loop</a> <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在迭代之间休眠。该行显示其运行计数和倒计时</td></tr>
+</table></div>
+
+<p>行右边缘可能出现的 `#N` 标签是<a class="kw" onclick="showKw('会话打开的拉取请求')" title="点击查看解释">会话打开的拉取请求</a>，不是状态图标的一部分。</p>
+
+<p>终端标签标题在 agent view 打开时显示等待输入的计数：当<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>需要输入时显示 `2 awaiting input · claude agents`，或当没有<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>需要输入时显示 `claude agents`。</p>
+
+<p>从 v2.1.198 开始，当 agent view 打开时，Claude Code 还会通过你配置的<a class="kw" onclick="showKw('终端通知频道')" title="点击查看解释">终端通知频道</a>发送通知，当本地<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>开始需要你的输入、完成或失败时。在计划上运行的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，例如 <a class="kw" onclick="showKw('/loop')" title="点击查看解释">/loop</a> <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，仅在需要你的输入时通知。通知使用与 Claude Code 其余部分相同的 <a class="kw" onclick="showKw('preferredNotifChannel 设置')" title="点击查看解释">preferredNotifChannel 设置</a>，并使用 `agent_needs_input` 或 `agent_completed` 类型触发 <a class="kw" onclick="showKw('Notification hook')" title="点击查看解释">Notification hook</a>。</p>
+
+<p><a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>不需要任何打开的终端来继续工作。一个单独的<a class="kw" onclick="showKw('监督进程')" title="点击查看解释">监督进程</a>运行它们，所以你可以关闭 agent view、关闭你的 shell 或启动一个新的交互式<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，你的调度工作继续进行。</p>
+
+<p><a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>状态通过自动更新和监督进程重启在磁盘上持久化。<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在你的机器休眠时也会被保留。它们的进程在唤醒时恢复，监督进程重新连接到它们，而不是将时间间隙视为空闲。关闭仍然会停止运行中的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>；请参阅<a class="kw" onclick="showKw('关闭后会话显示为失败')" title="点击查看解释">关闭后会话显示为失败</a>了解如何恢复它们。</p>
+
+<p>当你打开一个已停止响应的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>时，监督进程重启其进程，<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>从中断处继续中断的响应。当机器在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中途响应时休眠时，<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>可能会陷入该状态。需要 Claude Code v2.1.200 或更高版本。</p>
+
+<h4 id="sec-agent-view-5">行摘要</h4>
+
+<p>每行中的单行摘要由 <a class="kw" onclick="showKw('Haiku-class 模型')" title="点击查看解释">Haiku-class 模型</a>生成，所以该行可以告诉你<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>正在做什么、需要什么或生成了什么，无需打开记录。当<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>正在积极工作时，摘要最多每 15 秒从<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>自己的最近输出刷新一次，无需发送模型请求，每个回合结束时模型写入新摘要。</p>
+
+<p>工作中的行显示<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>说它正在做什么，被阻止的行显示它提出的问题。在长回合期间，模型也大约每分钟重写一次摘要，每次重写后等待时间加倍，最多四分钟，所以繁忙的行不会继续显示过时的摘要。在 v2.1.205 之前，工作中的行可能显示原始工具调用而不是报告，运行并行工作项的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在文本之前显示 `done/total` 计数，例如 `2/5`。</p>
+
+<p>摘要文本填充行的剩余宽度，仅在终端的右边缘截断；打开<a class="kw" onclick="showKw('窥视面板')" title="点击查看解释">窥视面板</a>读取边缘裁剪的句子。在 v2.1.206 之前，文本在 64 列处被切割，无论终端宽度如何。</p>
+
+<p>当列表<a class="kw" onclick="showKw('按目录分组')" title="点击查看解释">按目录分组</a>时，摘要以<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的状态作为彩色单词开头，例如 `Needs input · double jump or wall climb?`。在默认状态分组中，组标题已经命名了状态，所以行只显示摘要。在 v2.1.205 之前，按目录分组的行不带状态单词。</p>
+
+<p>整个输出不包含字母或数字的回合，例如打印单个符号的安静迭代的 <a class="kw" onclick="showKw('/loop')" title="点击查看解释">/loop</a> <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，保持行的前一个摘要和状态。在 v2.1.205 之前，该回合被重新分类，可能将等待你输入的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>翻转回 `Working`。</p>
+
+<p>结束回合摘要和每次中途重写是通过你的正常提供商的一个短 Haiku-class 请求，按与<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>本身相同的<a class="kw" onclick="showKw('数据使用条款')" title="点击查看解释">数据使用条款</a>计费和处理。15 秒的模型重写之间的更新重用<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>自己的输出，不发送请求。在第三方提供商（如 Amazon Bedrock、Google Cloud 的 <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> Platform、Microsoft Foundry 和自定义网关）上，当没有配置 Haiku 模型时，请求会回退到<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的主模型。<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> <a class="kw" onclick="showKw('ANTHROPIC_DEFAULT_HAIKU_MODEL')" title="点击查看解释">ANTHROPIC_DEFAULT_HAIKU_MODEL</a> 以在这些提供商上为这些摘要选择模型。</p>
+
+<h4 id="sec-agent-view-6">拉取请求状态</h4>
+
+<p>当<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>打开拉取请求时，`#1234` 标签出现在行的右边缘，在支持超链接的终端中链接到拉取请求。当你向<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>发送后续内容时标签保持，所以拉取请求在行恢复到实时进度时保持可见。在 worktree 中隔离其更改的<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>自己打开这些拉取请求；<a class="kw" onclick="showKw('文件编辑如何隔离')" title="点击查看解释">文件编辑如何隔离</a>涵盖何时发生以及<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在没有询问的情况下永远不会做什么。</p>
+
+<p>处理现有拉取请求的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>以相同方式链接到它。使用 `gh` 编辑、评论、关闭或标记拉取请求为就绪链接命令自己的输出命名的拉取请求，所以捕获的输出不命名拉取请求的 `gh` 命令不创建链接；`gh pr merge` 是常见情况，因为它仅将其结果打印到交互式终端。使用 `gh pr checkout` 检出拉取请求，或推送到有打开拉取请求的分支，通过改为使用 `gh pr view` 查找该分支来链接它。在 v2.1.205 之前，仅<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>创建或检出的拉取请求被链接，推送仅在本地分支名称匹配时链接一个。</p>
+
+<p>Claude Code 从完整命令输出读取拉取请求，包括当命令的输出超过内联限制时保存到文件的部分。在 v2.1.205 之前，在 Bash 调用中创建的拉取请求，其输出超过约 30,000 个字符，未被链接。</p>
+
+<p>当<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>链接到多个拉取请求时，标签显示计数，例如 `3 PRs`，按最需要关注的打开拉取请求着色。打开<a class="kw" onclick="showKw('窥视面板')" title="点击查看解释">窥视面板</a>查看它们全部。</p>
+
+<p>拉取请求编号由其状态着色：</p>
+
+<div class='table-wrap'><table>
+<tr><th>颜色</th><th>拉取请求状态</th></tr>
+<tr><td>:-</td><td>:------------</td></tr>
+<tr><td>黄色</td><td>等待检查或审查，或检查失败</td></tr>
+<tr><td>绿色</td><td>检查通过且没有审查阻止</td></tr>
+<tr><td>紫色</td><td>已合并</td></tr>
+<tr><td>灰色</td><td>草稿或已关闭</td></tr>
+</table></div>
+
+<p>对于大多数任务，这列是你收集结果的地方：当其编号变绿时审查和合并拉取请求。</p>
+
+<h4 id="sec-agent-view-7">窥视和回复</h4>
+
+<p>在选定的行上按 `Space` 打开窥视面板。它打开时显示行截断的句子，该句子是什么取决于<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的状态：</p>
+
+<p>* 等待你的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>：它提出的确切问题，在回复输入上方</p>
+<p>* 已完成的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>：其结果</p>
+<p>* 工作中的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>：其完整状态句子</p>
+
+<p>任何链接到<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的拉取请求都列在下面。对于等待你的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，下面的一行，例如 `waiting 3m` 显示它已经等待多长时间，这是面板中唯一显示的时间。行右边缘的年龄是一个不同的数字：它从<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>启动时开始计算。</p>
+
+<p>大多数时候窥视面板就足够了，你不需要打开完整的记录。</p>
+
+<p>在 v2.1.207 之前，每次窥视都以状态句子和裸时间戳打开，被阻止的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的问题出现在它们下方，前缀为相同的时间戳第二次。</p>
+
+<p>在窥视面板中输入回复并按 `Enter` 将其发送到该<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。当<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>提出多选问题时，窥视面板显示选项，你可以按数字键选择一个。对于其他被阻止的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，按 `Tab` 用建议的回复填充输入，你可以在发送前编辑。用 `!` 前缀回复以发送 Bash 命令。</p>
+
+<p>无法传递的回复，因为后台服务无法访问或发送失败，会被保存并在其进程再次启动时作为其下一个提示发送到<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，错误消息说回复已保存。前缀为 `!` 的回复不会被保存，因为保存的文本会作为纯提示而不是 Bash 命令到达<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。</p>
+
+<p>启用<a class="kw" onclick="showKw('语音听写')" title="点击查看解释">语音听写</a>后，在回复输入获得焦点时按住或点击你的推送通话键以听写回复而不是输入。同样的功能在 agent view 底部的调度输入中也有效。</p>
+
+<p>使用 `↑` 和 `↓` 窥视相邻<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>而不关闭面板，或 `→` 附加。</p>
+
+<h4 id="sec-agent-view-8">附加到会话</h4>
+
+<p>在选定的行上按 `Enter` 或 `→` 附加。<a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> view 被完整的交互式<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>替换。当你附加时，Claude 发布一个关于你离开时发生的事情的简短回顾。</p>
+
+<p>附加时，<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的行为像任何其他 Claude Code <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>：<a class="kw" onclick="showKw('命令')" title="点击查看解释">命令</a>、<a class="kw" onclick="showKw('快捷键')" title="点击查看解释">快捷键</a>和功能都有效，除了下面的例外。</p>
+
+<p><a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>拒绝 `/install-github-app` 和 <a class="kw" onclick="showKw('/mcp')" title="点击查看解释">/mcp</a> <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>列表，包括其身份验证操作，无论你是附加还是从窥视面板回复。消息指导你到常规 `claude` <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，`<a class="kw" onclick="showKw('/mcp')" title="点击查看解释">/mcp</a> reconnect &lt;server&gt;`、`<a class="kw" onclick="showKw('/mcp')" title="点击查看解释">/mcp</a> enable` 和 `<a class="kw" onclick="showKw('/mcp')" title="点击查看解释">/mcp</a> disable` 仍然有效。</p>
+
+<p>附加的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>始终以<a class="kw" onclick="showKw('全屏模式')" title="点击查看解释">全屏模式</a>呈现，无论你的 `tui` <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>如何，因为<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>没有终端滚动历史可追加。使用 `PgUp`、`PgDn` 或鼠标滚轮滚动，按 `Ctrl+O` 进入记录模式。你的终端的原生滚动和 tmux 复制模式仅显示当前视口，与运行任何全屏应用程序时相同。</p>
+
+<p>在空提示上按 `←` 或运行 `/exit` 分离并返回 agent view。从 v2.1.198 开始，这的工作方式与你从 agent view 打开<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>或从 shell 用 `claude attach &lt;id&gt;` 运行相同。</p>
+
+<p>`Ctrl+Z` 也分离但返回到你开始的地方：如果你从那里附加则返回 agent view，或如果你运行了 `claude attach` 则返回你的 shell。当对话有焦点且不响应 `←` 时使用 `Ctrl+Z`。</p>
+
+<p>`Ctrl+C` 在附加时保持其标准中断行为：它取消运行中的响应或 `!` shell 命令，而不是分离。在空提示上按两次 `Ctrl+C` 分离，与任何<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中的相同。</p>
+
+<p>分离永远不会停止<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>：`←`、`Ctrl+Z`、`/exit` 和双 `Ctrl+C` 或双 `Ctrl+D` 都让它运行。要从内部结束<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，运行 `/stop`。</p>
+
+<p>在前台运行的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中，一个你在终端中启动的而不是从 agent view 附加的，在空提示上按 `←` 会后台它并打开 agent view，该行被选中，所以你可以在不离开终端的情况下切换<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。同样的单次按压分离附加的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。</p>
+
+<p>如果在你按 `←` 时工具正在运行，Claude Code 会等待大约十秒钟让它完成，然后后台，响应在<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>中继续。再按一次 `←` 以立即后台而不是等待。当进行中的工作无法转移到<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>时，`Background this session?` 对话首先出现，与 <a class="kw" onclick="showKw('/background')" title="点击查看解释">/background</a> 相同。</p>
+
+<p>十秒限制在 <a class="kw" onclick="showKw('subagents')" title="点击查看解释">subagents</a> 运行时不适用。Claude Code 继续等待以便它们的工作转移，并在等待时显示 `Still backgrounding after the current tool` 通知；再按一次 `←` 以立即后台而不等待，这会从头重新启动 subagents。在 v2.1.203 之前，等待在十秒后结束，运行中的 subagents 在没有警告的情况下从头重新启动。</p>
+
+<p>该行即使从没有对话历史的新<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>也会被创建，所以 `→` 会返回到它。在 v2.1.203 之前，当该行是唯一的行时，agent view 在它下方显示一个入门提示。</p>
+
+<p>你可以在 `<a class="kw" onclick="showKw('/config')" title="点击查看解释">/config</a>` 中用 `leftArrowOpens<a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a>s` <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>关闭此<a class="kw" onclick="showKw('快捷键')" title="点击查看解释">快捷键</a>。</p>
+
+<h4 id="sec-agent-view-9">组织列表</h4>
+
+<p><a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> view 按状态分组<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，需要输入的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在顶部，`Ready for review` 和 `Needs input` 在 `Working` 和 `Completed` 上方。这些组名不与上面的<a class="kw" onclick="showKw('状态')" title="点击查看解释">状态</a>一一对应：当<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>有打开的拉取请求时，它移动到 `Ready for review`，`Completed` 收集已完成、失败和已停止的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。</p>
+
+<p>按 `Ctrl+S` 改为按目录分组。你的选择在运行中保存。</p>
+
+<p>在一个组内：</p>
+
+<p>* 按 `Ctrl+T` 将<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>固定到顶部并<a class="kw" onclick="showKw('在空闲时保持其进程运行')" title="点击查看解释">在空闲时保持其进程运行</a></p>
+<p>* 按 `Shift+↑` 或 `Shift+↓` 重新排序<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a></p>
+<p>* 按 `Ctrl+R` 重命名<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a></p>
+<p>* 在组标题上按 `Enter` 折叠它</p>
+
+<p>要从列表中删除<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，按 `Ctrl+X` 停止它，在两秒内再按 `Ctrl+X` 删除它。在组标题上按 `Ctrl+X` 在确认后删除该组中的每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。</p>
+
+<p>删除会从 agent view 中删除<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。如果 Claude <a class="kw" onclick="showKw('为会话创建了 worktree')" title="点击查看解释">为会话创建了 worktree</a>，删除会删除该 worktree，包括其中的任何未提交的更改，所以在删除前推送或提交你想保留的工作。你自己创建的 worktree 并在其中启动<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的会被保留。对话记录保留在你的本地机器上，并且仍然可以通过 `claude --resume` 访问。</p>
+
+<p>删除永远不会删除有未推送到任何地方的提交的 worktree，或另一个运行中的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>声称或已锁定的 worktree。Claude Code 保留 worktree 和<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，页脚命名保留的路径和原因。推送提交或关闭其他<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，然后再次删除。</p>
+
+<p>删除也会从<a class="kw" onclick="showKw('监督进程')" title="点击查看解释">监督进程</a>的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>列表中清除<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，无论你用 `Ctrl+X` 删除还是从 shell 用 <a class="kw" onclick="showKw('claude rm')" title="点击查看解释">claude rm</a> 删除，所以删除在监督进程重启中保持。在 v2.1.206 之前，在监督进程重启或无法访问时删除<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>会将其留在该列表中，下一个监督进程重启其进程并再次显示该行。</p>
+
+<p>不适合屏幕的已完成<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>折叠成 `… N more` 行。失败和有打开拉取请求的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>始终保持可见。`Completed` 组填充活跃组之后剩余的垂直空间，在短终端上标题压缩为单个摘要行，以便正在工作或需要输入的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>保持可见。</p>
+
+<h4 id="sec-agent-view-10">过滤会话</h4>
+
+<p>在调度输入中输入以过滤而不是调度：</p>
+
+<div class='table-wrap'><table>
+<tr><th>过滤</th><th>显示</th></tr>
+<tr><td>`a:&lt;name&gt;`</td><td>运行命名代理的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a></td></tr>
+<tr><td>`s:&lt;state&gt;`</td><td>给定状态的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，例如 `s:working`。也接受 `s:blocked` 用于等待你的所有内容</td></tr>
+<tr><td>`#&lt;number&gt;` 或 PR URL</td><td>处理该拉取请求的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a></td></tr>
+<tr><td>任何其他 URL</td><td>其第一个提示包含该 URL 的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a></td></tr>
+</table></div>
+
+<h4 id="sec-agent-view-11">快捷键</h4>
+
+<p>在 agent view 中按 `?` 查看每个<a class="kw" onclick="showKw('快捷键')" title="点击查看解释">快捷键</a>的上下文。下表总结了它们。</p>
+
+<div class='table-wrap'><table>
+<tr><th><a class="kw" onclick="showKw('快捷键')" title="点击查看解释">快捷键</a></th><th>操作</th></tr>
+<tr><td>`↑` / `↓`</td><td>在行之间移动</td></tr>
+<tr><td>`Enter`</td><td>附加到选定的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，或如果输入中有文本则调度</td></tr>
+<tr><td>`Space`</td><td>打开或关闭选定<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的窥视面板</td></tr>
+<tr><td>`Shift+Enter`</td><td>调度并立即附加</td></tr>
+<tr><td>`→`</td><td>附加到选定的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a></td></tr>
+<tr><td>`Alt+1`..`Alt+9`</td><td>附加到当前目录中的第 1–9 个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a></td></tr>
+<tr><td>`Tab`</td><td>在空输入上浏览所有 subagents。否则应用突出显示的建议</td></tr>
+<tr><td>`Ctrl+S`</td><td>在状态和目录之间切换分组</td></tr>
+<tr><td>`Ctrl+T`</td><td>固定或取消固定选定的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a></td></tr>
+<tr><td>`Ctrl+R`</td><td>重命名选定的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a></td></tr>
+<tr><td>`Ctrl+G`</td><td>在你的 `$VISUAL` 或 `$EDITOR` 中打开调度提示</td></tr>
+<tr><td>`Ctrl+X`</td><td>停止<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>；在两秒内再按一次删除它</td></tr>
+<tr><td>`Shift+↑` / `Shift+↓`</td><td>重新排序选定的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a></td></tr>
+<tr><td>`Esc`</td><td>关闭窥视面板、清除输入或退出</td></tr>
+<tr><td>`Ctrl+C`</td><td>清除输入；按两次退出</td></tr>
+<tr><td>`?`</td><td>显示所有<a class="kw" onclick="showKw('快捷键')" title="点击查看解释">快捷键</a></td></tr>
+</table></div>
+
+<h3 id="sec-agent-view-12">调度新代理</h3>
+
+<p>你可以从 agent view 调度新的<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>、将现有的交互式<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>发送到后台，或直接从 shell 启动一个。</p>
+
+<h4 id="sec-agent-view-13">从 agent view</h4>
+
+<p>在 agent view 底部的输入框中输入提示并按 `Enter` 启动新的<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>。<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>从提示自动命名；稍后可以用 `Ctrl+R` 重命名它。</p>
+
+<p><a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>稍后获得的名称也会出现在其行上，包括当你在该<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中 <a class="kw" onclick="showKw('接受计划')" title="点击查看解释">接受计划</a> 时 Claude 推导的名称。在 v2.1.207 之前，通过接受计划命名的<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>在 `/status` 中显示该名称，但在你自己重命名之前不会在其 agent-view 行上显示。</p>
+
+<p>将图像粘贴到提示中以包含任务的屏幕截图或图表。</p>
+
+<p>粘贴的文本长度超过 800 个字符或超过两行会折叠为 `[Pasted text #N]` 占位符，以便输入保持在一行；完整文本在你调度时发送。要在调度前查看或编辑折叠的文本，再次粘贴相同的文本，占位符会展开回输入。在至少 90 列宽的终端上，粘贴后会在输入下方出现 `paste again to expand` 提醒几秒钟。在 v2.1.207 之前，再次粘贴相同的文本会添加第二个占位符而不是展开第一个。</p>
+
+<p>前缀或提及提示的部分以控制<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>如何启动：</p>
+
+<div class='table-wrap'><table>
+<tr><th>输入</th><th>效果</th></tr>
+<p>` | 如果第一个单词匹配自定义 <a class="kw" onclick="showKw('subagent')" title="点击查看解释">subagent</a> 名称，该 subagent 作为<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的主代理运行，使用其 frontmatter 中的配置 |</p>
+<tr><td>`@&lt;agent-name&gt;`</td><td>在提示中的任何地方提及自定义 subagent 以作为主代理运行它</td></tr>
+<tr><td>`@&lt;repo&gt;`</td><td>提及一个存储库以在那里运行<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。参见 <a class="kw" onclick="showKw('调度到特定目录')" title="点击查看解释">调度到特定目录</a> 了解列出了哪些存储库</td></tr>
+<tr><td>`/&lt;command&gt;`</td><td>建议 <a class="kw" onclick="showKw('skills')" title="点击查看解释">skills</a> 和 <a class="kw" onclick="showKw('commands')" title="点击查看解释">commands</a> 作为提示调度</td></tr>
+<tr><td>`! &lt;command&gt;`</td><td>运行 shell 命令作为后台作业而不是启动 Claude <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。该作业显示为一行，你可以附加到、观看和分离</td></tr>
+<tr><td>`#&lt;number&gt;` 或拉取请求 URL</td><td>如果<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>已在处理该 PR，选择它而不是调度</td></tr>
+<tr><td>`Shift+Enter`</td><td>调度并立即附加到新<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a></td></tr>
+</table></div>
+
+<p>一小组命令在 agent view 本身中运行而不是调度：</p>
+
+<p>* `/exit` 和 `/quit` 关闭 agent view</p>
+<p>* `/logout` 将你登出</p>
+<p>* `/model` <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> <a class="kw" onclick="showKw('调度模型')" title="点击查看解释">调度模型</a></p>
+<p>* 从 v2.1.198 开始，`/login` 打开登录对话框，以便你可以在不附加到<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的情况下再次登录</p>
+
+<p><a class="kw" onclick="showKw('Skill')" title="点击查看解释">Skill</a>s、你自己的命令和提示扩展内置命令如 `/init` 作为其第一个提示发送到新的<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>。其他内置命令显示 `attach to a session to run it` 提示。你输入的所有内容都保留在提示旁边的输入中，以便你可以编辑它。在 v2.1.203 之前，提示清除了输入，输入的文本丢失了。</p>
+
+<p>将重复任务打包为 <a class="kw" onclick="showKw('skill')" title="点击查看解释">skill</a> 让你从 agent view 多次启动相同的<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>而无需重新输入提示。</p>
+
+<p>当相同的 `@name` 同时匹配 subagent 和同级存储库时，subagent 优先。不带 `@` 的首字形式也适用，所以以匹配你的某个 subagent 名称的单词开头的提示会调度该 subagent 而不是将该单词视为纯文本。当你想要明确指定时，使用 `@` 形式，或以不同的单词开头提示以避免匹配。</p>
+
+<h5 id="sec-agent-view-14">调度到特定目录</h5>
+
+<p>新<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在你打开 agent view 的目录中运行。要针对不同的目录，使用以下任何一种：</p>
+
+<p>* 在该目录中打开 `claude agents`。</p>
+<p>* 在父目录中打开 `claude agents` 并在提示中用 `@&lt;repo&gt;` 提及一个子存储库。输入 `@` 会列出这些目标：</p>
+
+<p>  * 启动目录下一级的 Git 存储库</p>
+<p>  * 你启动的存储库的已注册 <a class="kw" onclick="showKw('git worktrees')" title="点击查看解释">git worktrees</a>，这些 worktrees 位于其目录树内，例如 Claude 在 `.claude/worktrees/` 下创建的那些，标记有其检出的分支。在存储库外添加的 worktrees，例如用 `git worktree add ../feature` 添加的，不会被列出</p>
+<p>  * 任何已在列表中有<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的目录</p>
+
+<p>  名称包含空格的目录不会被列出。在 v2.1.203 之前，已注册的 worktrees 不会被列出，所以调度到其中意味着从该 worktree 的目录运行 `claude --bg`。</p>
+<p>* 从 shell，`cd` 进入目录并运行 `claude --bg &quot;</p>
+<p>&quot;`。</p>
+
+<p>当 agent view 按目录分组时，突出显示的行的目录成为调度目标，所以你可以滚动到一个组并在不重新输入路径的情况下调度到它。</p>
+
+<h4 id="sec-agent-view-15">从会话内部</h4>
+
+<p>运行 `/background` 或其别名 `/bg` 将当前对话移动到<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>。传递提示如 `/bg run the test suite and fix any failures` 以在后台化前先给出一个更多指令。如果 Claude 在你运行 `/bg` 时正在响应，响应会在<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>中继续。</p>
+
+<p>退出仍有后台工作运行的交互式<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，例如 subagents、后台 shell 命令、<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>或 <a class="kw" onclick="showKw('monitors')" title="点击查看解释">monitors</a>，会显示 `Background work is running` 对话而不是立即退出。从 v2.1.198 开始，对话提供 `Move to background and exit` 以及 `Exit anyway` 和 `Stay`。选择它会以与 `/background` 相同的方式将<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>移动到后台，然后返回你的 shell，所以可以继续的工作保持运行，<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>出现在 agent view 中。当 agent view 被 <a class="kw" onclick="showKw('关闭')" title="点击查看解释">关闭</a> 时，不显示该选项。</p>
+
+<p>从交互式<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>后台化启动一个新的进程，该进程从保存的对话恢复，进行中的工作会转移到它：运行后台 shell 命令、后台 subagents、动态<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>和你用 <a class="kw" onclick="showKw('/loop')" title="点击查看解释">/loop</a> 创建的<a class="kw" onclick="showKw('计划任务')" title="点击查看解释">计划任务</a>会转移到<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>并在那里继续运行。一个 subagent 与它启动的所有内容一起移动，所以它仅在所有工作都能转移时才转移，包括在 Windows 上。要停止进行中的工作而不是转移它，<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> <a class="kw" onclick="showKw('CLAUDE_DISABLE_ADOPT=1')" title="点击查看解释">CLAUDE_DISABLE_ADOPT=1</a> <a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>；Claude Code 随后会要求你在后台化前确认。</p>
+
+<p>无法转移的工作，例如运行中的 <a class="kw" onclick="showKw('monitor')" title="点击查看解释">monitor</a>，会被停止。拥有监视器的后台 subagent 会与它一起被停止。当任何此类工作正在运行时，Claude Code 显示 `Background this session?` 对话，以便你可以在它被停止前确认。</p>
+
+<p>一旦在后台，<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>可以启动新的 subagents、monitors 和后台命令，这些会在后续的分离和重新附加中保持运行。</p>
+
+<p>来自原始启动的配置标志会传递到后台化的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，所以其 <a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a>s、settings 和备用模型保持有效：</p>
+
+<p>* `--mcp-config` 和 `--strict-mcp-config`</p>
+<p>* `--settings`</p>
+<p>* `--add-dir`</p>
+<p>* `--plugin-dir`</p>
+<p>* `--fallback-model`</p>
+<p>* `--allow-dangerously-skip-permissions`</p>
+
+<p>你在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>期间用 <a class="kw" onclick="showKw('/add-dir')" title="点击查看解释">/add-dir</a> 添加的目录也会传递。</p>
+
+<p>传递 `--allow-dangerously-skip-permissions` 会在后台化的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中保持 `<a class="kw" onclick="showKw('bypassPermissions')" title="点击查看解释">bypassPermissions</a>` 可访问，但它不会授予任何新<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>。该模式仍然需要在任何<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>使用它之前进行相同的一次性交互式接受，如 <a class="kw" onclick="showKw('权限模式、模型和工作量')" title="点击查看解释">权限模式、模型和工作量</a> 中所述。</p>
+
+<h4 id="sec-agent-view-16">从你的 shell</h4>
+
+<p>传递 `--bg` 或其长形式 `--background` 启动直接进入后台的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>：</p>
+
+<pre><code>
+claude --bg &quot;investigate the flaky SettingsChangeDetector test&quot;
+</code></pre>
+
+<p>提示是位置参数，不是 `-p` 值。从 v2.1.198 开始，将 `--bg` 与 `-p` 或 `--print` 结合会在创建任何<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>前被拒绝并显示错误，因为 `--print` 永远不会启动 `claude agents` 附加到的交互式<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。</p>
+
+<p>要运行特定的 subagent 作为<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的主代理，结合 `--bg` 和 `--agent`：</p>
+
+<pre><code>
+claude --agent code-reviewer --bg &quot;address review comments on PR 1234&quot;
+</code></pre>
+
+<p>传递 `--name` 以在 agent view 中<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a><a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的显示名称而不是自动生成的名称：</p>
+
+<pre><code>
+claude --bg --name &quot;flaky-test-fix&quot; &quot;investigate the flaky SettingsChangeDetector test&quot;
+</code></pre>
+
+<p>后台化后，Claude 打印<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的短 ID 和管理它的命令。当托管<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>的服务尚未运行时，`--bg` 可能首先在此输出上方打印 `Starting background service…`。当你传递 `--name` 时，名称出现在短 ID 之后：</p>
+
+<pre><code>
+backgrounded · 7c5dcf5d · flaky-test-fix
+  claude agents             list sessions
+  claude attach 7c5dcf5d    open in this terminal
+  claude logs 7c5dcf5d      show recent output
+  claude stop 7c5dcf5d      stop this session
+</code></pre>
+
+<h5 id="sec-agent-view-17">运行 shell 命令</h5>
+
+<p>要运行 shell 命令作为后台作业而不是 Claude <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，在 agent view 调度输入的第一个字符处输入 `!`。`!` 显示为前缀，你在它之后输入的所有内容都是命令。以下示例从 agent view 输入框调度 `pytest -x`：</p>
+
+<pre><code>
+! pytest -x
+</code></pre>
+
+<p>按 `Enter` 启动作业。同一作业也可以直接从你的 shell 用 `--exec` 启动：</p>
+
+<pre><code>
+claude --bg --exec &#x27;pytest -x&#x27;
+</code></pre>
+
+<p>该命令作为 PTY 支持的作业运行，并在 agent view 中显示为一行，最近的输出行作为其状态。shell 作业运行命令代替 Claude，所以不调用任何模型，输出也不发送到任何<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。</p>
+
+<p>要查看输出，附加到该行，按 `Space` 以在不附加的情况下查看，或从你的 shell 运行 `claude logs &lt;id&gt;`。捕获的输出保留在内存中，不写入磁盘。该行及其输出在命令退出后约五分钟自动清理，所以如果你需要结果，请在那之前读取它。</p>
+
+<h4 id="sec-agent-view-18">文件编辑如何隔离</h4>
+
+<p>每个<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>，无论是从 agent view、`/bg` 还是 `claude --bg` 启动，都在你的工作目录中启动。在编辑文件前，Claude 将<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>移动到 `.claude/worktrees/` 下的隔离 <a class="kw" onclick="showKw('git worktree')" title="点击查看解释">git worktree</a> 中，所以并行<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>可以读取相同的检出但每个都写入自己的。</p>
+
+<p>Claude 在以下情况下跳过 worktree：</p>
+
+<p>* <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>已经在链接的 git worktree 内，无论 Claude 是在 `.claude/worktrees/` 下创建的还是你用 `git worktree add` 在其他地方创建的</p>
+<p>* 工作目录不是 git 存储库且没有配置 <a class="kw" onclick="showKw('WorktreeCreate hook')" title="点击查看解释">WorktreeCreate hook</a></p>
+<p>* 写入在工作目录外</p>
+
+<p>要为 git worktree 不实用的存储库关闭 worktree 隔离，将 <a class="kw" onclick="showKw('worktree.bgIsolation')" title="点击查看解释">worktree.bgIsolation</a> <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>为 `&quot;none&quot;`。<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>随后直接编辑你的工作副本而不先移动到 worktree。将<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>添加到项目的 `.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>`：</p>
+
+<pre><code>
+{
+  &quot;worktree&quot;: {
+    &quot;bgIsolation&quot;: &quot;none&quot;
+  }
+}
+</code></pre>
+
+<p>在 git 存储库外，<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>直接写入工作目录且彼此不隔离，所以避免调度编辑相同文件的并行<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。如果你使用不同的版本控制系统，配置一个 <a class="kw" onclick="showKw('WorktreeCreate hook')" title="点击查看解释">WorktreeCreate hook</a>，Claude 会以与 git 相同的方式隔离编辑。</p>
+
+<p>当 hook 在不是 git 存储库的目录中失败时，<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>跳过该目录的隔离并就地编辑工作目录。在 git 存储库内，写入保持被阻止，直到<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>隔离。在 v2.1.203 之前，处于该状态的<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>无法编辑任何文件：每次写入都被拒绝，直到它隔离，hook 永远无法隔离该目录。</p>
+
+<p>删除<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>会删除或保留 Claude 为其创建的 worktree，取决于你如何删除它以及 worktree 包含的内容：</p>
+
+<p>* 在 agent view 中用 `Ctrl+X` 两次删除会删除 worktree，包括任何未提交的更改，所以先提交你想保留的更改。</p>
+<p>* 从 shell 用 <a class="kw" onclick="showKw('claude rm')" title="点击查看解释">claude rm</a> 删除会保留有未提交更改的 worktree，以及其<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>行。</p>
+<p>* 两种方式都不会删除有未推送到任何地方的提交的 worktree：worktree 会 <a class="kw" onclick="showKw('与其会话一起保留')" title="点击查看解释">与其会话一起保留</a>，输出会命名保留的路径和原因。</p>
+<p>* 你自己创建的 worktree 并在其中启动<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的，无论哪种方式都会保留在原地。</p>
+
+<p>要找到<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的 worktree 路径，查看<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>或附加并检查其工作目录。</p>
+
+<p><a class="kw" onclick="showKw('subagent')" title="点击查看解释">subagent</a> <a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>生成的继承<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的工作目录，所以其文件编辑落在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的 worktree 中而不是你的工作副本。要给 subagent 其自己的单独 worktree，在其 frontmatter 中<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> <a class="kw" onclick="showKw('isolation: worktree')" title="点击查看解释">isolation: worktree</a> 或在生成它时传递 `isolation: &quot;worktree&quot;`。</p>
+
+<p>从 v2.1.198 开始，隔离其代码更改在 worktree 中的<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>也会提交、推送其自己的分支，并打开草稿拉取请求而不停止询问。当拉取请求打开时，<a class="kw" onclick="showKw('#N 标签')" title="点击查看解释">#N 标签</a> 出现在其行上。它永远不会推送到 `main` 或 `master`，永远不会强制推送或合并，当你告诉它不要打开拉取请求或存储库没有远程时，它会跳过拉取请求。</p>
+
+<p>编辑未自行隔离的检出的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>仍然会在提交或切换分支前询问。这适用于隔离<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>为 `&quot;none&quot;` 时、worktree 移动失败时，或<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在已存在的 worktree 内启动时。</p>
+
+<h4 id="sec-agent-view-19">设置模型</h4>
+
+<p>agent view 标题中显示的模型名称是调度默认值。你从输入启动的新<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>使用此模型，这来自你的用户<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>中的 <a class="kw" onclick="showKw('model 设置')" title="点击查看解释">model 设置</a>。通过在 <a class="kw" onclick="showKw('/model 选择器')" title="点击查看解释">/model 选择器</a> 中选择模型来<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>它，或直接编辑<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>。</p>
+
+<p>要为整个 agent view <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>覆盖调度默认值，在打开 agent view 时传递 `--model`。参见 <a class="kw" onclick="showKw('权限模式、模型和工作量')" title="点击查看解释">权限模式、模型和工作量</a>。</p>
+
+<p>要从 agent view 内部更改调度默认值，在调度输入中输入 `/model` 后跟模型名称并按 `Enter`。标题更新以显示该模型，带有 `(session)` 标记，之后调度的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>使用它。输入 `/model default` 以清除覆盖并返回调度默认值。此覆盖持续当前 `claude agents` 运行的其余部分，不写入你的<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>文件。以下示例在 Opus 上调度一个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，在 Sonnet 上调度下一个：</p>
+
+<pre><code>
+/model opus
+refactor auth
+/model sonnet
+run the test suite
+</code></pre>
+
+<p>每个<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>可以在不同的模型上运行。要为一个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>覆盖它：</p>
+
+<p>* 从 shell，用 `claude --bg` 传递 `--model`。</p>
+<p>* 附加到运行中的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>并运行 `/model` 以切换：从选择器中选择，或输入 `/model &lt;name&gt;`，保存为你的新<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>默认值，除非你在选择器中按 `s` 进行仅<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>切换。如果<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>被重新生成，仅<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>切换会持续。</p>
+<p>* 调度一个 <a class="kw" onclick="showKw('subagent')" title="点击查看解释">subagent</a>，其 frontmatter <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> `model` 字段。</p>
+
+<h4 id="sec-agent-view-20">权限模式、模型和工作量</h4>
+
+<p><a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>从它运行的目录读取其 <a class="kw" onclick="showKw('settings')" title="点击查看解释">settings</a>，就像你在那里启动了 `claude` 一样。这包括项目<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>中的 <a class="kw" onclick="showKw('env 值')" title="点击查看解释">env 值</a>，所以在那里<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>的 `ANTHROPIC_MODEL` 或提供商变量适用于该目录中的<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>。</p>
+
+<p>云提供商选择，如 `CLAUDE_CODE_USE_BEDROCK` 或 `CLAUDE_CODE_USE_VERTEX`，以及 `ANTHROPIC_DEFAULT_*_MODEL` 别名遵循调度<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的 shell。如果你在该 shell 中导出 <a class="kw" onclick="showKw('CLAUDE_CODE_EXTRA_BODY')" title="点击查看解释">CLAUDE_CODE_EXTRA_BODY</a> 请求体覆盖，它会以相同的方式到达<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。在 v2.1.206 之前，后台工作进程忽略了 shell 导出的 `CLAUDE_CODE_EXTRA_BODY`。</p>
+
+<p>如果你在调度 shell 中导出网关 `ANTHROPIC_BASE_URL`，它也会到达<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，以及 `ANTHROPIC_CUSTOM_HEADERS`，当监督者使用相同的网关环境运行且<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在你调度的目录中运行或是你自己的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>用 `←` 或 `/background` 后台化时。这是第一个 shell 打开 agent view 或调度<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>时的正常情况，是网关 shell。用 `@repo` 或 `--cwd` 调度到不同目录不会携带 shell 的网关；该项目的 <a class="kw" onclick="showKw('settings')" title="点击查看解释">settings</a> 提供端点。参见 <a class="kw" onclick="showKw('监督者进程')" title="点击查看解释">监督者进程</a> 了解<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>如何获取提供商<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>和凭证。</p>
+
+<p><a class="kw" onclick="showKw('permission mode')" title="点击查看解释">permission mode</a> 取决于你如何启动<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。用 `/bg` 或 `←` 后台化现有<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>会保持当前<a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a>，所以你切换到 `acceptEdits` 或 `auto` 的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在分离后仍保持该模式。从 agent view 输入调度或从你的 shell 运行 `claude --bg` 使用该目录<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>中的 `defaultMode`，或调度的 <a class="kw" onclick="showKw('subagent 的 frontmatter')" title="点击查看解释">subagent 的 frontmatter</a> 中的 `permissionMode`。</p>
+
+<p><a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>启动时的<a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a>、模型和工作量，以及它携带的 <a class="kw" onclick="showKw('配置标志')" title="点击查看解释">配置标志</a>，在监督者稍后 <a class="kw" onclick="showKw('停止并重新启动')" title="点击查看解释">停止并重新启动</a> 其进程时都会持续。你用 `claude --bg --dangerously-skip-permissions` 或 `claude --bg --permission-mode <a class="kw" onclick="showKw('bypassPermissions')" title="点击查看解释">bypassPermissions</a>` 启动的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在该重新启动后仍保持 `<a class="kw" onclick="showKw('bypassPermissions')" title="点击查看解释">bypassPermissions</a>` 而不是回退到目录的 `defaultMode`，以及你在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中期用 `/model` 或 `/effort` 更改的模型或工作量会被保留。</p>
+
+<p><a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>从 <a class="kw" onclick="showKw('effortLevel 设置')" title="点击查看解释">effortLevel 设置</a> 而不是从 `--effort` 或 `/effort` 获取的工作量不会在调度时固定：为<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>启动的每个进程都会再次读取<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>，所以在 `<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 中编辑 `effortLevel` 会到达你用 `←` 或 `/bg` 后台化的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>及其后续重新启动。在 v2.1.203 之前，后台化<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>会记录其<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>派生的工作量，就像你传递了 `--effort` 一样，所以后续的 `effortLevel` 编辑永远无法到达它。</p>
+
+<p>你用 <a class="kw" onclick="showKw('/rename')" title="点击查看解释">/rename</a> 或 `Ctrl+R` <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>的名称也会在该重新启动中持续，所以 <a class="kw" onclick="showKw('claude --resume &lt;name&gt;')" title="点击查看解释">claude --resume &lt;name&gt;</a> 仍然解析<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。在 v2.1.202 之前，重新启动会将<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>恢复为调度时的名称，新名称停止解析。</p>
+
+<p>要为从 agent view 调度的每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a><a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>默认值，在打开它时传递 `--permission-mode`、`--model`、`--effort` 或 `--agent` 中的任何一个：</p>
+
+<pre><code>
+claude agents --permission-mode plan --model opus --effort high
+</code></pre>
+
+<p>`--agent` <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>当调度提示未命名一个时使用的 <a class="kw" onclick="showKw('subagent')" title="点击查看解释">subagent</a>，无论是用 `@name` 还是作为第一个单词。如果<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>了一个，它默认为 <a class="kw" onclick="showKw('agent 设置')" title="点击查看解释">agent 设置</a>，否则为内置的全能 `claude` 代理。在调度输入中命名 subagent 会覆盖两者。</p>
+
+<p>`claude agents` 也接受 `--dangerously-skip-permissions` 作为 `--permission-mode <a class="kw" onclick="showKw('bypassPermissions')" title="点击查看解释">bypassPermissions</a>` 的简写，以及 `--allow-dangerously-skip-permissions` 以在每个调度<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的 `Shift+Tab` 循环中使 `<a class="kw" onclick="showKw('bypassPermissions')" title="点击查看解释">bypassPermissions</a>` 可用而不带<a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a>启动。两者都匹配 <a class="kw" onclick="showKw('顶级 CLI 标志')" title="点击查看解释">顶级 CLI 标志</a>。</p>
+
+<p>活跃的默认值出现在调度输入下方的页脚中。</p>
+
+<p>没有这些标志，<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>使用该目录<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>中的 `defaultMode` 或调度的 <a class="kw" onclick="showKw('subagent 的 frontmatter')" title="点击查看解释">subagent 的 frontmatter</a> 中的 `permissionMode`，以及 agent view 标题中显示的模型。</p>
+
+<p>使用 `<a class="kw" onclick="showKw('bypassPermissions')" title="点击查看解释">bypassPermissions</a>` 与 `claude --bg --permission-mode` 被拒绝，直到你通过交互式运行 `claude --dangerously-skip-permissions` 一次接受了绕过免责声明，因为该模式让你没有看到的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>无需批准就能行动。传递 `--dangerously-skip-permissions` 或 `--permission-mode <a class="kw" onclick="showKw('bypassPermissions')" title="点击查看解释">bypassPermissions</a>` 到 `claude agents` 在你之前没有接受它时显示相同的免责声明，接受会将 `<a class="kw" onclick="showKw('bypassPermissions')" title="点击查看解释">bypassPermissions</a>` 应用到你从视图启动的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。传递 `--allow-dangerously-skip-permissions` 也显示相同的免责声明，接受会在这些<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的 `Shift+Tab` 循环中使 `<a class="kw" onclick="showKw('bypassPermissions')" title="点击查看解释">bypassPermissions</a>` 可用而不在其中启动它们。</p>
+
+<h4 id="sec-agent-view-21">Settings、plugins 和 MCP servers</h4>
+
+<p><a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> view 接受与 `claude` 相同的配置标志以加载 settings、plugins、<a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a>s 和额外目录。每个标志适用于 agent view 本身，并传递给你从它调度的每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，所以以这种方式加载的 plugin 或 <a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a> 在这些<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中也可用。</p>
+
+<div class='table-wrap'><table>
+<tr><th>标志</th><th>效果</th></tr>
+<tr><td><a class="kw" onclick="showKw('--settings &lt;file-or-json&gt;')" title="点击查看解释">--settings &lt;file-or-json&gt;</a></td><td>覆盖 agent view 和调度<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的 settings</td></tr>
+<p>`](/docs/zh-CN<a class="kw" onclick="showKw('/permissions')" title="点击查看解释">/permissions</a>#additional-directories-grant-file-access-not-configuration) | 授予对额外目录的文件访问<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>                                 |</p>
+<p>`](/docs/zh-CN<a class="kw" onclick="showKw('/plugin')" title="点击查看解释">/plugin</a>s)                                                             | 从本地目录加载 plugin                                 |</p>
+<tr><td><a class="kw" onclick="showKw('--mcp-config &lt;file-or-json&gt;')" title="点击查看解释">--mcp-config &lt;file-or-json&gt;</a></td><td>从配置文件或 JSON 字符串加载 <a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a>s</td></tr>
+<tr><td>`--strict-mcp-config`</td><td>仅使用来自 `--mcp-config` 的 <a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a>s，忽略其他 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 配置</td></tr>
+</table></div>
+
+<p>对每个值重复 `--add-dir`、`--plugin-dir` 或 `--mcp-config`。空格分隔的形式，如 `--add-dir a b c`，不支持与 `claude agents` 一起使用。</p>
+
+<p>以下示例使用 settings 覆盖和一个额外目录打开 agent view：</p>
+
+<pre><code>
+claude agents --settings ./ci-settings.json --add-dir ../shared-lib
+</code></pre>
+
+<h3 id="sec-agent-view-22">从 shell 管理会话</h3>
+
+<p>每个<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>有一个短 ID，你可以从 shell 使用。当你使用 `claude --bg` 启动<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>时会打印该 ID，每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的 ID 是其在 `~/.claude/jobs/` 下的目录名。这些命令对于脚本编写或当你不想打开 agent view 时很有用。</p>
+
+<div class='table-wrap'><table>
+<tr><th>命令</th><th>目的</th></tr>
+<tr><td>`claude agents`</td><td>打开 agent view</td></tr>
+<p>` | 打开 agent view，范围限定为在 `</p>
+<p>` 下启动的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>                                                                                                                                                                                                                                                                                                                                                                     |</p>
+<tr><td>`claude agents --json`</td></tr>
+<p>` 结合使用以进行过滤 |</p>
+<tr><td>`claude attach &lt;id&gt;`</td><td>在此终端附加到<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a></td></tr>
+<tr><td>`claude logs &lt;id&gt;`</td><td>打印<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的最近输出</td></tr>
+<tr><td>`claude stop &lt;id&gt;`</td><td>停止<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。也接受 `claude kill`</td></tr>
+<tr><td>`claude respawn &lt;id&gt;`</td><td>重新启动<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，运行中或已停止，保持其对话完整，例如用于获取更新的 Claude Code 二进制文件</td></tr>
+<tr><td>`claude respawn --all`</td><td>重新启动每个运行中的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，例如一次性将所有<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>移至更新的 Claude Code 二进制文件</td></tr>
+<tr><td>`claude rm &lt;id&gt;`</td><td>从列表中删除<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。如果没有未提交的更改和没有未推送的提交，会删除 Claude 为<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>创建的 worktree；否则<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>也会被保留，命令会打印 worktree 路径和原因，以便你可以解决它并再次运行 `claude rm`。保留你自己创建的 worktree。对话记录保存在你的本地机器上，并且仍然可以通过 `claude --resume` 访问</td></tr>
+<tr><td>`claude daemon status`</td><td>打印 <a class="kw" onclick="showKw('supervisor')" title="点击查看解释">supervisor</a> 的状态、版本、socket 目录和 worker 数量</td></tr>
+<tr><td>`claude daemon stop --any`</td><td>停止 supervisor 进程及其托管的<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>。传递 `--keep-workers` 以保持<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>运行，以便下一个 supervisor 重新连接到它们。下一个 `claude agents` 或 `claude --bg` 启动一个新的 supervisor</td></tr>
+</table></div>
+
+<h3 id="sec-agent-view-23">后台会话如何被托管</h3>
+
+<p>agent view 中列出的每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>都被视为<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>，无论你当前是否连接到它。相比之下，通过直接运行 `claude` 启动的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>与该终端绑定，并在终端关闭时结束，除非你<a class="kw" onclick="showKw('将其发送到后台')" title="点击查看解释">将其发送到后台</a>。</p>
+
+<h4 id="sec-agent-view-24">监督进程</h4>
+
+<p><a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>由每用户监督进程托管，与你的终端和 agent view 分离。监督进程在你第一次<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>或打开 agent view 时自动启动，你不直接管理它。</p>
+
+<p>当更新替换或移除了运行中的 Claude Code 进程启动时所用的二进制文件时，该进程会从另一个已安装的副本（如已安装的 `claude` 启动器或磁盘上的最新版本）启动监督进程。</p>
+
+<p>监督进程保持一个预热的工作进程就绪，以便从 agent view 或 `claude --bg` 的调度启动时不会有冷启动的延迟。当你调度时，监督进程将预热的工作进程分配给你的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，将该<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的目录、<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>和凭证应用到它，然后为下一次调度启动一个替代进程。如果没有可用的健康预热工作进程，监督进程会改为启动一个新进程。</p>
+
+<p>监督进程及其<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>使用与你的交互式<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>相同的凭证进行身份验证，并且除了模型 API 外不进行额外的网络连接。提供商选择变量如 `CLAUDE_CODE_USE_BEDROCK` 和 `ANTHROPIC_DEFAULT_*_MODEL` 别名从调度每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的 shell 中读取，并应用到其工作进程。</p>
+
+<p>调度 shell 的 `PATH` 以相同的方式应用到工作进程，因此<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>运行的 shell 命令会找到你的终端所拥有的相同工具。在 v2.1.203 之前，<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>保持启动监督进程的 shell 的 `PATH`，因此自那时以来添加到你的 `PATH` 的工具可能会丢失，最常见的是在 Windows 上。</p>
+
+<p><a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>不继承网关端点变量如 `ANTHROPIC_BASE_URL` 或等效的 Amazon Bedrock、Google Cloud 的 <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> Platform 和 Microsoft Foundry 基础 URL 变量，这些变量来自启动监督进程的 shell。如果没有在你调度的 shell 中导出网关，<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>会使用你的存储凭证和项目目录的<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>中 `env` 块中的任何 `env` 值。要在项目中指向<a class="kw" onclick="showKw('LLM 网关')" title="点击查看解释">LLM 网关</a>的每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，在该项目的 `.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` `env` 块中<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> `ANTHROPIC_BASE_URL`。</p>
+
+<p>如果你在调度的 shell 中导出网关 `ANTHROPIC_BASE_URL`，它会到达该<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的工作进程。`ANTHROPIC_CUSTOM_HEADERS` 和与它们一起导出的凭证会随之转发。这发生在监督进程从具有相同网关的环境启动时。监督进程从打开 agent view 或调度<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>的第一个 shell 中捕获其环境，因此从网关 shell 启动会给它该环境。转发也仅适用于调度到你调度的目录中的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，或从你自己的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>用 `←` 或 `/background` 后台化的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>：用 `@repo` 或 `--cwd` 调度到不同目录不会携带 shell 的网关，该项目的 `<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` `env` 块会改为提供端点。当监督进程的环境携带不同的网关或没有网关时，工作进程会针对默认端点保持你的存储凭证，而不是混合一个环境的凭证与另一个环境的端点。在 v2.1.203 之前，调度 shell 的 `ANTHROPIC_BASE_URL` 被丢弃，而与它一起导出的 `ANTHROPIC_API_KEY` 被保留，因此网关的密钥被发送到默认端点，每个请求都以 401 失败。</p>
+
+<p>转发的端点仅适用于该活跃进程，永远不会写入磁盘。当监督进程停止空闲<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>并稍后重新启动它时，重新启动的进程会从你的<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>中再次读取其端点：使用网关 `ANTHROPIC_AUTH_TOKEN` 它会回退到你的存储凭证，使用网关颁发的 `ANTHROPIC_API_KEY` 它可能会失败进行身份验证，直到网关在<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>中<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>。</p>
+
+<p>每个<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>是其自己的 Claude Code 进程，由监督进程管理而不是与你的终端绑定。积极工作、等待你的输入或有终端连接的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>保持其进程运行。运行中的后台 shell 命令、<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>、动态<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>或监视器计为活跃工作，因此长时间运行的进程（如开发服务器）会保持<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>活跃。</p>
+
+<p>一旦<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>完成并未连接地坐了大约一小时，监督进程停止其进程以释放资源。你用 `Ctrl+T` <a class="kw" onclick="showKw('固定')" title="点击查看解释">固定</a>的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>是例外，在空闲时保持其进程运行。无论哪种方式，记录和状态都保留在磁盘上，下次你附加、窥视或回复停止的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>时，监督进程从中断处启动一个新进程。当每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>都完成且没有终端连接时，监督进程本身退出，下次你需要它时再次启动。</p>
+
+<p><a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在其进程被停止、重新启动或更新时启动的后台工作会被交付，包括在 Windows 上。为该<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>启动的下一个进程会接管这项工作：</p>
+
+<p>* 在此期间完成的后台 shell 命令会报告为已完成及其输出</p>
+<p>* 动态<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>从中断处恢复</p>
+<p>* <a class="kw" onclick="showKw('后台子代理')" title="点击查看解释">后台子代理</a>从其自己的记录恢复</p>
+
+<p>从 v2.1.198 起，交付涵盖所有三项。在 v2.1.198 之前，它仅涵盖 shell 命令和<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>，因此后台<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>会随进程停止，并在下次唤醒时报告为失败。</p>
+
+<p>其状态仅存在于进程内部的工作会随之停止而不是被交付。那是<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>启动的 shell 命令，恢复的<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>可以再次启动，以及运行中的<a class="kw" onclick="showKw('监视器')" title="点击查看解释">监视器</a>，其事件流无法移动到另一个进程。</p>
+
+<p>删除<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>会停止它交付的所有内容。要让<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的所有后台工作随进程停止而不是被交付，将 <a class="kw" onclick="showKw('CLAUDE_CODE_DISABLE_BG_EXIT_HANDOFF')" title="点击查看解释">CLAUDE_CODE_DISABLE_BG_EXIT_HANDOFF</a> <a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a><a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>为 `1`。</p>
+
+<p>重新启动的进程会找到<a class="kw" onclick="showKw('移入 worktree')" title="点击查看解释">移入 worktree</a> 的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的对话，该<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在任务中途移动：当记录不在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>启动的位置时，Claude Code 也会在存储库的已注册 worktree 下查找。在 v2.1.207 之前，在其进程停止后从 agent view 重新打开该<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>可能会显示仅包含其原始提示的空对话，记录仍完整地保留在磁盘上；在 v2.1.207 或更高版本上再次打开<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>会恢复它。</p>
+
+<p>如果重新启动的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>回来时仅显示其原始提示，因为 Claude Code 误读了其记录为空，对话记录会被重命名为 `.orphaned-` 后缀而不是删除，所以它保留在你的机器上。</p>
+
+<p>从按 `←` 留下的空行从未给出提示符会在大约五分钟后被完全删除，以便列表自动清理。使用 `claude --bg` 启动的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>和等待<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>提示符（如信任对话）的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>不会以这种方式被删除。</p>
+
+<p>当主机内存不足时，监督进程首先停止空闲的非固定<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，仅在释放任何内容时才停止空闲的固定<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。</p>
+
+<p>监督进程监视磁盘上安装的 Claude Code 二进制文件，在常规<a class="kw" onclick="showKw('自动更新程序')" title="点击查看解释">自动更新程序</a>替换它后重新启动到新版本。这是本地文件监视，不是网络检查。<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>是分离的进程，所以它们在重新启动期间继续运行，新的监督进程重新连接到它们。空闲的固定<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>也会在原地重新启动到新版本，以便它获取更新而无需你重新附加。</p>
+
+<p>一旦新的监督进程接管，它也会将剩余的空闲<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>重新启动到新版本，在后台一次几个，在短暂延迟后，让在重新启动期间连接的终端首先重新连接。积极工作、等待你的输入或有终端连接的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>不会被中断；它在其进程下次重新启动时移动到新版本。在 v2.1.206 之前，监督进程每分钟仅将几个空闲<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>移动到新版本，因此<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>可能在更新后继续运行旧版本一段时间。</p>
+
+<p>这些重新启动仅将<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>移动到较新版本。运行比<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>进程启动时所用版本更旧的 Claude Code 版本的监督进程会单独保留该进程；<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>继续运行较新版本，直到较新的监督进程接管。</p>
+
+<p>在监督进程重新启动<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>时运行 `claude attach`，无论是为了更新、停滞还是迁移，会等待替换进程而不是失败。状态行如 `<a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> is updating to the new Claude Code…` 会命名它正在等待的内容并计算经过的秒数，命令在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>准备好后立即连接。大约 60 秒后它停止等待并报告错误。在 v2.1.205 之前，`claude attach` 在几秒后停止重试并在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>仍在重新启动时打印错误。</p>
+
+<h4 id="sec-agent-view-25">状态存储位置</h4>
+
+<p><a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>状态存储在你的 Claude Code 配置目录下。如果你<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>了 <a class="kw" onclick="showKw('CLAUDE_CONFIG_DIR')" title="点击查看解释">CLAUDE_CONFIG_DIR</a>，监督进程使用该目录而不是 `~/.claude` 并作为单独的实例运行，具有其自己的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。</p>
+
+<div class='table-wrap'><table>
+<tr><th>路径</th><th>内容</th></tr>
+<tr><td>`~/.claude/daemon.log`</td><td>监督进程日志</td></tr>
+<tr><td>`~/.claude/daemon/roster.json`</td><td>运行中的<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>列表，用于在重新启动后重新连接</td></tr>
+<tr><td>`~/.claude/jobs/&lt;id&gt;/state.json`</td><td>在 agent view 中显示的每<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>状态</td></tr>
+<tr><td>`~/.claude/jobs/&lt;id&gt;/tmp/`</td><td>每<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>临时目录。写入此处不会提示<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>。<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>删除时移除</td></tr>
+</table></div>
+
+<p>每个<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>都<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>了 `CLAUDE_JOB_DIR` <a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>指向其 `~/.claude/jobs/&lt;id&gt;` 目录，因此<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>运行的 shell 命令可以将临时文件写入 `$CLAUDE_JOB_DIR/tmp` 而不会与并行<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>冲突。</p>
+
+<p>要在不直接读取文件的情况下检查此状态，请运行 `claude daemon status`。它报告监督进程是否可达、其进程 ID 和版本、套接字目录以及有多少<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>处于活跃状态。</p>
+
+<p>该命令还会在运行的监督进程版本与你调用的 `claude` 版本不同时发出警告，这发生在监督进程尚未重新启动到新版本的更新之后。警告显示两个版本，并告诉你运行 `claude daemon stop --any` 以获取新版本。当 Claude Code 作为操作系统服务安装时，建议的命令是 `claude daemon stop` 不带该标志。</p>
+
+<p><a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>完整地保留该版本不匹配：更新<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a> `state.json` 的较旧 Claude Code 版本会保留它不识别的字段并保持<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>列出。`roster.json` 中的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>列表遵循相同的规则：重写它的较旧版本会保留较新版本写入的字段，因此由较新版本启动的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>保持可达并在监督进程重新启动后继续接受输入。在 v2.1.200 之前，较旧版本可能会在重写时删除这些字段。</p>
+
+<p>在 Windows 上，当守护进程的管道密钥文件被锁定或无法读取时，`claude daemon status` 会显示底层文件错误，而不是报告通用连接失败。</p>
+
+<h4 id="sec-agent-view-26">关闭 agent view</h4>
+
+<p>要完全关闭后台代理和 agent view，将 `disable<a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a>View` <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>设为 `true` 或<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> `CLAUDE_CODE_DISABLE_AGENT_VIEW` <a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>。管理员可以通过<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>强制执行这个。</p>
+
+<h3 id="sec-agent-view-27">故障排除</h3>
+
+<h4 id="sec-agent-view-28">`claude agents` 列出子代理而不是打开代理视图</h4>
+
+<p>如果 `claude agents` 打印一个计数，然后是你配置的<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>，然后退出，说明<a class="kw" onclick="showKw('代理视图')" title="点击查看解释">代理视图</a>在你的环境中不可用。运行 `claude update` 来安装最新版本。</p>
+
+<p>如果更新后<a class="kw" onclick="showKw('代理视图')" title="点击查看解释">代理视图</a>仍然没有打开，检查它是否已被<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>或<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a><a class="kw" onclick="showKw('关闭')" title="点击查看解释">关闭</a>。</p>
+
+<h4 id="sec-agent-view-29">Agent view 打开时没有会话</h4>
+
+<p>在你调度你的第一个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>之前，agent view 显示空的部分标题，每个标题下有一个描述，以及输入上方的单行说明，代替<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>列表。在底部的输入框中输入提示并按 `Enter` 来调度你的第一个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。</p>
+
+<h4 id="sec-agent-view-30">后台化显示 `Background this session?` 对话</h4>
+
+<p>如果按 `←` 来后台当前<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>显示 `Background this session?` 对话，<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>有进行中的工作无法转移到<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>，例如运行中的 <a class="kw" onclick="showKw('monitor')" title="点击查看解释">monitor</a>，Claude Code 不会默默停止它。对话命名将被停止的工作，并分别计算转移的任务。运行 `/tasks` 查看正在运行的内容，然后确认无论如何后台或选择 `Stay` 让工作先完成。参见<a class="kw" onclick="showKw('从会话内部')" title="点击查看解释">从会话内部</a>了解哪些任务类型转移，哪些被停止。</p>
+
+<h4 id="sec-agent-view-31">提示被拒绝，因为太短</h4>
+
+<p>调度输入期望一个任务描述，而不是对话开场白。少于四个字符的提示会被拒绝，并显示 `Too short` 提示，这样随意的按键就不会启动<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。描述你希望<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>执行的操作，例如 `investigate the flaky checkout test`。</p>
+
+<h4 id="sec-agent-view-32">会话在关闭后显示为已失败</h4>
+
+<p>关闭或重启你的机器会停止运行中的<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>，所以当你下次打开 agent view 时，它们显示为已失败。附加、窥视或回复任何已失败的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>从中断处重新启动。</p>
+
+<p>睡眠单独不会导致这种情况。<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在睡眠期间被保留，监督进程在唤醒时重新连接到它们。</p>
+
+<h4 id="sec-agent-view-33">打开会话说对话已经打开</h4>
+
+<p>打开一个已停止的行，其对话也由另一个运行中的非交互式 Claude Code 进程持有，例如同一对话的后台工作进程仍在关闭中，会显示 `This conversation is already open in another running Claude session` 而不是启动该行的进程，因为两个进程无法写入同一个记录。在已经持有对话的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中回复，或退出它并再次打开该行。你在拒绝尝试中输入的回复不会丢失；它会在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>下次启动时发送。</p>
+
+<p>在 v2.1.203 之前，这种状态会启动第二个进程。该进程会以 `currently running as a background agent` 错误退出，该行显示为已失败。</p>
+
+<h4 id="sec-agent-view-34">会话在启动前失败，并显示 `possibly low memory` 注记</h4>
+
+<p>从 v2.1.199 开始，当<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>的进程在完成启动前退出，且主机内存不足时，该行的状态会命名退出并添加 `possibly low memory — free some up and retry`。早期版本仅显示此失败的原始退出原因。</p>
+
+<p>该注记是一个假设，而不是确认的原因。Claude Code 仅在进程无声退出（未写入错误且未被信号停止）且主机在该时刻报告内存不足时才添加它。当进程在退出前确实写入了错误时，该行显示该错误。</p>
+
+<p>释放机器上的内存，然后附加、窥视或回复该行，监督进程为<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>启动一个新进程。当内存保持不足时，监督进程也会<a class="kw" onclick="showKw('停止空闲会话')" title="点击查看解释">停止空闲会话</a>来自行释放资源。</p>
+
+<h4 id="sec-agent-view-35">Agent view 说后台服务没有响应</h4>
+
+<p>如果附加、窥视或 `claude logs` 报告后台服务没有响应，监督进程可能已经停滞。停止它并让下一个 `claude agents` 启动一个新的。要在重启期间保持你的<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>运行，请传递 `--keep-workers`：</p>
+
+<pre><code>
+claude daemon stop --any --keep-workers
+</code></pre>
+
+<p>新的监督进程重新连接到运行中的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。没有 `--keep-workers`，该命令也会结束<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>。`--any` 标志确认你想停止一个按需启动的监督进程，而不是作为已安装的服务启动的，这是默认的。</p>
+
+<p>一个启动但无法接受连接的监督进程会自行退出并释放其锁，所以下一个 `claude agents` 会启动一个新的，无需此手动停止。上述步骤适用于运行中的监督进程停滞的情况。</p>
+
+<p>在 Windows 上，如果监督进程没有响应停止请求，该命令会打印其进程 ID。用 `taskkill /PID </p>
+<p>` 结束该进程以完成恢复。当你传递了 `--keep-workers` 时，<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>仍然被保留。</p>
+
+<h4 id="sec-agent-view-36">后台调度失败，出现 `Could not resolve authentication method`</h4>
+
+<p>如果后台调度失败，出现 `Could not resolve authentication method`，而交互式<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>正常进行身份验证，则接收调度的工作进程没有获取凭证。监督进程在将<a class="kw" onclick="showKw('预热工作进程')" title="点击查看解释">预热工作进程</a>分配给调度时提供新的凭证快照，所以这个错误意味着监督进程本身没有可用的存储凭证。确认你已运行 `/login` 或配置了 API 密钥，然后停止监督进程：</p>
+
+<pre><code>
+claude daemon stop --any --keep-workers
+</code></pre>
+
+<p>下一个 `claude agents` 或 `claude --bg` 启动一个新的监督进程，该进程读取你存储的凭证。如果你使用<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>（如 `ANTHROPIC_API_KEY`）而不是 `/login` 进行身份验证，请从<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>了该变量的 shell 运行下一个命令。</p>
+
+<p>参见<a class="kw" onclick="showKw('错误参考')" title="点击查看解释">错误参考</a>了解完整的原因和修复列表。</p>
+
+<h4 id="sec-agent-view-37">后台会话无法在 macOS 上读取 Desktop、Documents 或 Downloads</h4>
+
+<p>在 macOS 上，<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>主机作为其自己的进程运行，并与你的终端分开请求对受保护文件夹的访问。如果<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>在读取 `~/Desktop`、`~/Documents`、`~/Downloads` 或其他受保护位置时报告 `Operation not permitted`，请在系统<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>中的隐私与安全 &gt; 文件和文件夹下授予访问<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>，或为该条目启用完全磁盘访问。</p>
+
+<p>使用原生安装程序，该条目显示为 Claude Code，授予在更新中持续。使用其他安装方法（如 Homebrew 或 npm），该条目显示二进制路径，在更新后可能需要再次授予。</p>
+
+<h4 id="sec-agent-view-38">后台会话无法在 macOS 上访问本地网络主机</h4>
+
+<p>在 macOS 15 及更高版本上，系统会阻止进程访问你本地网络上的设备，直到你授予本地网络<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>。在 v2.1.198 之前，<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>主机从未请求该<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>，所以针对 LAN 地址的命令失败，出现 `connect: no route to host`，即使相同的命令在前台终端中有效。从 v2.1.198 开始，<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>中连接到本地网络地址的第一个命令会触发 Claude Code 的 macOS 本地网络<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>提示。授予一次，这些命令就能像在前台终端中一样访问 LAN 主机。</p>
+
+<h4 id="sec-agent-view-39">附加后会话响应缓慢</h4>
+
+<p>一旦<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>完成并未连接地坐了大约一小时，监督进程停止其进程以释放资源。附加启动一个从中断处的新进程并立即切换到<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，而进程重新启动。工作或等待你的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，或<a class="kw" onclick="showKw('固定')" title="点击查看解释">固定</a>的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>永远不会以这种方式停止，所以用 `Ctrl+T` 固定一个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>来保持它的响应性。</p>
+
+<p>当进程启动时，<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>记录的最后一屏会显示，下面有一个 `<a class="kw" onclick="showKw('Session')" title="点击查看解释">Session</a> is starting` 注记，当<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>准备好时，实时<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>会立即替换它。</p>
+
+<h4 id="sec-agent-view-40">`.claude/worktrees/` 填满了</h4>
+
+<p>在 agent view 中删除<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>会删除 Claude 为其创建的 worktree，无法安全删除的 worktree <a class="kw" onclick="showKw('保持其会话行')" title="点击查看解释">保持其会话行</a>，这样它就不会被孤立。`claude rm` 保留具有未提交更改的 worktree 及其<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>行，并打印保留的路径。在项目目录中用 `git worktree list` 列出剩余条目，并用 `git worktree remove </p>
+<p>` 删除每个。参见<a class="kw" onclick="showKw('清理 worktrees')" title="点击查看解释">清理 worktrees</a>。</p>
+
+<h3 id="sec-agent-view-41">限制</h3>
+
+<p><a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> view 处于研究预览阶段，存在以下限制：</p>
+
+<p>* **速率限制适用**：<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>消耗你的订阅使用量，与交互式<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>相同，因此并行运行十个代理的配额消耗速度大约是运行一个代理的十倍。</p>
+<p>* **<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>是本地的**：<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>在你的机器上运行。它们在机器睡眠时保留，但在机器关闭时停止。</p>
+<p>* **Claude 创建的 worktrees 在 agent view 中随<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>删除**：在删除在其自己的 worktree 中编辑文件的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>之前，请提交更改。具有未推送任何地方的提交的 worktree 与<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>一起保留。`claude rm` 也会将具有未提交更改的 worktree 与其<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>一起保留，而你自己创建的 worktree 保持原位。</p>
+
+<h3 id="sec-agent-view-42">相关资源</h3>
+
+<p>有关以并行方式运行 Claude 的其他方法，请参阅：</p>
+
+<p>* <a class="kw" onclick="showKw('并行运行代理')" title="点击查看解释">并行运行代理</a>：比较 agent view 与 subagents、agent teams 和 worktrees</p>
+<p>* <a class="kw" onclick="showKw('Agent teams')" title="点击查看解释">Agent teams</a>：协调相互发送消息的多个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a></p>
+<p>* <a class="kw" onclick="showKw('Claude Code on the web')" title="点击查看解释">Claude Code on the web</a>：在托管的云环境中运行<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>而不是本地</p>
+
+<h3 id="sec-agent-view-43">版本历史</h3>
+
+<p><a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> view 在研究预览期间发展迅速。如果你使用较旧的 Claude Code 版本，本页上的某些行为可能会有所不同；特别是，`claude agents` 拒绝它尚不支持的标志，出现 `unknown option` 错误。下表列出了何时添加每个标志和行为。</p>
+
+<div class='table-wrap'><table>
+<tr><th>版本</th><th>更改</th></tr>
+<tr><td>v2.1.208</td><td>附加到一个进程已停止的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>会显示其记录的最后一屏，而进程启动，而不是仅显示 `<a class="kw" onclick="showKw('Session')" title="点击查看解释">Session</a> is starting` 注记。无法传递的回复（因为后台服务无法访问或发送失败）会被保存，并在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的进程再次启动时作为<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的下一个提示发送；在此版本之前，后台服务无法访问时丢失的回复会被丢弃。其自身二进制文件被更新替换的进程仍然可以从已安装的 `claude` 启动器或磁盘上的最新版本启动监督进程，而不是在 Claude Code 重新启动之前失败。运行较旧版本的监督进程永远不会将由较新版本启动的空闲<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>重新启动到其自身的较旧二进制文件上。删除<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>会删除其 worktree，即使<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>将 worktree 移到了不同的分支，并在 worktree 有未推送到任何地方的提交或另一个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>声称它时将 worktree 与<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>行保持在一起，而不是销毁提交或孤立 worktree。`/install-github-app` 和 `<a class="kw" onclick="showKw('/mcp')" title="点击查看解释">/mcp</a>` <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>列表及其身份验证操作在<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>中被拒绝，并显示替代方案的消息；仅在 v2.1.208 中，`/model` 选择器以相同方式被拒绝，键入的 `/model &lt;name&gt;` 仅切换该<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，而不是也保存你的默认模型。</td></tr>
+<tr><td>v2.1.207</td><td>窥视面板以行截断的句子打开，例如等待你的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的确切问题，并显示被阻止的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>已等待多长时间作为单个 `waiting 3m` 行，而不是将相同的时间戳前缀添加到状态句子和问题。在调度输入中再次粘贴相同的文本会展开折叠的 `[Pasted text #N]` 占位符，而不是添加第二个。按名称接受计划的<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>在其行上显示该名称。移入 worktree 的<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>在其进程从 agent view 重新启动时保持其对话。</td></tr>
+<tr><td>v2.1.206</td><td>行摘要填充行的剩余宽度，仅在终端的右边缘截断，而不是在 64 列处。监督进程重新启动到新的 Claude Code 版本后，它在后台将剩余的空闲<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>重新启动到该版本，而不是每分钟几个。使用 `Ctrl+X` 或 `claude rm` 删除<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>也会将其从监督进程的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>列表中清除，因此行在监督进程重新启动后不再重新出现。</td></tr>
+<tr><td>v2.1.205</td><td>行摘要显示<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>自己的单行报告，在 64 列处截断，而不是原始工具调用或 `done/total` 计数；按目录分组的行以彩色状态词打开。窥视面板以完整状态句子打开，对于等待你的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，其精确问题显示在回复输入上方。编辑、评论、关闭或使用 `gh` 标记拉取请求为就绪的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>与其关联，不仅仅是创建或检出拉取请求的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，推送即使本地分支名称不匹配也会关联拉取请求，创建命令的输出超过内联限制的拉取请求也会关联。没有可读文本的转向保持<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的前一个状态，而不是将其翻转回 `Working`。`claude attach` 等待重新启动的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>长达约 60 秒，带有命名原因的状态行，而不是失败。</td></tr>
+<tr><td>v2.1.203</td><td>在调度 shell 中导出的网关 `ANTHROPIC_BASE_URL` 当监督进程共享该网关环境时，会到达从它调度的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>进入同一目录，而不是在保留随之导出的 API 密钥时被丢弃。调度 shell 的 `PATH` 应用于每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的工作进程。在<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>运行时按 `←` 会等待它们，而不是在十秒后重新启动它们。空列表始终显示部分标题及其下方的描述。在调度输入中键入 `@` 也会列出启动存储库内其目录树中的已注册 git worktrees。从 `effortLevel` <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>继承的工作量在该<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>的后续编辑后跟随，而不是在调度时固定。打开一个已停止的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>（其对话已在另一个运行中的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中打开）会被拒绝并显示消息，而不是导致行失败。在 agent view 中不可用的命令会在输入中保留已键入的文本。在 git 存储库外失败的 `WorktreeCreate` hook 不再阻止<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>编辑文件。</td></tr>
+<tr><td>v2.1.202</td><td>使用 `/rename` 或 `Ctrl+R` 在<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>上<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>的名称在监督进程停止并重新启动时保持不变，而不是恢复为<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>调度时的名称。</td></tr>
+<tr><td>v2.1.200</td><td>重写 `roster.json` 中<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>列表的较旧 Claude Code 版本保留由较新版本写入的字段，与现有的 `state.json` 保证相匹配，因此由较新版本启动的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在监督进程重新启动后继续接受输入。当你打开已停止响应的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>时，监督进程重新启动其进程，<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>从中断处继续响应。</td></tr>
+<tr><td>v2.1.199</td><td><a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>的进程在低内存主机上完成启动前退出时，其行状态显示 `possibly low memory — free some up and retry` 而不仅仅是裸退出原因。使用 `←` 或 `/background` <a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>时将其 `/color` 转移到新行。</td></tr>
+<tr><td>v2.1.198</td><td><a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> view 在<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>需要输入、完成或失败时通过 `preferredNotifChannel` 发送通知，并使用 `agent_needs_input` 或 `agent_completed` 类型触发 `Notification` hook。`←` 和 `/exit` 在 `claude attach &lt;id&gt;` 内返回 agent view 而不是退出到 shell；`Ctrl+Z` 返回到 shell。<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>在 worktree 中隔离其工作，提交、推送其自己的隔离分支，从不 `main` 或 `master`，并在完成时打开草稿拉取请求而不是先询问。`/login` 在 agent view 中运行并打开登录对话框。`Background work is running` 退出对话框提供 `Move to background and exit`。退出交付也涵盖后台<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>，它们在下次唤醒时从其记录恢复，而不是被报告为失败。`claude --bg` 与 `-p` 或 `--print` 结合被拒绝并出现错误。</td></tr>
+<tr><td>v2.1.196</td><td>单次 `←` 按压后台前台<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>；早期版本需要两次按压，带有页脚提示和确认。`--dangerously-skip-permissions` 传递给 `claude agents` 显示绕过免责声明而不是被默默丢弃。你从未命名的交互式<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>列表和 `claude agents --json` 中携带默认名称，例如 `my-app-3f`。后台 shell 命令和动态<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的进程被停止、重新启动或更新时存活，包括在 Windows 上；<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> `CLAUDE_CODE_DISABLE_BG_EXIT_HANDOFF=1` 关闭交付。在重新启动时误读为空的记录被重命名为 `.orphaned-` 后缀而不是删除。</td></tr>
+<tr><td>v2.1.195</td><td>进行中的工作在 Windows 上<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>时也转移；<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> `CLAUDE_DISABLE_ADOPT=1` 改为停止它。`Completed` 组填充剩余的垂直空间，标题在短终端上压缩。较旧的 Claude Code 版本不再丢弃较新<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的 `state.json` 字段或从 `claude agents` 隐藏这些<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。附加到停止的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>立即切换而不是显示空白屏幕长达五秒。无法接受连接的监督进程自行退出并释放其锁。</td></tr>
+<tr><td>v2.1.174</td><td><a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>不再从监督进程的启动 shell 继承网关端点变量如 `ANTHROPIC_BASE_URL`；监督进程向预热工作进程提供新的凭证快照，修复虚假的 `Could not resolve authentication method` 错误。</td></tr>
+<tr><td>v2.1.172</td><td>调度输入中的 `/model` <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a><a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>范围的调度模型覆盖。</td></tr>
+<tr><td>v2.1.161</td><td>行摘要显示并行工作项的 `done/total` 计数；窥视面板命名最长运行的并行工作项。</td></tr>
+<tr><td>v2.1.157</td><td>`claude agents` 接受 `--agent`；调度的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>尊重 `agent` <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>。</td></tr>
+<tr><td>v2.1.145</td><td>窥视面板回复输入和调度输入中支持语音听写。</td></tr>
+<tr><td>v2.1.143</td><td>添加 `worktree.bgIsolation` <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>；`claude agents` 接受 `--allow-dangerously-skip-permissions`。</td></tr>
+<tr><td>v2.1.142</td><td>`claude agents` 接受 `--permission-mode`、`--model`、`--effort`、`--dangerously-skip-permissions`、`--settings`、`--add-dir`、`--plugin-dir`、`--mcp-config` 和 `--strict-mcp-config`。</td></tr>
+<tr><td>v2.1.141</td><td>`claude agents` 接受 `--cwd` 以将列表范围限定到一个项目。</td></tr>
+<tr><td>v2.1.139</td><td><a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> view 作为研究预览版引入。</td></tr>
+</table></div>
+
+  </main>
+</div>
+
+<nav class="pager">
+  <a href="agent-sdk_overview.html"><span class="dir">← 上一篇</span><span class="ptitle">Agent SDK 概览</span></a>
+  <a class="next" href="agents.html"><span class="dir">下一篇 →</span><span class="ptitle">并行运行代理</span></a>
+</nav>
+
+<button class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="返回顶部"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 5l0 14" /> <path d="M18 11l-6 -6" /> <path d="M6 11l6 -6" /> </svg></span></button>
+
+<!-- 关键词解释弹窗 -->
+<div class="kw-panel" id="kwPanel">
+  <div class="kwp-head">
+    <span class="kwp-badge" id="kwpBadge"></span>
+    <span class="kwp-title" id="kwpTitle"></span>
+    <button class="kwp-close" onclick="hideKw()">×</button>
+  </div>
+  <div class="kwp-body">
+    <div class="kwp-desc" id="kwpDesc"></div>
+    <a class="kwp-link" id="kwpLink" target="_blank">阅读完整文档<span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l14 0" /> <path d="M13 18l6 -6" /> <path d="M13 6l6 6" /> </svg></span></a>
+  </div>
+  <div class="kwp-bar-wrap"><div class="kwp-bar" id="kwBar"></div></div>
+</div>
+
+<script>
+function toggleDrawer() {
+  document.getElementById('drawer').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+window.addEventListener('scroll', function() {
+  var st = document.getElementById('scrollTop');
+  st.classList.toggle('show', window.scrollY > 400);
+  var h = document.documentElement.scrollHeight - window.innerHeight;
+  var pct = h > 0 ? (window.scrollY / h * 100) : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+});
+
+// ===== 关键词弹窗逻辑 =====
+const KW_DATA = {"Marketplace": {"doc": "plugin-marketplaces", "title": "创建和分发 plugin marketplace", "desc": "**plugin marketplace** 是一个目录，让你能够将 plugins 分发给他人。Marketplace 提供集中式发现、版本跟踪、自动更新以及对多种源类型（包括 git 存储库和本地路径）的支持。本指南展示了如何创建自己的 marketplace，与你的团队或社区共享 plugins。"}, "市场": {"doc": "plugin-marketplaces", "title": "创建和分发 plugin marketplace", "desc": "**plugin marketplace** 是一个目录，让你能够将 plugins 分发给他人。Marketplace 提供集中式发现、版本跟踪、自动更新以及对多种源类型（包括 git 存储库和本地路径）的支持。本指南展示了如何创建自己的 marketplace，与你的团队或社区共享 plugins。"}, "Plugin": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "插件": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "Skill": {"doc": "skills", "title": "使用 skills 扩展 Claude", "desc": "Skills 扩展了 Claude 能做的事情。创建一个 `SKILL.md` 文件，其中包含说明，Claude 会将其添加到其工具包中。Claude 在相关时使用 skills，或者你可以使用 `/skill-name` 直接调用一个。"}, "技能": {"doc": "skills", "title": "使用 skills 扩展 Claude", "desc": "Skills 扩展了 Claude 能做的事情。创建一个 `SKILL.md` 文件，其中包含说明，Claude 会将其添加到其工具包中。Claude 在相关时使用 skills，或者你可以使用 `/skill-name` 直接调用一个。"}, "Agent": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "Subagent": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "子代理": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "Hook": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "钩子": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "MCP": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "CLI": {"doc": "cli-reference", "title": "CLI 参考", "desc": "CLI 命令"}, "斜杠命令": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "快捷键": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "keybindings": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "权限模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Permission Mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "上下文窗口": {"doc": "context-window", "title": "探索上下文窗口", "desc": "了解 Claude Code 的上下文窗口如何工作：上下文包含哪些内容、如何高效利用、以及自动压缩等机制。"}, "Context Window": {"doc": "context-window", "title": "探索上下文窗口", "desc": "了解 Claude Code 的上下文窗口如何工作：上下文包含哪些内容、如何高效利用、以及自动压缩等机制。"}, "设置": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "环境变量": {"doc": "env-vars", "title": "环境变量", "desc": "环境变量可以控制 Claude Code 的行为，例如模型选择、身份验证、请求路由和功能切换。许多相同的行为也可以通过设置文件字段、CLI 标志或会话内命令（如 `/model`）进行配置。"}, "Environment Variables": {"doc": "env-vars", "title": "环境变量", "desc": "环境变量可以控制 Claude Code 的行为，例如模型选择、身份验证、请求路由和功能切换。许多相同的行为也可以通过设置文件字段、CLI 标志或会话内命令（如 `/model`）进行配置。"}, "记忆": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "Memory": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "会话": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "Session": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "状态栏": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "Statusline": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "CLAUDE.md": {"doc": "claude-directory", "title": "探索 .claude 目录", "desc": "Claude Code 在项目根目录读取的指令文件，每次会话都会加载，用来定义项目约定、常用命令和架构上下文。"}, ".claude 目录": {"doc": "claude-directory", "title": "探索 .claude 目录", "desc": "Claude Code 读取 CLAUDE.md、settings.json、hooks、skills、commands、subagents 等配置的目录结构。"}, "keybindings.json": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "settings.json": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "Prompt caching": {"doc": "prompt-caching", "title": "Claude Code 如何使用 prompt caching", "desc": "Prompt caching 使 Claude Code 更快、更经济高效。没有缓存，API 会在每个回合重新处理您的完整历史记录。有了缓存，它会重用已经处理过的内容，只对更改的部分进行新工作。"}, "提示词缓存": {"doc": "prompt-caching", "title": "Claude Code 如何使用 prompt caching", "desc": "Prompt caching 使 Claude Code 更快、更经济高效。没有缓存，API 会在每个回合重新处理您的完整历史记录。有了缓存，它会重用已经处理过的内容，只对更改的部分进行新工作。"}, "提示词库": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类（理解、计划、原型、构建等），帮助快速上手常见任务。"}, "Prompt library": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类（理解、计划、原型、构建等），帮助快速上手常见任务。"}, "提示词": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类，帮助快速上手 Claude Code 常见任务。"}, "auto memory": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "自动记忆": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "后台会话": {"doc": "agent-view", "title": "使用 agent view 管理多个代理", "desc": "Agent view 通过 `claude agents` 打开，是所有后台会话的一个屏幕：什么正在运行、什么需要你的输入、什么已完成。调度新会话，一目了然地查看它们的状态而不是滚动浏览记录，只在需要时才介入。每个后台会话都是一个完整的 Claude Code 对话，在没有终端连接的情况下继续运行，所以你可以随时打开它、回复并离开。"}, "代理视图": {"doc": "agent-view", "title": "使用 agent view 管理多个代理", "desc": "Agent view 通过 `claude agents` 打开，是所有后台会话的一个屏幕：什么正在运行、什么需要你的输入、什么已完成。调度新会话，一目了然地查看它们的状态而不是滚动浏览记录，只在需要时才介入。每个后台会话都是一个完整的 Claude Code 对话，在没有终端连接的情况下继续运行，所以你可以随时打开它、回复并离开。"}, "远程控制": {"doc": "remote-control", "title": "使用 Remote Control 从任何设备继续本地会话", "desc": "Remote Control 处于研究预览阶段，在所有计划中都可用。在 Team 和 Enterprise 上，在所有者在 Claude Code 管理员设置中启用 Remote Control 切换之前，它默认处于关闭状态。"}, "Remote Control": {"doc": "remote-control", "title": "使用 Remote Control 从任何设备继续本地会话", "desc": "Remote Control 处于研究预览阶段，在所有计划中都可用。在 Team 和 Enterprise 上，在所有者在 Claude Code 管理员设置中启用 Remote Control 切换之前，它默认处于关闭状态。"}, "计划任务": {"doc": "scheduled-tasks", "title": "按计划运行提示词", "desc": "计划任务让 Claude 按间隔自动重新运行提示词。使用它们来轮询部署、监督 PR、检查长时间运行的构建，或在会话中稍后提醒自己做某事。要对事件进行实时反应而不是轮询，请参阅 Channels：您的 CI 可以直接将失败推送到会话中。要保持会话工作转向转向直到满足条件而不是按间隔，请参阅 `/goal`。"}, "定期任务": {"doc": "desktop-scheduled-tasks", "title": "在 Claude Code Desktop 中安排定期任务", "desc": "定期任务在您选择的时间和频率自动启动新会话。使用它们进行定期工作，如日常代码审查、依赖项更新检查或从您的日历和收件箱中提取信息的早晨简报。"}, "例程": {"doc": "routines", "title": "使用例程自动化工作", "desc": "Routines 处于研究预览阶段。行为、限制和 API 表面可能会改变。"}, "Routines": {"doc": "routines", "title": "使用例程自动化工作", "desc": "Routines 处于研究预览阶段。行为、限制和 API 表面可能会改变。"}, "代码审查": {"doc": "code-review", "title": "Code Review", "desc": "Code Review 处于研究预览阶段，仅适用于 Team 和 Enterprise 订阅。对于启用了 Zero Data Retention 的组织，此功能不可用。"}, "Code Review": {"doc": "code-review", "title": "Code Review", "desc": "Code Review 处于研究预览阶段，仅适用于 Team 和 Enterprise 订阅。对于启用了 Zero Data Retention 的组织，此功能不可用。"}, "检查点": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "Checkpointing": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "工作流": {"doc": "workflows", "title": "使用动态工作流大规模编排子代理", "desc": "动态工作流需要 Claude Code v2.1.154 或更高版本，在所有付费计划上可用，具有 Anthropic API 访问权限，以及在 Amazon Bedrock、Google Cloud 的 Agent Platform 和 Microsoft Foundry 上可用。在 Pro 上，从 `/config` 中的\"Dynamic workflows\"行启用它们。"}, "Workflows": {"doc": "workflows", "title": "使用动态工作流大规模编排子代理", "desc": "动态工作流需要 Claude Code v2.1.154 或更高版本，在所有付费计划上可用，具有 Anthropic API 访问权限，以及在 Amazon Bedrock、Google Cloud 的 Agent Platform 和 Microsoft Foundry 上可用。在 Pro 上，从 `/config` 中的\"Dynamic workflows\"行启用它们。"}, "最佳实践": {"doc": "best-practices", "title": "Claude Code 最佳实践", "desc": "Claude Code 是一个代理式编码环境。与等待回答问题的聊天机器人不同，Claude Code 可以读取你的文件、运行命令、进行更改，并在你观看、重定向或完全离开的情况下自主解决问题。"}, "Best Practices": {"doc": "best-practices", "title": "Claude Code 最佳实践", "desc": "Claude Code 是一个代理式编码环境。与等待回答问题的聊天机器人不同，Claude Code 可以读取你的文件、运行命令、进行更改，并在你观看、重定向或完全离开的情况下自主解决问题。"}, "交互模式": {"doc": "interactive-mode", "title": "交互模式", "desc": "键盘快捷键"}, "交互式模式": {"doc": "interactive-mode", "title": "交互模式", "desc": "键盘快捷键"}, "常见工作流": {"doc": "common-workflows", "title": "常见工作流程", "desc": "本页收集了日常开发的简短工作流程。有关提示和上下文管理的更高级指导，请参阅最佳实践。"}, "JetBrains": {"doc": "jetbrains", "title": "JetBrains IDEs", "desc": "Claude Code 通过专用插件与 JetBrains IDE 集成，提供交互式差异查看、选择上下文共享等功能。"}, "VS Code": {"doc": "vs-code", "title": "在 VS Code 中使用 Claude Code", "desc": "VS Code 扩展为 Claude Code 提供了原生图形界面，直接集成到您的 IDE 中。这是在 VS Code 中使用 Claude Code 的推荐方式。"}, "GitHub Actions": {"doc": "github-actions", "title": "Claude Code GitHub Actions", "desc": "Claude Code GitHub Actions 为您的 GitHub 工作流带来了 AI 驱动的自动化。只需在任何 PR 或 issue 中简单地提及 `@claude`，Claude 就可以分析您的代码、创建拉取请求、实现功能和修复错误 - 所有这些都遵循您项目的标准。如需在每个 PR 上自动发布评论而无需触发器，请参阅 GitHub Code Review。"}, "GitLab CI": {"doc": "gitlab-ci-cd", "title": "Claude Code GitLab CI/CD", "desc": "Claude Code for GitLab CI/CD 目前处于测试阶段。随着我们完善体验，功能和特性可能会发生变化。"}, "桌面应用": {"doc": "desktop", "title": "Desktop application", "desc": "Claude Desktop 应用有三个选项卡：Chat 用于对话，Cowork 用于 Dispatch 和更长的代理工作，Code 用于软件开发。本页是 Code 选项卡的参考。"}, "计划模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Plan mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "自动模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "auto mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Accept Edits": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "bypassPermissions": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "权限": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "/plugin": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "/mcp": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "/hooks": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "/agents": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "/clear": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/compact": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/config": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "/resume": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/continue": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/fork": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/checkpoint": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "/cost": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/permissions": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "/statusline": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "/keybindings": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "术语表": {"doc": "glossary", "title": "术语表", "desc": "本术语表定义了 Claude Code 术语。每个条目都链接到深入讨论该概念的页面。对于模型级概念（如 tokens、temperature 和 RAG），请参阅平台术语表。"}, "OAuth": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "MCP server": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "MCP Server": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "组织设置": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "托管设置": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "服务器托管": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "快速开始": {"doc": "quickstart", "title": "快速开始", "desc": "本快速开始指南将在几分钟内让您使用 AI 驱动的编码辅助。完成本指南后，您将了解如何使用 Claude Code 完成常见的开发任务。"}, "故障排除": {"doc": "troubleshooting", "title": "故障排除", "desc": "本页涵盖 Claude Code 运行后的性能、稳定性和搜索问题。对于其他问题，请从与您遇到的问题相匹配的页面开始："}, "Troubleshooting": {"doc": "troubleshooting", "title": "故障排除", "desc": "本页涵盖 Claude Code 运行后的性能、稳定性和搜索问题。对于其他问题，请从与您遇到的问题相匹配的页面开始："}, "完整文档": {"doc": "overview", "title": "概述", "desc": "Claude Code 是一个由 AI 驱动的编码助手，可帮助你构建功能、修复错误和自动化开发任务。它理解你的整个代码库，可以跨多个文件和工具工作以完成任务。"}, "概述": {"doc": "overview", "title": "概述", "desc": "Claude Code 是一个由 AI 驱动的编码助手，可帮助你构建功能、修复错误和自动化开发任务。它理解你的整个代码库，可以跨多个文件和工具工作以完成任务。"}};
+  const KW_EXTRA = {"skills": {"doc": "skills", "title": "Skills 技能", "desc": "Claude Code 技能扩展。SKILL.md 提供操作说明，Claude 按需调用完成任务。"}, "Skills": {"doc": "skills", "title": "Skills 技能", "desc": "Claude Code 技能扩展。SKILL.md 提供操作说明，Claude 按需调用完成任务。"}, "skill": {"doc": "skills", "title": "Skill 技能", "desc": "单个技能定义，包含 SKILL.md 说明文件，供 Claude 按需调用。"}, "Hooks": {"doc": "hooks", "title": "Hooks 钩子", "desc": "生命周期钩子。在 Claude Code 操作前后自动运行脚本，如格式化、lint。"}, "hooks": {"doc": "hooks", "title": "Hooks 钩子", "desc": "生命周期钩子。在 Claude Code 操作前后自动运行脚本，如格式化、lint。"}, "hook": {"doc": "hooks", "title": "Hook 钩子", "desc": "单个钩子，监听事件并在操作前后执行命令。"}, "hook 事件": {"doc": "hooks", "title": "Hook 事件", "desc": "钩子可监听的事件，如 PreToolUse、SessionStart 等。"}, "Subagents": {"doc": "sub-agents", "title": "Subagents 子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行，只返回摘要。"}, "subagents": {"doc": "sub-agents", "title": "子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行。"}, "subagent": {"doc": "sub-agents", "title": "子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行。"}, "agent team": {"doc": "agents", "title": "Agent team 代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "agent teams": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "Agent teams": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "代理团队": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "Plugins": {"doc": "plugins", "title": "Plugins 插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包，可共享给团队。"}, "plugins": {"doc": "plugins", "title": "插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包。"}, "plugin": {"doc": "plugins", "title": "插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包。"}, "MCP servers": {"doc": "mcp", "title": "MCP 服务器", "desc": "通过 Model Context Protocol 连接外部工具与数据源的服务器。"}, "MCP 服务器": {"doc": "mcp", "title": "MCP 服务器", "desc": "通过 Model Context Protocol 连接外部工具与数据源的服务器。"}, "Amazon Bedrock": {"doc": "third-party-integrations", "title": "Amazon Bedrock", "desc": "AWS 托管 AI 平台，可运行 Claude 模型并接入 Claude Code。"}, "Microsoft Foundry": {"doc": "third-party-integrations", "title": "Microsoft Foundry", "desc": "微软云 AI 平台，提供模型托管服务，支持 Claude Code 接入。"}, "Claude apps gateway": {"doc": "desktop", "title": "Claude apps gateway", "desc": "Anthropic 官方网关，管理桌面端与网络服务的连接。"}, "Agent SDK": {"doc": "agent-sdk_overview", "title": "Claude Agent SDK", "desc": "官方工具包，用于以编程方式构建和集成 Claude Code 代理。"}, "动态工作流": {"doc": "workflows", "title": "动态工作流", "desc": "通过 JSON/JS 定义步骤，让 Claude 编排子代理执行复杂任务。"}, "LLM 网关": {"doc": "third-party-integrations", "title": "LLM 网关", "desc": "大模型网关，统一路由、代理和管控 LLM API 请求的中间层。"}, "自动内存": {"doc": "memory", "title": "自动内存", "desc": "自动将重要信息写入记忆文档，跨会话保持上下文连续。"}, "Slack": {"doc": "slack", "title": "Slack", "desc": "协作平台。可通过 Claude Code 集成在 Slack 中运行 AI 代理。"}, "Dispatch": {"doc": "desktop", "title": "Dispatch", "desc": "桌面应用功能，将任务分派给代理在后台执行。"}, "Desktop": {"doc": "desktop", "title": "桌面应用", "desc": "Claude Code 桌面应用，提供 Chat、Cowork、Code 图形界面。"}, "Channels": {"doc": "channels", "title": "Channels 频道", "desc": "将 Claude Code 会话接入 Telegram、Discord 等平台的插件系统。"}, "Sandboxing": {"doc": "settings", "title": "沙箱", "desc": "限制 Bash 工具访问范围的安全隔离机制。"}, "沙箱": {"doc": "settings", "title": "沙箱", "desc": "限制工具文件系统访问的安全隔离环境。"}, "非交互模式": {"doc": "cli-reference", "title": "非交互模式", "desc": "通过 -p 参数在脚本中无交互运行 Claude Code，适合自动化。"}, "快速模式": {"doc": "settings", "title": "快速模式", "desc": "提高速率限制的付费模式，响应速度更快。"}, "Plan Mode": {"doc": "permission-modes", "title": "计划模式", "desc": "只分析不执行，先产出修改方案供确认再动手。"}, "Auto mode": {"doc": "permission-modes", "title": "自动模式", "desc": "自动批准低风险操作，减少交互打断，提升效率。"}, "状态行": {"doc": "statusline", "title": "状态行", "desc": "可自定义的底部状态栏，显示上下文、成本等信息。"}, "工具搜索": {"doc": "mcp", "title": "MCP 工具搜索", "desc": "让 Claude 按需搜索并发现更多 MCP 工具，扩展能力。"}, "扩展思考": {"doc": "common-workflows", "title": "扩展思考", "desc": "让 Claude 回答前进行更深入的多步推理，提升复杂问题准确率。"}, "计算机使用": {"doc": "computer-use", "title": "计算机使用", "desc": "让 Claude 控制屏幕、操作应用的实验性功能。"}, "云会话": {"doc": "claude-code-on-the-web", "title": "云会话", "desc": "在 Anthropic 云端运行的 Claude Code 会话。"}, "第三方提供商": {"doc": "third-party-integrations", "title": "第三方提供商", "desc": "通过兼容 API 使用非 Anthropic 模型的服务商。"}, "身份验证": {"doc": "settings", "title": "身份验证", "desc": "Claude Code 登录与凭证验证机制。"}, "网络配置": {"doc": "settings", "title": "网络配置", "desc": "Claude Code 访问网络端点与代理的设置。"}, "语音听写": {"doc": "desktop", "title": "语音听写", "desc": "通过语音转文字向 Claude 下达指令。"}, "权限规则": {"doc": "permission-modes", "title": "权限规则", "desc": "定义允许、询问、拒绝操作的规则。"}, "输出样式": {"doc": "settings", "title": "输出样式", "desc": "自定义 Claude 回复格式的样式文件。"}, "工作量级别": {"doc": "settings", "title": "工作量级别", "desc": "控制模型推理深度的设置。"}, "努力级别": {"doc": "settings", "title": "努力级别", "desc": "控制模型推理深度的设置。"}, "Worktrees": {"doc": "common-workflows", "title": "Git worktree", "desc": "Git 并行工作树，支持多会话同时开发互不干扰。"}, "git worktree": {"doc": "common-workflows", "title": "Git worktree", "desc": "Git 并行工作树，支持多会话同时开发互不干扰。"}, "后台代理": {"doc": "agent-view", "title": "后台代理", "desc": "在后台运行、无需终端连接的 Claude Code 会话。"}, "自动修复": {"doc": "github-actions", "title": "自动修复", "desc": "Claude 自动修复 PR 或代码问题并提交。"}, "顾问工具": {"doc": "code-review", "title": "顾问工具", "desc": "提供代码审查建议的辅助工具。"}, "SSH": {"doc": "remote-control", "title": "SSH", "desc": "安全外壳协议，用于远程连接与加密通信。"}, "连接器": {"doc": "channels", "title": "连接器", "desc": "Claude 连接外部工具和数据源的官方集成。"}, "Artifact": {"doc": "desktop", "title": "Artifact 工件", "desc": "Claude 生成的可共享成果物。"}, "管理会话": {"doc": "sessions", "title": "会话管理", "desc": "保存、恢复、分叉 Claude Code 对话。"}, "命令参考": {"doc": "commands", "title": "命令参考", "desc": "Claude Code 斜杠命令的说明文档。"}, "插件参考": {"doc": "plugins-reference", "title": "插件参考", "desc": "插件组件与配置的参考文档。"}, "自适应推理": {"doc": "settings", "title": "自适应推理", "desc": "根据任务难度动态调整模型推理强度。"}, "环境缓存": {"doc": "settings", "title": "环境缓存", "desc": "缓存已验证的脚本环境，加快工具执行。"}, "扩展上下文": {"doc": "context-window", "title": "扩展上下文", "desc": "增大上下文窗口容量，处理更长内容。"}, "内置命令": {"doc": "commands", "title": "内置命令", "desc": "Claude Code 自带的斜杠命令。"}, "权限设置": {"doc": "permission-modes", "title": "权限设置", "desc": "控制 Claude 操作权限的配置。"}, "环境": {"doc": "env-vars", "title": "环境", "desc": "影响 Claude Code 运行的系统环境配置。"}, "Chrome": {"doc": "chrome", "title": "Chrome 扩展", "desc": "Claude in Chrome 浏览器扩展，在网页中调用 Claude。"}, "iOS": {"doc": "desktop", "title": "iOS 应用", "desc": "Claude 移动端应用，支持远程控制与推送。"}, "Android": {"doc": "desktop", "title": "Android 应用", "desc": "Claude 移动端应用，支持远程控制与推送。"}, "网页": {"doc": "claude-code-on-the-web", "title": "Claude Code 网页版", "desc": "在浏览器中使用的 Claude Code，无需安装 CLI，登录即用。"}, "GitLab": {"doc": "gitlab-ci-cd", "title": "GitLab", "desc": "代码托管平台。可通过 GitLab CI/CD 集成 Claude Code 实现自动化。"}, "CI/CD": {"doc": "github-actions", "title": "CI/CD", "desc": "持续集成/持续交付，自动化完成构建、测试和部署的流水线。"}, "终端 CLI": {"doc": "cli-reference", "title": "终端 CLI", "desc": "命令行界面工具，在终端中直接运行 Claude Code 管理项目。"}, "终端指南": {"doc": "overview", "title": "终端指南", "desc": "终端基础使用入门，介绍如何用命令行操作 Claude Code。"}, "Claude Console": {"doc": "overview", "title": "Anthropic 控制台", "desc": "Anthropic 官方控制台，管理 API 密钥、查看用量和账单。"}, "Claude 订阅": {"doc": "overview", "title": "Claude 订阅", "desc": "Claude 付费套餐（Pro/Max/Team/Enterprise），解锁全部功能。"}, "支持的云提供商": {"doc": "third-party-integrations", "title": "支持的云提供商", "desc": "Amazon Bedrock、Google Cloud 等可托管并运行 Claude 模型的云平台。"}, "凭证管理": {"doc": "settings", "title": "凭证管理", "desc": "管理 API 密钥、登录凭证和身份验证的机制。"}, "Git for Windows": {"doc": "settings", "title": "Git for Windows", "desc": "Windows 版 Git，安装后 Claude Code 可使用 Bash 工具。"}, "Discord": {"doc": "channels", "title": "Discord", "desc": "社区平台。可通过 Channels 插件在 Discord 中使用 Claude Code。"}, "所有界面": {"doc": "overview", "title": "所有界面", "desc": "Claude Code 的多种使用方式：终端、IDE、桌面应用、网页等。"}, "Amazon Bedrock、Google Cloud 的 Agent Platform 或 Microsoft Foundry": {"doc": "third-party-integrations", "title": "三大云平台", "desc": "AWS、谷歌云、微软云三大平台，均可托管 Claude 模型接入 Claude Code。"}, "Claude Pro、Max、Team 或 Enterprise": {"doc": "overview", "title": "Claude 订阅套餐", "desc": "Claude 的付费订阅层级，提供不同额度的模型访问与功能。"}, "Troubleshoot installation": {"doc": "troubleshoot-install", "title": "安装故障排除", "desc": "安装 Claude Code 出错时的排查指南与替代安装方法。"}, "终端": {"doc": "cli-reference", "title": "终端", "desc": "命令行环境，Claude Code 的主要使用场景。"}, "GitHub Actions": {"doc": "github-actions", "title": "GitHub Actions", "desc": "GitHub 的 CI/CD 自动化平台，可集成 Claude Code 自动审查和修复。"}, "JetBrains IDE": {"doc": "jetbrains", "title": "JetBrains IDE", "desc": "JetBrains 系列 IDE（IDEA、PyCharm 等）的 Claude Code 插件。"}, "apt, dnf, or apk": {"doc": "setup", "title": "Linux 包管理器", "desc": "Linux 包管理器：apt 用于 Debian/Ubuntu，dnf 用于 Fedora。"}, "CLI 参考": {"doc": "cli-reference", "title": "CLI 参考", "desc": "Claude Code 命令行参考，列出全部命令、参数与用法。"}};
+let kwTimer = null;
+function showKw(kw) {
+  const d = KW_DATA[kw] || KW_EXTRA[kw];
+  if (!d) {
+    document.getElementById('kwpBadge').textContent = kw;
+    document.getElementById('kwpTitle').textContent = kw;
+    document.getElementById('kwpDesc').textContent = '暂无该词条详细解释，可前往官方文档查阅。';
+    document.getElementById('kwpLink').style.display = 'none';
+    const panel = document.getElementById('kwPanel');
+    panel.style.width = '320px';
+    panel.classList.add('open');
+    const bar = document.getElementById('kwBar');
+    bar.style.transition = 'none';
+    bar.style.width = '100%';
+    void bar.offsetWidth;
+    bar.style.transition = 'width 4s linear';
+    bar.style.width = '0%';
+    clearTimeout(kwTimer);
+    kwTimer = setTimeout(hideKw, 4000);
+    return;
+  }
+  document.getElementById('kwpBadge').textContent = kw;
+  document.getElementById('kwpTitle').textContent = d.title;
+  document.getElementById('kwpDesc').textContent = d.desc;
+  var _kwpPfx = location.pathname.indexOf('/doc/') !== -1 || location.pathname.endsWith('/doc/') ? '' : 'doc/';
+  document.getElementById('kwpLink').style.display = '';
+  document.getElementById('kwpLink').href = _kwpPfx + d.doc + '.html';
+  // 弹窗宽度随内容自适应（280-480px）
+  const panel = document.getElementById('kwPanel');
+  const estW = Math.min(480, Math.max(300, 280 + d.desc.length * 0.5));
+  panel.style.width = estW + 'px';
+  // 进度条时长按文本长度：每55字1秒，限4-14秒
+  const dur = Math.min(14, Math.max(4, Math.round(d.desc.length / 55)));
+  panel.classList.add('open');
+  // 重置进度条动画
+  const bar = document.getElementById('kwBar');
+  bar.style.transition = 'none';
+  bar.style.width = '100%';
+  void bar.offsetWidth;
+  bar.style.transition = 'width ' + dur + 's linear';
+  bar.style.width = '0%';
+  clearTimeout(kwTimer);
+  kwTimer = setTimeout(hideKw, dur * 1000);
+}
+function hideKw() {
+  document.getElementById('kwPanel').classList.remove('open');
+  clearTimeout(kwTimer);
+}
+
+// ===== 错误汇报 =====
+function openRpt() {
+  var page = location.pathname.split('/').pop() || 'index.html';
+  document.getElementById('rptPage').textContent = page;
+  document.getElementById('rptDesc').value = '';
+  document.getElementById('rptContact').value = '';
+  document.getElementById('rptForm').style.display = '';
+  document.getElementById('rptOk').style.display = 'none';
+  document.getElementById('rptOverlay').classList.add('show');
+}
+function closeRpt() {
+  document.getElementById('rptOverlay').classList.remove('show');
+}
+function submitRpt() {
+  var desc = document.getElementById('rptDesc').value.trim();
+  if (!desc) { document.getElementById('rptDesc').focus(); return; }
+  var btn = document.getElementById('rptBtn');
+  btn.disabled = true; btn.textContent = '提交中...';
+  var payload = {
+    page: document.getElementById('rptPage').textContent,
+    desc: desc,
+    contact: document.getElementById('rptContact').value.trim(),
+    time: new Date().toLocaleString('zh-CN', {hour12:false}),
+    user_agent: navigator.userAgent
+  };
+  fetch('/api/report', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  }).then(function(r){ return r.json(); }).then(function(d) {
+    btn.disabled = false; btn.textContent = '提交汇报';
+    document.getElementById('rptForm').style.display = 'none';
+    document.getElementById('rptOk').style.display = 'block';
+    setTimeout(closeRpt, 1800);
+  }).catch(function(e) {
+    btn.disabled = false; btn.textContent = '提交汇报';
+    alert('汇报失败，请重试：' + e);
+  });
+}
+</script>
+<!-- 错误汇报弹窗 -->
+<div class="rpt-overlay" id="rptOverlay" onclick="if(event.target===this)closeRpt()">
+  <div class="rpt-modal">
+    <div class="rpt-head">
+      <span class="rpt-title"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9 9v-1a3 3 0 0 1 6 0v1" /> <path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /> <path d="M3 13l4 0" /> <path d="M17 13l4 0" /> <path d="M12 20l0 -6" /> <path d="M4 19l3.35 -2" /> <path d="M20 19l-3.35 -2" /> <path d="M4 7l3.75 2.4" /> <path d="M20 7l-3.75 2.4" /> </svg></span> 文档有误？向服务器汇报！</span>
+      <button class="rpt-close" onclick="closeRpt()">×</button>
+    </div>
+    <div class="rpt-body" id="rptForm">
+      <div class="rpt-field">
+        <label>问题页面</label>
+        <div class="rpt-page" id="rptPage"></div>
+      </div>
+      <div class="rpt-field">
+        <label>问题描述</label>
+        <textarea id="rptDesc" placeholder="请描述你发现的问题：哪个词错了？哪里跳转不对？内容过时了？"></textarea>
+      </div>
+      <div class="rpt-field">
+        <label>联系方式（选填）</label>
+        <input id="rptContact" type="text" placeholder="QQ号 / 邮箱等，方便反馈处理结果">
+      </div>
+      <div class="rpt-tip">提交后内容会发送到服务器 reports/ 目录，管理员会尽快处理喵~</div>
+      <button class="rpt-submit" id="rptBtn" onclick="submitRpt()">提交汇报</button>
+    </div>
+    <div class="rpt-ok" id="rptOk" style="display:none;">
+      <div class="rpt-ok-icon"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span></div>
+      <div class="rpt-ok-title">汇报成功！</div>
+      <div class="rpt-ok-desc">感谢主人的反馈，问题已记录到服务器</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

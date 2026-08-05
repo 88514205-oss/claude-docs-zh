@@ -1,0 +1,50 @@
+# ===== 密钥与配置（绝不上传！） =====
+config.json
+.env
+*.key
+*.pem
+
+# ===== Python =====
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# ===== 运行数据 =====
+reports/
+server.log
+server_run.log
+download_log.txt
+
+# ===== 备份/临时 =====
+*.bak*
+*.backup*
+*.tmp
+_backup/
+temp/
+
+# ===== 系统 =====
+.DS_Store
+Thumbs.db
+
+# ===== 已归档大文件 =====
+*.zip
+home.html
+md_cli_test.md
+
+# ===== 调试截图（下划线开头） =====
+_*.png
+_*.jpg
+_*.jpeg
+
+# ===== 个人笔记（不上传） =====
+Claude_Code扩展体系入门笔记.md
+md_cli_test.md
+
+# ===== 原始爬取文件（已生成 doc/ md/） =====
+home.html
+llms.txt
+claude_code_docs_zh.zip
+download.sh
+dl_all.sh

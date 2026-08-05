@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f1117">
+<title>在 VS Code 中使用 Claude Code - Claude Code 知识库</title>
+<style>
+:root {
+  --bg: #0f1117; --bg2: #16181f; --card: #1b1e26; --card2: #20242e;
+  --border: #2a2e3a; --text: #e2e4ea; --text2: #9aa0ad; --muted: #6b7280;
+  --accent: #8b7cff; --accent2: #a99dff; --code-bg: #0c0e13;
+  --kw-bg: rgba(139,124,255,0.15); --kw-hover: rgba(139,124,255,0.28);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { scroll-behavior:smooth; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); }
+.icon { display:inline-flex; vertical-align:-0.2em; width:1.1em; height:1.1em; margin-right:6px; }
+.icon svg { width:100%; height:100%; }
+.progress-bar { position:fixed; top:0; left:0; height:3px; background:var(--accent); width:0%; z-index:300; transition:width 0.1s linear; }
+.topbar { position:fixed; top:0; left:0; right:0; z-index:200; background:rgba(22,24,31,0.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 12px; height:52px; }
+.topbar .tb-home { display:flex; align-items:center; color:var(--text2); text-decoration:none; font-size:14px; padding:6px 10px; border-radius:8px; }
+.topbar .tb-home:hover { color:var(--text); background:var(--card2); }
+.topbar .tb-title { flex:1; text-align:center; font-size:15px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 10px; }
+.topbar .tb-toc { background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:13px; display:flex; align-items:center; }
+.topbar .tb-toc:hover { color:var(--text); border-color:var(--accent); }
+.reader { display:flex; padding-top:52px; min-height:100vh; }
+.toc-side { width:240px; flex-shrink:0; position:sticky; top:52px; height:calc(100vh - 52px); overflow-y:auto; padding:20px 12px; border-right:1px solid var(--border); background:var(--bg); display:none; }
+.toc-side h3 { font-size:13px; color:var(--muted); margin-bottom:10px; padding-left:8px; letter-spacing:1px; }
+.toc-side a { display:block; color:var(--text2); text-decoration:none; padding:6px 8px; border-radius:6px; font-size:13px; line-height:1.5; border-left:2px solid transparent; }
+.toc-side a:hover { color:var(--text); background:var(--card2); border-left-color:var(--accent); }
+.toc-drawer { position:fixed; top:0; right:-300px; width:280px; max-width:85vw; height:100vh; background:var(--bg2); z-index:250; transition:right 0.25s ease; overflow-y:auto; padding:70px 16px 30px; border-left:1px solid var(--border); }
+.toc-drawer.open { right:0; }
+.toc-drawer h3 { font-size:14px; color:var(--muted); margin-bottom:12px; }
+.toc-drawer a { display:block; color:var(--text2); text-decoration:none; padding:8px 6px; border-radius:6px; font-size:14px; line-height:1.5; }
+.toc-drawer a:hover { color:var(--text); background:var(--card2); }
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:240; display:none; }
+.overlay.show { display:block; }
+.article { flex:1; max-width:760px; margin:0 auto; padding:40px 24px 80px; min-width:0; }
+.article h1 { font-size:26px; margin-bottom:6px; line-height:1.4; }
+.article .doc-meta { color:var(--muted); font-size:13px; margin-bottom:28px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+.article h2 { font-size:21px; margin:36px 0 14px; color:var(--text); line-height:1.4; }
+.article h3 { font-size:18px; margin:28px 0 12px; color:var(--text); }
+.article h4 { font-size:16px; margin:22px 0 10px; color:var(--accent2); }
+.article p { font-size:16.5px; line-height:1.95; margin:14px 0; color:var(--text); }
+.article li { margin-left:24px; line-height:1.9; font-size:16px; color:var(--text); }
+.article a { color:#a78bfa; text-decoration:underline; text-underline-offset:3px; transition:color 0.15s; }
+.article a:hover { color:#c4b5fd; }
+.article a:visited { color:#a78bfa; }
+.article a.kw { color:#c4b5fd; text-decoration:none; }
+.article blockquote { border-left:4px solid var(--accent); padding:10px 16px; background:rgba(139,124,255,0.08); margin:16px 0; color:var(--text2); font-size:15px; border-radius:0 8px 8px 0; }
+.article pre { background:var(--code-bg); color:#d5d8e0; padding:16px 18px; border-radius:10px; overflow-x:auto; -webkit-overflow-scrolling:touch; font-size:13.5px; line-height:1.7; margin:16px 0; white-space:pre; border:1px solid var(--border); }
+.article code { font-family:"JetBrains Mono",Consolas,monospace; }
+.article .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; margin:16px 0; border-radius:8px; border:1px solid var(--border); }
+.article table { width:100%; border-collapse:collapse; font-size:14px; min-width:420px; }
+.article th, .article td { border-bottom:1px solid var(--border); padding:9px 12px; text-align:left; color:var(--text); line-height:1.7; }
+.article th { background:var(--card2); color:var(--accent2); }
+.kw { color:#c4b5fd; background:var(--kw-bg); border-bottom:1px dashed var(--accent); padding:1px 4px; border-radius:4px; text-decoration:none; cursor:pointer; font-weight:500; transition:all 0.15s; }
+.kw:hover { background:var(--kw-hover); color:#fff; }
+.pager { max-width:760px; margin:0 auto; padding:0 24px 60px; display:flex; gap:12px; }
+.pager a { flex:1; display:block; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 18px; text-decoration:none; transition:0.2s; }
+.pager a:hover { border-color:var(--accent); transform:translateY(-2px); }
+.pager .dir { font-size:12px; color:var(--muted); display:block; margin-bottom:6px; }
+.pager .ptitle { font-size:15px; color:var(--text); font-weight:600; display:block; }
+.pager a.next { text-align:right; }
+.pager a:empty { display:none; }
+.scroll-top { position:fixed; right:16px; bottom:20px; width:44px; height:44px; border-radius:50%; background:var(--card2); color:var(--text); border:1px solid var(--border); box-shadow:0 3px 12px rgba(0,0,0,0.4); display:none; z-index:90; align-items:center; justify-content:center; cursor:pointer; }
+.scroll-top.show { display:flex; }
+.scroll-top .icon { margin:0; width:1.4em; height:1.4em; }
+
+.hamburger { background:none; border:none; color:var(--text); cursor:pointer; padding:8px; line-height:1; display:inline-flex; align-items:center; }
+.topbar .logo { display:flex; align-items:center; font-weight:700; font-size:15px; color:var(--text); flex-shrink:0; }
+.topbar .logo .icon { color:var(--accent); }
+.drawer { position:fixed; top:0; left:0; bottom:0; width:250px; background:var(--bg2); color:var(--text); z-index:250; transform:translateX(-100%); transition:transform 0.25s ease; overflow-y:auto; padding-top:60px; border-right:1px solid var(--border); }
+.drawer.open { transform:translateX(0); }
+.drawer nav a { display:flex; align-items:center; padding:12px 20px; color:var(--text2); text-decoration:none; font-size:15px; }
+.drawer nav a:hover, .drawer nav a:active { color:var(--text); background:var(--card2); }
+.drawer a { display:block; color:var(--text2); text-decoration:none; padding:7px 20px; font-size:13.5px; line-height:1.5; }
+.drawer a:hover { color:var(--text); background:var(--card2); }
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:240; display:none; }
+.overlay.show { display:block; }
+
+
+/* ===== MDX组件样式 ===== */
+.card-group { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin:16px 0; }
+.mg-card { display:flex; align-items:flex-start; gap:10px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; text-decoration:none; transition:0.2s; }
+.mg-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+.mg-icon { font-size:20px; flex-shrink:0; color:var(--accent); }
+.mg-card-title { font-size:14px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.mg-card-desc { font-size:12.5px; color:var(--text2); line-height:1.5; }
+.callout { border-left:4px solid var(--accent); padding:10px 16px; margin:14px 0; border-radius:0 8px 8px 0; font-size:14.5px; line-height:1.7; color:var(--text2); }
+.callout-tip { border-left-color:#4caf50; background:rgba(76,175,80,0.08); }
+.callout-note { border-left-color:#42a5f5; background:rgba(66,165,245,0.08); }
+.callout-warning { border-left-color:#ff9800; background:rgba(255,152,0,0.08); }
+.callout-info { border-left-color:#8b7cff; background:rgba(139,124,255,0.08); }
+.steps { list-style:none; counter-reset:step; margin:16px 0; padding:0; }
+.steps > li { position:relative; padding:0 0 16px 44px; margin:0; }
+.steps > li::before { counter-increment:step; content:counter(step); position:absolute; left:0; top:2px; width:28px; height:28px; border-radius:50%; background:var(--accent); color:#fff; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.step-title { font-weight:600; color:var(--text); margin-bottom:6px; font-size:15px; }
+.tabs { margin:16px 0; }
+.tab-item { background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:10px; overflow:hidden; }
+.tab-label { padding:9px 14px; font-size:13px; font-weight:600; color:var(--accent2); background:var(--card2); border-bottom:1px solid var(--border); }
+.tab-body { padding:12px 14px; }
+.acc-group { margin:16px 0; }
+.acc { background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; overflow:hidden; }
+.acc summary { padding:12px 16px; cursor:pointer; font-size:14px; font-weight:600; color:var(--text); }
+.acc summary:hover { background:var(--card2); }
+.acc[open] summary { border-bottom:1px solid var(--border); }
+.article kbd { background:var(--card2); border:1px solid var(--border); border-bottom-width:2px; border-radius:5px; padding:1px 7px; font-size:12px; font-family:inherit; color:var(--text); }
+
+
+.dot { display:inline-block; width:0.85em; height:0.85em; border-radius:50%; vertical-align:-0.1em; margin:0 2px; }
+.dot-red { background:#f03e3e; }
+.dot-yellow { background:#f59f00; }
+.dot-purple { background:#9c36b5; }
+
+@media (min-width: 1024px) { .toc-side { display:block; } .tb-toc { display:none; } }
+@media (max-width: 1023px) { .article { padding:32px 18px 60px; } .article p { font-size:16px; } }
+
+
+/* ===== 关键词弹窗 ===== */
+.kw-panel { position:fixed; left:0; top:50%; transform:translate(-110%,-50%); z-index:400; background:var(--card); border:1px solid var(--accent); border-left:none; border-radius:0 16px 16px 0; box-shadow:0 8px 40px rgba(0,0,0,0.6); transition:transform 0.35s cubic-bezier(0.22,1,0.36,1); max-height:70vh; display:flex; flex-direction:column; }
+.kw-panel.open { transform:translate(0,-50%); }
+.kw-panel .kwp-head { display:flex; align-items:center; gap:8px; padding:14px 18px 10px; border-bottom:1px solid var(--border); }
+.kw-panel .kwp-badge { background:var(--kw-bg); color:var(--accent2); font-size:12px; font-weight:700; padding:3px 10px; border-radius:10px; flex-shrink:0; }
+.kw-panel .kwp-title { font-size:15px; font-weight:600; color:var(--text); flex:1; line-height:1.4; }
+.kw-panel .kwp-close { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:0 4px; line-height:1; flex-shrink:0; }
+.kw-panel .kwp-close:hover { color:var(--text); }
+.kw-panel .kwp-body { padding:14px 18px; overflow-y:auto; flex:1; }
+.kw-panel .kwp-desc { font-size:14px; line-height:1.8; color:var(--text2); }
+.kw-panel .kwp-link { display:inline-flex; align-items:center; margin-top:12px; color:var(--accent2); text-decoration:none; font-size:13px; font-weight:600; }
+.kw-panel .kwp-link:hover { color:var(--accent); }
+.kw-panel .kwp-bar-wrap { height:4px; background:var(--card2); border-radius:0 0 16px 0; overflow:hidden; flex-shrink:0; }
+.kw-panel .kwp-bar { height:100%; width:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:0 0 16px 0; }
+/* ===== 错误汇报 ===== */
+.btn-report { display:inline-flex; align-items:center; gap:4px; background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12.5px; transition:0.15s; }
+.btn-report:hover { color:var(--text); border-color:var(--accent); background:var(--card2); }
+.rpt-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:500; display:none; align-items:center; justify-content:center; padding:20px; }
+.rpt-overlay.show { display:flex; }
+.rpt-modal { background:var(--card); border:1px solid var(--accent); border-radius:16px; width:100%; max-width:460px; box-shadow:0 20px 60px rgba(0,0,0,0.7); overflow:hidden; }
+.rpt-head { display:flex; align-items:center; gap:8px; padding:16px 20px; border-bottom:1px solid var(--border); }
+.rpt-head .rpt-title { font-size:16px; font-weight:700; color:var(--text); flex:1; }
+.rpt-close { background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1; }
+.rpt-close:hover { color:var(--text); }
+.rpt-body { padding:18px 20px; }
+.rpt-field { margin-bottom:14px; }
+.rpt-field label { display:block; font-size:13px; color:var(--text2); margin-bottom:6px; }
+.rpt-field .rpt-page { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:13px; color:var(--accent2); word-break:break-all; }
+.rpt-field input, .rpt-field textarea { width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:14px; color:var(--text); font-family:inherit; resize:vertical; }
+.rpt-field input:focus, .rpt-field textarea:focus { outline:none; border-color:var(--accent); }
+.rpt-field textarea { min-height:90px; }
+.rpt-tip { font-size:12px; color:var(--muted); margin-top:4px; }
+.rpt-submit { width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px; font-size:15px; font-weight:600; cursor:pointer; transition:0.15s; }
+.rpt-submit:hover { background:var(--accent2); }
+.rpt-submit:disabled { opacity:0.5; cursor:not-allowed; }
+.rpt-ok { text-align:center; padding:30px 20px; }
+.rpt-ok .rpt-ok-icon { font-size:42px; margin-bottom:12px; }
+.rpt-ok .rpt-ok-title { font-size:17px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.rpt-ok .rpt-ok-desc { font-size:13px; color:var(--text2); }
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar"></div>
+<header class="topbar">
+  <span class="logo"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6l0 13" /> <path d="M12 6l0 13" /> <path d="M21 6l0 13" /> </svg></span>Claude Code 知识库</span>
+  <div class="tb-title">在 VS Code 中使用 Claude Code</div>
+  <button class="hamburger" onclick="toggleDrawer()" aria-label="菜单"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M4 6l16 0" /> <path d="M4 12l16 0" /> <path d="M4 18l16 0" /> </svg></span></button>
+</header>
+<aside class="drawer" id="drawer">
+  <nav>
+    <a href="../index.html" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l-2 0l9 -9l9 9l-2 0" /> <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /> <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /> </svg></span>返回首页</a>
+    <a href="../index.html#index" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>文档索引</a>
+    <a href="../index.html#manual" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M19 4v16h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12" /> <path d="M19 16h-12a2 2 0 0 0 -2 2" /> <path d="M9 8h6" /> </svg></span>入门手册</a>
+    <a href="../index.html#docs" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>全部文档</a>
+    <a href="#" onclick="closeDrawer();openRpt()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9 9v-1a3 3 0 0 1 6 0v1" /> <path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /> <path d="M3 13l4 0" /> <path d="M17 13l4 0" /> <path d="M12 20l0 -6" /> <path d="M4 19l3.35 -2" /> <path d="M20 19l-3.35 -2" /> <path d="M4 7l3.75 2.4" /> <path d="M20 7l-3.75 2.4" /> </svg></span>文档有误？汇报</a>
+  </nav>
+  <div style="margin:14px 20px 6px;font-size:12px;color:var(--muted);letter-spacing:1px;">本文目录</div>
+  <a href="#sec-vs-code-1" style="padding-left:0px;font-size:13px;">在 VS Code 中使用 Claude Code</a>
+<a href="#sec-vs-code-2" style="padding-left:14px;font-size:13.5px;">前置条件</a>
+<a href="#sec-vs-code-3" style="padding-left:14px;font-size:13.5px;">安装扩展</a>
+<a href="#sec-vs-code-4" style="padding-left:14px;font-size:13.5px;">开始使用</a>
+<a href="#sec-vs-code-5" style="padding-left:14px;font-size:13.5px;">使用提示框</a>
+<a href="#sec-vs-code-6" style="padding-left:28px;font-size:13px;">引用文件和文件夹</a>
+<a href="#sec-vs-code-7" style="padding-left:28px;font-size:13px;">恢复过去的对话</a>
+<a href="#sec-vs-code-8" style="padding-left:28px;font-size:13px;">从 Claude.ai 恢复远程会话</a>
+<a href="#sec-vs-code-9" style="padding-left:28px;font-size:13px;">检查账户和使用情况</a>
+<a href="#sec-vs-code-10" style="padding-left:14px;font-size:13.5px;">自定义您的工作流</a>
+<a href="#sec-vs-code-11" style="padding-left:28px;font-size:13px;">选择 Claude 的位置</a>
+<a href="#sec-vs-code-12" style="padding-left:28px;font-size:13px;">运行多个对话</a>
+<a href="#sec-vs-code-13" style="padding-left:28px;font-size:13px;">切换到终端模式</a>
+<a href="#sec-vs-code-14" style="padding-left:14px;font-size:13.5px;">管理 plugins</a>
+<a href="#sec-vs-code-15" style="padding-left:28px;font-size:13px;">安装 plugins</a>
+<a href="#sec-vs-code-16" style="padding-left:28px;font-size:13px;">管理 marketplaces</a>
+<a href="#sec-vs-code-17" style="padding-left:14px;font-size:13.5px;">使用 Chrome 自动化浏览器任务</a>
+<a href="#sec-vs-code-18" style="padding-left:14px;font-size:13.5px;">VS Code 命令和快捷键</a>
+<a href="#sec-vs-code-19" style="padding-left:28px;font-size:13px;">从其他工具启动 VS Code 选项卡</a>
+<a href="#sec-vs-code-20" style="padding-left:14px;font-size:13.5px;">配置设置</a>
+<a href="#sec-vs-code-21" style="padding-left:28px;font-size:13px;">扩展设置</a>
+<a href="#sec-vs-code-22" style="padding-left:14px;font-size:13.5px;">VS Code 扩展与 Claude Code CLI</a>
+<a href="#sec-vs-code-23" style="padding-left:28px;font-size:13px;">使用 checkpoints 进行倒带</a>
+<a href="#sec-vs-code-24" style="padding-left:28px;font-size:13px;">在 VS Code 中运行 CLI</a>
+<a href="#sec-vs-code-25" style="padding-left:28px;font-size:13px;">在扩展和 CLI 之间切换</a>
+<a href="#sec-vs-code-26" style="padding-left:28px;font-size:13px;">在提示中包含终端输出</a>
+<a href="#sec-vs-code-27" style="padding-left:28px;font-size:13px;">监控后台进程</a>
+<a href="#sec-vs-code-28" style="padding-left:28px;font-size:13px;">使用 MCP 连接到外部工具</a>
+<a href="#sec-vs-code-29" style="padding-left:14px;font-size:13.5px;">使用 git</a>
+<a href="#sec-vs-code-30" style="padding-left:28px;font-size:13px;">创建提交和拉取请求</a>
+<a href="#sec-vs-code-31" style="padding-left:28px;font-size:13px;">使用 git worktrees 进行并行任务</a>
+<a href="#sec-vs-code-32" style="padding-left:14px;font-size:13.5px;">使用第三方提供商</a>
+<a href="#sec-vs-code-33" style="padding-left:14px;font-size:13.5px;">安全和隐私</a>
+<a href="#sec-vs-code-34" style="padding-left:28px;font-size:13px;">内置 IDE MCP server</a>
+<a href="#sec-vs-code-35" style="padding-left:14px;font-size:13.5px;">修复常见问题</a>
+<a href="#sec-vs-code-36" style="padding-left:28px;font-size:13px;">扩展无法安装</a>
+<a href="#sec-vs-code-37" style="padding-left:28px;font-size:13px;">Spark 图标不可见</a>
+<a href="#sec-vs-code-38" style="padding-left:28px;font-size:13px;">macOS 上 Cmd+Esc 无效</a>
+<a href="#sec-vs-code-39" style="padding-left:28px;font-size:13px;">Claude Code 从不响应</a>
+<a href="#sec-vs-code-40" style="padding-left:14px;font-size:13.5px;">卸载扩展</a>
+<a href="#sec-vs-code-41" style="padding-left:14px;font-size:13.5px;">后续步骤</a>
+</aside>
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+
+<div class="reader">
+  <aside class="toc-side">
+    <h3>本文目录</h3>
+    <a href="#sec-vs-code-1" style="padding-left:0px;font-size:13px;">在 VS Code 中使用 Claude Code</a>
+<a href="#sec-vs-code-2" style="padding-left:14px;font-size:13.5px;">前置条件</a>
+<a href="#sec-vs-code-3" style="padding-left:14px;font-size:13.5px;">安装扩展</a>
+<a href="#sec-vs-code-4" style="padding-left:14px;font-size:13.5px;">开始使用</a>
+<a href="#sec-vs-code-5" style="padding-left:14px;font-size:13.5px;">使用提示框</a>
+<a href="#sec-vs-code-6" style="padding-left:28px;font-size:13px;">引用文件和文件夹</a>
+<a href="#sec-vs-code-7" style="padding-left:28px;font-size:13px;">恢复过去的对话</a>
+<a href="#sec-vs-code-8" style="padding-left:28px;font-size:13px;">从 Claude.ai 恢复远程会话</a>
+<a href="#sec-vs-code-9" style="padding-left:28px;font-size:13px;">检查账户和使用情况</a>
+<a href="#sec-vs-code-10" style="padding-left:14px;font-size:13.5px;">自定义您的工作流</a>
+<a href="#sec-vs-code-11" style="padding-left:28px;font-size:13px;">选择 Claude 的位置</a>
+<a href="#sec-vs-code-12" style="padding-left:28px;font-size:13px;">运行多个对话</a>
+<a href="#sec-vs-code-13" style="padding-left:28px;font-size:13px;">切换到终端模式</a>
+<a href="#sec-vs-code-14" style="padding-left:14px;font-size:13.5px;">管理 plugins</a>
+<a href="#sec-vs-code-15" style="padding-left:28px;font-size:13px;">安装 plugins</a>
+<a href="#sec-vs-code-16" style="padding-left:28px;font-size:13px;">管理 marketplaces</a>
+<a href="#sec-vs-code-17" style="padding-left:14px;font-size:13.5px;">使用 Chrome 自动化浏览器任务</a>
+<a href="#sec-vs-code-18" style="padding-left:14px;font-size:13.5px;">VS Code 命令和快捷键</a>
+<a href="#sec-vs-code-19" style="padding-left:28px;font-size:13px;">从其他工具启动 VS Code 选项卡</a>
+<a href="#sec-vs-code-20" style="padding-left:14px;font-size:13.5px;">配置设置</a>
+<a href="#sec-vs-code-21" style="padding-left:28px;font-size:13px;">扩展设置</a>
+<a href="#sec-vs-code-22" style="padding-left:14px;font-size:13.5px;">VS Code 扩展与 Claude Code CLI</a>
+<a href="#sec-vs-code-23" style="padding-left:28px;font-size:13px;">使用 checkpoints 进行倒带</a>
+<a href="#sec-vs-code-24" style="padding-left:28px;font-size:13px;">在 VS Code 中运行 CLI</a>
+<a href="#sec-vs-code-25" style="padding-left:28px;font-size:13px;">在扩展和 CLI 之间切换</a>
+<a href="#sec-vs-code-26" style="padding-left:28px;font-size:13px;">在提示中包含终端输出</a>
+<a href="#sec-vs-code-27" style="padding-left:28px;font-size:13px;">监控后台进程</a>
+<a href="#sec-vs-code-28" style="padding-left:28px;font-size:13px;">使用 MCP 连接到外部工具</a>
+<a href="#sec-vs-code-29" style="padding-left:14px;font-size:13.5px;">使用 git</a>
+<a href="#sec-vs-code-30" style="padding-left:28px;font-size:13px;">创建提交和拉取请求</a>
+<a href="#sec-vs-code-31" style="padding-left:28px;font-size:13px;">使用 git worktrees 进行并行任务</a>
+<a href="#sec-vs-code-32" style="padding-left:14px;font-size:13.5px;">使用第三方提供商</a>
+<a href="#sec-vs-code-33" style="padding-left:14px;font-size:13.5px;">安全和隐私</a>
+<a href="#sec-vs-code-34" style="padding-left:28px;font-size:13px;">内置 IDE MCP server</a>
+<a href="#sec-vs-code-35" style="padding-left:14px;font-size:13.5px;">修复常见问题</a>
+<a href="#sec-vs-code-36" style="padding-left:28px;font-size:13px;">扩展无法安装</a>
+<a href="#sec-vs-code-37" style="padding-left:28px;font-size:13px;">Spark 图标不可见</a>
+<a href="#sec-vs-code-38" style="padding-left:28px;font-size:13px;">macOS 上 Cmd+Esc 无效</a>
+<a href="#sec-vs-code-39" style="padding-left:28px;font-size:13px;">Claude Code 从不响应</a>
+<a href="#sec-vs-code-40" style="padding-left:14px;font-size:13.5px;">卸载扩展</a>
+<a href="#sec-vs-code-41" style="padding-left:14px;font-size:13.5px;">后续步骤</a>
+  </aside>
+
+  <main class="article">
+    <blockquote>## Documentation Index</blockquote>
+<blockquote>Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt</blockquote>
+<blockquote>Use this file to discover all available pages before exploring further.</blockquote>
+
+<h2 id="sec-vs-code-1">在 VS Code 中使用 Claude Code</h2>
+
+<blockquote>安装和配置 VS Code 的 Claude Code 扩展。获得 AI 编码协助，包括内联差异、@-提及、计划审查和快捷键。</blockquote>
+
+<p>&lt;img src=&quot;https://mintcdn.com/claude-code/-YhHHmtSxwr7W8gy/images/vs-code-extension-interface.jpg?fit=max&amp;auto=format&amp;n=-YhHHmtSxwr7W8gy&amp;q=85&amp;s=300652d5678c63905e6b0ea9e50835f8&quot; alt=&quot;<a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 编辑器，右侧打开 Claude Code 扩展面板，显示与 Claude 的对话&quot; width=&quot;2500&quot; height=&quot;1155&quot; data-path=&quot;images/vs-code-extension-interface.jpg&quot; /&gt;</p>
+
+<p><a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 扩展为 Claude Code 提供了原生图形界面，直接集成到您的 IDE 中。这是在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 中使用 Claude Code 的推荐方式。</p>
+
+<p>使用该扩展，您可以在接受 Claude 的计划之前审查和编辑它们、在进行编辑时自动接受、@-提及具有特定行范围的文件、访问对话历史记录，以及在单独的选项卡或窗口中打开多个对话。</p>
+
+<h3 id="sec-vs-code-2">前置条件</h3>
+
+<p>安装前，请确保您拥有：</p>
+
+<p>* <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 1.98.0 或更高版本</p>
+<p>* Anthropic 账户：任何付费 Claude 订阅（Pro、Max、Team 或 Enterprise）或 Claude Console 账户都可以使用，无需 API 密钥。首次打开扩展时，您将<a class="kw" onclick="showKw('使用此账户登录')" title="点击查看解释">使用此账户登录</a>。如果您通过第三方提供商（如 Amazon Bedrock 或 Google Cloud 的 <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> Platform）访问 Claude，请参阅<a class="kw" onclick="showKw('使用第三方提供商')" title="点击查看解释">使用第三方提供商</a>了解<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>说明。</p>
+
+<div class="callout callout-tip">
+<p>  该扩展包含其自己的 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a>（命令行界面）副本用于聊天面板。要在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 的集成终端中运行 `claude`，您还需要<a class="kw" onclick="showKw('独立 CLI 安装')" title="点击查看解释">独立 CLI 安装</a>。有关详细信息，请参阅 <a class="kw" onclick="showKw('VS Code 扩展与 Claude Code CLI')" title="点击查看解释">VS Code 扩展与 Claude Code CLI</a>。</p>
+</div>
+
+<h3 id="sec-vs-code-3">安装扩展</h3>
+
+<p>点击您的 IDE 的链接以直接安装：</p>
+
+<p>* <a class="kw" onclick="showKw('为 VS Code 安装')" title="点击查看解释">为 VS Code 安装</a></p>
+<p>* <a class="kw" onclick="showKw('为 Cursor 安装')" title="点击查看解释">为 Cursor 安装</a></p>
+
+<p>或在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 中，按 `Cmd+Shift+X`（Mac）或 `Ctrl+Shift+X`（Windows/Linux）打开扩展视图，搜索&quot;Claude Code&quot;，然后点击**安装**。</p>
+
+<p>该扩展也可以安装在其他 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 分支中，如 Devin Desktop 或 Kiro。在编辑器的扩展视图中搜索&quot;Claude Code&quot;，或从 <a class="kw" onclick="showKw('Open VSX 注册表')" title="点击查看解释">Open VSX 注册表</a> 安装。如果您的编辑器无法安装该扩展，请<a class="kw" onclick="showKw('安装 CLI')" title="点击查看解释">安装 CLI</a> 并在其集成终端中运行 `claude`。<a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 可在任何终端中使用。</p>
+
+<div class="callout callout-note">如果安装后扩展没有出现，请重启 VS Code 或从命令面板运行"Developer: Reload Window"。</div>
+
+<h3 id="sec-vs-code-4">开始使用</h3>
+
+<p>安装后，您可以通过 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 界面开始使用 Claude Code：</p>
+
+<ol class="steps">
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;打开 Claude Code 面板&lt;/div&gt;</p>
+<p>    在整个 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 中，Spark 图标表示 Claude Code：&lt;img src=&quot;https://mintcdn.com/claude-code/c5r9_6tjPMzFdDDT/images/vs-code-spark-icon.svg?fit=max&amp;auto=format&amp;n=c5r9_6tjPMzFdDDT&amp;q=85&amp;s=3ca45e00deadec8c8f4b4f807da94505&quot; alt=&quot;Spark icon&quot; style={{display: &quot;inline&quot;, height: &quot;0.85em&quot;, verticalAlign: &quot;middle&quot;}} width=&quot;16&quot; height=&quot;16&quot; data-path=&quot;images/vs-code-spark-icon.svg&quot; /&gt;</p>
+
+<p>    打开 Claude 的最快方式是点击**编辑器工具栏**（编辑器右上角）中的 Spark 图标。该图标仅在您打开文件时出现。</p>
+
+<p>    &lt;img src=&quot;https://mintcdn.com/claude-code/mfM-EyoZGnQv8JTc/images/vs-code-editor-icon.png?fit=max&amp;auto=format&amp;n=mfM-EyoZGnQv8JTc&amp;q=85&amp;s=eb4540325d94664c51776dbbfec4cf02&quot; alt=&quot;<a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 编辑器显示编辑器工具栏中的 Spark 图标&quot; width=&quot;2796&quot; height=&quot;734&quot; data-path=&quot;images/vs-code-editor-icon.png&quot; /&gt;</p>
+
+<p>    打开 Claude Code 的其他方式：</p>
+
+<p>    * **活动栏**：点击左侧边栏中的 Spark 图标打开<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>列表。点击任何<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>以将其作为完整编辑器选项卡打开，或开始新的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。此图标在活动栏中始终可见。</p>
+<p>    * **命令面板**：`Cmd+Shift+P`（Mac）或 `Ctrl+Shift+P`（Windows/Linux），输入&quot;Claude Code&quot;，然后选择一个选项，如&quot;在新选项卡中打开&quot;</p>
+<p>    * **<a class="kw" onclick="showKw('状态栏')" title="点击查看解释">状态栏</a>**：点击窗口右下角的\*\*<span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873l-6.158 -3.245" /> </svg></span> Claude Code\*\*。即使没有打开文件也可以使用。</p>
+
+<p>    您可以拖动 Claude 面板在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 中重新定位它。有关详细信息，请参阅<a class="kw" onclick="showKw('自定义您的工作流')" title="点击查看解释">自定义您的工作流</a>。</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;登录&lt;/div&gt;</p>
+<p>    首次打开面板时，会出现登录屏幕。点击**登录**并在浏览器中完成授权。</p>
+
+<p>    如果您稍后看到**未登录 · 请运行 /login**，扩展会自动重新打开登录屏幕。如果它没有出现，请从命令面板使用**Developer: Reload Window**重新加载窗口。</p>
+
+<p>    如果您在 shell 中<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>了 `ANTHROPIC_API_KEY` 但仍然看到登录提示，<a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 可能没有继承您的 shell 环境。使用 `code .` 从终端启动 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a>，以便它继承您的<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>，或改用您的 Claude 账户登录。</p>
+
+<p>    登录后，会出现**学习 Claude Code** 检查清单。通过点击**显示给我**来完成每一项，或用 X 关闭它。要稍后重新打开它，请在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>中的扩展 → Claude Code 下取消选中**隐藏入门**。</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;发送提示&lt;/div&gt;</p>
+<p>    要求 Claude 帮助您处理代码或文件，无论是解释某些内容的工作原理、调试问题还是进行更改。</p>
+
+    <div class="callout callout-tip">Claude 会自动看到您选择的文本。按 `Option+K`（Mac）/ `Alt+K`（Windows/Linux）也可以在您的提示中插入 @-提及引用（如 `@file.ts#5-10`）。</div>
+
+<p>    以下是询问文件中特定行的示例：</p>
+
+<p>    &lt;img src=&quot;https://mintcdn.com/claude-code/FVYz38sRY-VuoGHA/images/vs-code-send-prompt.png?fit=max&amp;auto=format&amp;n=FVYz38sRY-VuoGHA&amp;q=85&amp;s=ede3ed8d8d5f940e01c5de636d009cfd&quot; alt=&quot;<a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 编辑器，Python 文件中的第 2-3 行被选中，Claude Code 面板显示关于这些行的问题，带有 @-提及引用&quot; width=&quot;3288&quot; height=&quot;1876&quot; data-path=&quot;images/vs-code-send-prompt.png&quot; /&gt;</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;审查更改&lt;/div&gt;</p>
+<p>    当 Claude 想要编辑文件时，它会显示原始内容和建议更改的并排比较，然后请求许可。您可以接受、拒绝或告诉 Claude 改为做什么。如果您在接受前直接在差异视图中编辑建议的内容，Claude 会被告知您修改了它，因此它不会假设文件与其原始提案相匹配。</p>
+
+<p>    &lt;img src=&quot;https://mintcdn.com/claude-code/FVYz38sRY-VuoGHA/images/vs-code-edits.png?fit=max&amp;auto=format&amp;n=FVYz38sRY-VuoGHA&amp;q=85&amp;s=e005f9b41c541c5c7c59c082f7c4841c&quot; alt=&quot;<a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 显示 Claude 建议更改的差异，带有<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>提示，询问是否进行编辑&quot; width=&quot;3292&quot; height=&quot;1876&quot; data-path=&quot;images/vs-code-edits.png&quot; /&gt;</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;/ol&gt;</p>
+
+<p>有关您可以使用 Claude Code 做什么的更多想法，请参阅<a class="kw" onclick="showKw('常见工作流')" title="点击查看解释">常见工作流</a>。</p>
+
+<div class="callout callout-tip">
+<p>  从命令面板运行&quot;Claude Code: Open Walkthrough&quot;以获得基础知识的引导式教程。</p>
+</div>
+
+<h3 id="sec-vs-code-5">使用提示框</h3>
+
+<p>提示框支持多个功能：</p>
+
+<p>* **<a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a>**：点击提示框底部的模式指示器以切换模式，或在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>中的 `claudeCode.initialPermissionMode` 下<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>默认值。请参阅<a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a>了解指示器提供的每种模式。</p>
+<p>  * **Manual**：Claude 在文件编辑和大多数 shell 命令前请求许可。</p>
+<p>  * **Plan**：Claude 描述它将做什么，并在进行更改前等待批准。<a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 会自动将计划作为完整的 Markdown 文档打开，您可以添加内联注释以在 Claude 开始前提供反馈。</p>
+<p>  * **Edit automatically**：Claude 进行编辑而不询问。</p>
+<p>* **命令菜单**：点击 `/` 或输入 `/` 以打开命令菜单。选项包括附加文件、切换模型、切换扩展思考、查看计划使用情况（`/usage`）以及启动 <a class="kw" onclick="showKw('Remote Control')" title="点击查看解释">Remote Control</a> <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>（`/remote-control`）。自定义部分提供对 <a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a>s、hooks、memory、permissions 和 plugins 的访问。带有终端图标的项目在集成终端中打开。</p>
+<p>  * <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>部分包括**为所有<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>启用 <a class="kw" onclick="showKw('Remote Control')" title="点击查看解释">Remote Control</a>**，它<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> <a class="kw" onclick="showKw('remoteControlAtStartup')" title="点击查看解释">remoteControlAtStartup</a> 以便<a class="kw" onclick="showKw('每个新的交互式会话都自动连接到 Remote Control')" title="点击查看解释">每个新的交互式会话都自动连接到 Remote Control</a>。需要 Claude Code v2.1.203 或更高版本。</p>
+<p>* **上下文指示器**：提示框显示您使用了多少 Claude 的 context window。Claude 在需要时自动压缩，或者您可以手动运行 `<a class="kw" onclick="showKw('/compact')" title="点击查看解释">/compact</a>`。</p>
+<p>* **扩展思考**：让 Claude 花更多时间推理复杂问题。通过命令菜单（`/`）切换它。Claude 的推理在对话中显示为折叠块：点击一个块来阅读它，或按 `Ctrl+O` 以展开或折叠<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中的每个思考块。有关详细信息，请参阅<a class="kw" onclick="showKw('扩展思考')" title="点击查看解释">扩展思考</a>。</p>
+<p>* **多行输入**：按 `Shift+Enter` 添加新行而不发送。这也适用于问题对话框的&quot;其他&quot;自由文本输入。</p>
+
+<h4 id="sec-vs-code-6">引用文件和文件夹</h4>
+
+<p>使用 @-提及为 Claude 提供有关特定文件或文件夹的上下文。当您输入 `@` 后跟文件或文件夹名称时，Claude 会读取该内容，可以回答有关它的问题或对其进行更改。Claude Code 支持模糊匹配，因此您可以输入部分名称来找到您需要的内容：</p>
+
+<pre><code>
+&gt; Explain the logic in @auth (fuzzy matches auth.js, AuthService.ts, etc.)
+&gt; What&#x27;s in @src/components/ (include a trailing slash for folders)
+</code></pre>
+
+<p>对于大型 PDF，您可以要求 Claude 读取特定页面而不是整个文件：单个页面、范围（如第 1-10 页）或开放式范围（如第 3 页及以后）。</p>
+
+<p>当您在编辑器中选择文本时，Claude 可以自动看到您突出显示的代码。提示框页脚显示选择了多少行。按 `Option+K`（Mac）/ `Alt+K`（Windows/Linux）插入带有文件路径和行号的 @-提及（例如 `@app.ts#5-10`）。点击选择指示器以切换 Claude 是否可以看到您突出显示的文本 - 眼睛斜线图标表示选择对 Claude 隐藏。</p>
+
+<p>您也可以在将文件拖到提示框时按住 `Shift` 以将它们添加为附件。点击任何附件上的 X 以将其从上下文中删除。</p>
+
+<h4 id="sec-vs-code-7">恢复过去的对话</h4>
+
+<p>点击 Claude Code 面板顶部的**<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>历史**按钮以访问您的对话历史记录。您可以按关键字搜索或按时间浏览（今天、昨天、过去 7 天等）。点击任何对话以使用完整的消息历史记录恢复它。新<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>根据您的第一条消息接收 AI 生成的标题。将鼠标悬停在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>上以显示重命名和删除操作：重命名以给它一个描述性标题，或删除以将其从列表中删除。有关恢复<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的更多信息，请参阅<a class="kw" onclick="showKw('管理会话')" title="点击查看解释">管理会话</a>。</p>
+
+<h4 id="sec-vs-code-8">从 Claude.ai 恢复远程会话</h4>
+
+<p>如果您使用<a class="kw" onclick="showKw('网络上的 Claude Code')" title="点击查看解释">网络上的 Claude Code</a>，您可以直接在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 中恢复这些远程<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。这需要使用 **Claude.ai Subscription** 登录，而不是 Anthropic Console。</p>
+
+<ol class="steps">
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;打开<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>历史&lt;/div&gt;</p>
+<p>    点击 Claude Code 面板顶部的**<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>历史**按钮。</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;选择远程选项卡&lt;/div&gt;</p>
+<p>    对话框显示两个选项卡：本地和远程。点击**远程**以查看来自 claude.ai 的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;选择要恢复的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>&lt;/div&gt;</p>
+<p>    浏览或搜索您的远程<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。点击任何<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>以下载它并在本地继续对话。</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;/ol&gt;</p>
+
+<div class="callout callout-note">
+<p>  只有使用 GitHub 存储库启动的网络<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>才会出现在远程选项卡中。恢复会在本地加载对话历史记录；更改不会同步回 claude.ai。</p>
+</div>
+
+<h4 id="sec-vs-code-9">检查账户和使用情况</h4>
+
+<p>从命令菜单运行 `/usage` 以打开账户和使用情况对话框。它显示您登录的账户、计划以及当前<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>和周的使用情况条形图，以及每个限制重置的时间。</p>
+
+<p>该对话框还分解了对您的计划限制有贡献的内容。它标记了占最近使用情况 10% 或更多的行为，例如缓存未命中、长上下文和<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>密集或高度并行的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，每个都有减少它的提示。属性表显示了每个 skill、subagent、plugin 和 <a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a> 贡献了多少使用情况。需要 Claude Code v2.1.174 或更高版本。</p>
+
+<p>使用日期和周切换以在过去 24 小时和过去 7 天之间切换。这些数字是近似的，从这台机器上的本地<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>计算，因此不包括来自其他设备或 claude.ai 的使用情况。有关跟踪和减少使用情况的更多信息，请参阅<a class="kw" onclick="showKw('跟踪您的成本')" title="点击查看解释">跟踪您的成本</a>。</p>
+
+<h3 id="sec-vs-code-10">自定义您的工作流</h3>
+
+<p>一旦您启动并运行，您可以重新定位 Claude 面板、运行多个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>或切换到终端模式。</p>
+
+<h4 id="sec-vs-code-11">选择 Claude 的位置</h4>
+
+<p>您可以拖动 Claude 面板在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 中重新定位它。抓住面板的选项卡或标题栏并将其拖到：</p>
+
+<p>* **次级边栏**：窗口的右侧。在您编码时保持 Claude 可见。</p>
+<p>* **主边栏**：左侧边栏，带有资源管理器、搜索等图标。</p>
+<p>* **编辑器区域**：将 Claude 作为选项卡打开，与您的文件并排。适用于辅助任务。</p>
+
+<div class="callout callout-tip">
+<p>  为您的主 Claude <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>使用边栏，并为辅助任务打开其他选项卡。Claude 会记住您首选的位置。活动栏<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>列表图标与 Claude 面板分开：<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>列表在活动栏中始终可见，而 Claude 面板图标仅在面板停靠到左侧边栏时出现在那里。</p>
+</div>
+
+<h4 id="sec-vs-code-12">运行多个对话</h4>
+
+<p>从命令面板使用**在新选项卡中打开**或**在新窗口中打开**来启动其他对话。每个对话维护自己的历史记录和上下文，允许您并行处理不同的任务。</p>
+
+<p>使用选项卡时，spark 图标上的小彩色点表示状态：蓝色表示<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>请求待处理，橙色表示 Claude 在选项卡隐藏时完成。</p>
+
+<h4 id="sec-vs-code-13">切换到终端模式</h4>
+
+<p>默认情况下，扩展打开图形聊天面板。如果您更喜欢 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 风格的界面，打开<a class="kw" onclick="showKw('使用终端设置')" title="点击查看解释">使用终端设置</a>并勾选该框。</p>
+
+<p>您也可以打开 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>（Mac 上为 `Cmd+,` 或 Windows/Linux 上为 `Ctrl+,`），转到扩展 → Claude Code，然后勾选**使用终端**。</p>
+
+<h3 id="sec-vs-code-14">管理 plugins</h3>
+
+<p><a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 扩展包括用于安装和管理 <a class="kw" onclick="showKw('plugins')" title="点击查看解释">plugins</a> 的图形界面。在提示框中输入 `<a class="kw" onclick="showKw('/plugin')" title="点击查看解释">/plugin</a>s` 以打开**管理 plugins** 界面。</p>
+
+<h4 id="sec-vs-code-15">安装 plugins</h4>
+
+<p>plugin 对话框显示两个选项卡：**<a class="kw" onclick="showKw('Plugin')" title="点击查看解释">Plugin</a>s** 和 **<a class="kw" onclick="showKw('Marketplace')" title="点击查看解释">Marketplace</a>s**。</p>
+
+<p>在 <a class="kw" onclick="showKw('Plugin')" title="点击查看解释">Plugin</a>s 选项卡中：</p>
+
+<p>* **已安装的 plugins** 显示在顶部，带有切换开关以启用或禁用它们</p>
+<p>* **可用的 plugins** 来自您配置的 marketplaces，显示在下方</p>
+<p>* 搜索以按名称或描述过滤 plugins</p>
+<p>* 点击任何可用 plugin 上的**安装**</p>
+
+<p>当您安装 plugin 时，选择安装范围：</p>
+
+<p>* **为您安装**：在您的所有项目中可用（用户范围）</p>
+<p>* **为此项目安装**：与项目协作者共享（项目范围）</p>
+<p>* **本地安装**：仅适用于您，仅在此存储库中（本地范围）</p>
+
+<h4 id="sec-vs-code-16">管理 marketplaces</h4>
+
+<p>切换到 **<a class="kw" onclick="showKw('Marketplace')" title="点击查看解释">Marketplace</a>s** 选项卡以添加或删除 plugin 源：</p>
+
+<p>* 输入 GitHub 存储库、URL 或本地路径以添加新的 marketplace</p>
+<p>* 点击刷新图标以更新 marketplace 的 plugin 列表</p>
+<p>* 点击垃圾桶图标以删除 marketplace</p>
+
+<p>进行更改后，横幅会提示您重启 Claude Code 以应用更新。</p>
+
+<div class="callout callout-note">
+<p>  <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 中的 plugin 管理在幕后使用相同的 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 命令。您在扩展中配置的 plugins 和 marketplaces 也可在 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 中使用，反之亦然。</p>
+</div>
+
+<p>有关 plugin 系统的更多信息，请参阅 <a class="kw" onclick="showKw('Plugins')" title="点击查看解释">Plugins</a> 和 <a class="kw" onclick="showKw('Plugin marketplaces')" title="点击查看解释">Plugin marketplaces</a>。</p>
+
+<h3 id="sec-vs-code-17">使用 Chrome 自动化浏览器任务</h3>
+
+<p>将 Claude 连接到您的 Chrome 浏览器以测试网络应用、使用控制台日志进行调试，以及在不离开 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 的情况下自动化浏览器<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>。这需要 <a class="kw" onclick="showKw('Claude in Chrome extension')" title="点击查看解释">Claude in Chrome extension</a> 版本 1.0.36 或更高版本。</p>
+
+<p>在提示框中输入 `@browser` 后跟您想要 Claude 做的事情：</p>
+
+<pre><code>
+@browser go to localhost:3000 and check the console for errors
+</code></pre>
+
+<p>您也可以打开附件菜单以选择特定的浏览器工具，如打开新选项卡或读取页面内容。</p>
+
+<p>Claude 为浏览器任务打开新选项卡并共享您的浏览器登录状态，因此它可以访问您已登录的任何网站。</p>
+
+<p>有关<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>说明、完整的功能列表和<a class="kw" onclick="showKw('故障排除')" title="点击查看解释">故障排除</a>，请参阅<a class="kw" onclick="showKw('使用 Claude Code 与 Chrome')" title="点击查看解释">使用 Claude Code 与 Chrome</a>。</p>
+
+<h3 id="sec-vs-code-18">VS Code 命令和快捷键</h3>
+
+<p>打开命令面板（Mac 上为 `Cmd+Shift+P` 或 Windows/Linux 上为 `Ctrl+Shift+P`）并输入&quot;Claude Code&quot;以查看 Claude Code 扩展的所有可用 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 命令。</p>
+
+<p>某些<a class="kw" onclick="showKw('快捷键')" title="点击查看解释">快捷键</a>取决于哪个面板&quot;获得焦点&quot;（接收键盘输入）。当您的光标在代码文件中时，编辑器获得焦点。当您的光标在 Claude 的提示框中时，Claude 获得焦点。使用 `Cmd+Esc` / `Ctrl+Esc` 在它们之间切换。</p>
+
+<div class="callout callout-note">
+<p>  这些是用于控制扩展的 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 命令。并非所有内置 Claude Code 命令都在扩展中可用。有关详细信息，请参阅 <a class="kw" onclick="showKw('VS Code 扩展与 Claude Code CLI')" title="点击查看解释">VS Code 扩展与 Claude Code CLI</a>。</p>
+</div>
+
+<div class='table-wrap'><table>
+<tr><th>命令</th><th><a class="kw" onclick="showKw('快捷键')" title="点击查看解释">快捷键</a></th><th>描述</th></tr>
+<tr><td>焦点输入</td><td>`Cmd+Esc`（Mac）/ `Ctrl+Esc`（Windows/Linux）</td><td>在编辑器和 Claude 之间切换焦点</td></tr>
+<tr><td>在边栏中打开</td><td>-</td><td>在左侧边栏中打开 Claude</td></tr>
+<tr><td>在终端中打开</td><td>-</td><td>在终端模式下打开 Claude</td></tr>
+<tr><td>在新选项卡中打开</td><td>`Cmd+Shift+Esc`（Mac）/ `Ctrl+Shift+Esc`（Windows/Linux）</td><td>将新对话作为编辑器选项卡打开</td></tr>
+<tr><td>在新窗口中打开</td><td>-</td><td>在单独的窗口中打开新对话</td></tr>
+<tr><td>新对话</td><td>`Cmd+N`（Mac）/ `Ctrl+N`（Windows/Linux）</td><td>开始新对话。需要 Claude 获得焦点且 `enableNewConversationShortcut` <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>为 `true`</td></tr>
+<tr><td>重新打开已关闭的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a></td><td>`Cmd+Shift+T`（Mac）/ `Ctrl+Shift+T`（Windows/Linux）</td><td>重新打开最近关闭的 Claude <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>选项卡。当最后关闭的选项卡不是 Claude <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>时，回退到 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 的正常重新打开已关闭编辑器。使用 `enableReopenClosed<a class="kw" onclick="showKw('Session')" title="点击查看解释">Session</a>Shortcut` 禁用</td></tr>
+<tr><td>插入 @-提及引用</td><td>`Option+K`（Mac）/ `Alt+K`（Windows/Linux）</td><td>插入对当前文件和选择的引用（需要编辑器获得焦点）</td></tr>
+<tr><td>显示日志</td><td>-</td><td>查看扩展调试日志</td></tr>
+<tr><td>登出</td><td>-</td><td>登出您的 Anthropic 账户</td></tr>
+</table></div>
+
+<h4 id="sec-vs-code-19">从其他工具启动 VS Code 选项卡</h4>
+
+<p>该扩展在 `vscode://anthropic.claude-code/open` 处注册了一个 URI 处理程序。使用它从您自己的工具中打开新的 Claude Code 选项卡：shell 别名、浏览器书签或任何可以打开 URL 的脚本。如果 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 尚未运行，打开 URL 会首先启动它。如果 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 已在运行，URL 会在当前获得焦点的窗口中打开。</p>
+
+<p>使用您的操作系统的 URL 打开器调用处理程序。</p>
+
+<div class="tabs">
+<div class="tab-item"><div class="tab-label">macOS</div><div class="tab-body">
+<p>    ```bash theme={null}</p>
+<p>    open &quot;vscode://anthropic.claude-code/open&quot;</p>
+<p>    ```</p>
+  </div></div>
+<div class="tab-item"><div class="tab-label">Linux</div><div class="tab-body">
+<p>    ```bash theme={null}</p>
+<p>    xdg-open &quot;vscode://anthropic.claude-code/open&quot;</p>
+<p>    ```</p>
+  </div></div>
+<div class="tab-item"><div class="tab-label">Windows</div><div class="tab-body">
+<p>    在 PowerShell 中：</p>
+
+<p>    ```powershell theme={null}</p>
+<p>    Start-Process &quot;vscode://anthropic.claude-code/open&quot;</p>
+<p>    ```</p>
+
+<p>    在 `cmd.exe` 中，`start` 将其第一个带引号的参数视为窗口标题，因此在 URL 之前传递一个空标题：</p>
+
+<p>    ```cmd theme={null}</p>
+<p>    start &quot;&quot; &quot;vscode://anthropic.claude-code/open&quot;</p>
+<p>    ```</p>
+  </div></div>
+</div>
+
+<p>处理程序接受两个可选的查询参数：</p>
+
+<div class='table-wrap'><table>
+<tr><th>参数</th><th>描述</th></tr>
+<tr><td>`prompt`</td><td>要在提示框中预填充的文本。必须进行 URL 编码。提示框被预填充但不会自动提交。</td></tr>
+<tr><td>`session`</td><td>要恢复的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a> ID，而不是启动新对话。<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>必须属于 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 中当前打开的工作区。如果找不到<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，将启动新的对话。如果<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>已在选项卡中打开，该选项卡将获得焦点。要以编程方式捕获<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a> ID，请参阅 <a class="kw" onclick="showKw('继续对话')" title="点击查看解释">继续对话</a>。</td></tr>
+</table></div>
+
+<p>例如，要打开一个预填充&quot;review my changes&quot;的选项卡：</p>
+
+<pre><code>
+vscode://anthropic.claude-code/open?prompt=review%20my%20changes
+</code></pre>
+
+<p>要启动终端<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>而不是 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 选项卡，请使用 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 的 `claude-cli://` 处理程序。请参阅 <a class="kw" onclick="showKw('从链接启动会话')" title="点击查看解释">从链接启动会话</a>。</p>
+
+<h3 id="sec-vs-code-20">配置设置</h3>
+
+<p>扩展有两种类型的<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>：</p>
+
+<p>* **扩展<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>**在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 中：控制扩展在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 中的行为。使用 `Cmd+,`（Mac）或 `Ctrl+,`（Windows/Linux）打开，然后转到扩展 → Claude Code。您也可以输入 `/` 并选择**常规配置**以打开<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>。</p>
+<p>* **Claude Code <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>**在 `~/.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 中：在扩展和 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 之间共享。用于允许的命令、<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>、hooks 和 <a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a>s。有关详细信息，请参阅<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>。</p>
+
+<div class="callout callout-tip">
+<p>  将 `&quot;$schema&quot;: &quot;https://json.schemastore.org/claude-code-<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>&quot;` 添加到您的 `<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 以在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 中直接获得所有可用<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>的自动完成和内联验证。</p>
+</div>
+
+<h4 id="sec-vs-code-21">扩展设置</h4>
+
+<div class='table-wrap'><table>
+<tr><th><a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a></th><th>默认值</th><th>描述</th></tr>
+<tr><td>`useTerminal`</td><td>`false`</td><td>以终端模式而不是图形面板启动 Claude</td></tr>
+<tr><td>`initialPermissionMode`</td><td>`default`</td><td>控制新对话的批准提示：`default`、`plan`、`acceptEdits` 或 `<a class="kw" onclick="showKw('bypassPermissions')" title="点击查看解释">bypassPermissions</a>`。`manual` 是 `default` 的别名，选择模式指示器中标记为**手动**的模式。需要 Claude Code v2.1.200 或更高版本。请参阅<a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a>。</td></tr>
+<tr><td>`preferredLocation`</td><td>`panel`</td><td>Claude 打开的位置：`sidebar`（右侧）或 `panel`（新选项卡）</td></tr>
+<tr><td>`autosave`</td><td>`true`</td><td>在 Claude 读取或写入文件前自动保存文件</td></tr>
+<tr><td>`useCtrlEnterToSend`</td><td>`false`</td><td>使用 Ctrl/Cmd+Enter 而不是 Enter 发送提示</td></tr>
+<tr><td>`enableNewConversationShortcut`</td><td>`false`</td><td>启用 Cmd/Ctrl+N 以开始新对话</td></tr>
+<tr><td>`enableReopenClosed<a class="kw" onclick="showKw('Session')" title="点击查看解释">Session</a>Shortcut`</td><td>`true`</td><td>使用 Cmd/Ctrl+Shift+T 重新打开最近关闭的 Claude <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>选项卡。当最后关闭的选项卡不是 Claude <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>时，<a class="kw" onclick="showKw('快捷键')" title="点击查看解释">快捷键</a>会运行 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 的正常重新打开关闭编辑器命令。</td></tr>
+<tr><td>`hideOnboarding`</td><td>`false`</td><td>隐藏入门检查清单（毕业帽图标）</td></tr>
+<tr><td>`respectGitIgnore`</td><td>`true`</td><td>从文件搜索中排除 .gitignore 模式</td></tr>
+<tr><td>`usePythonEnvironment`</td><td>`true`</td><td>运行 Claude 时激活工作区的 Python 环境。需要 Python 扩展。</td></tr>
+<tr><td>`environmentVariables`</td><td>`[]`</td><td>为 Claude 进程<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a><a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>。对于共享配置，请改用 Claude Code <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>。</td></tr>
+<tr><td>`disableLoginPrompt`</td><td>`false`</td><td>跳过身份验证提示（用于第三方提供商<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>）</td></tr>
+<tr><td>`allowDangerouslySkipPermissions`</td><td>`false`</td><td>添加 Bypass permissions 到模式选择器。仅在没有互联网访问的沙箱中使用。</td></tr>
+<tr><td>`claudeProcessWrapper`</td><td>-</td><td>用于启动 Claude 进程的可执行文件。当存在时，捆绑的二进制文件路径作为参数传递。如果扩展构建不包含您的平台的二进制文件，请将其<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>为单独安装的 `claude` 二进制文件。在激活时出现&quot;不支持的平台&quot;错误意味着您的平台没有捆绑二进制文件；请参阅<a class="kw" onclick="showKw('哪些平台有预构建的二进制文件')" title="点击查看解释">哪些平台有预构建的二进制文件</a>。</td></tr>
+</table></div>
+
+<h3 id="sec-vs-code-22">VS Code 扩展与 Claude Code CLI</h3>
+
+<p>Claude Code 既可作为 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 扩展（图形面板）也可作为 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a>（终端中的命令行界面）使用。某些功能仅在 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 中可用。如果您需要仅限 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 的功能，请在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 的集成终端中运行 `claude`。这需要<a class="kw" onclick="showKw('独立 CLI 安装')" title="点击查看解释">独立 CLI 安装</a>：扩展不会将 `claude` 添加到您的 PATH。请参阅<a class="kw" onclick="showKw('在 VS Code 中运行 CLI')" title="点击查看解释">在 VS Code 中运行 CLI</a>。</p>
+
+<div class='table-wrap'><table>
+<tr><th>功能</th><th><a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a></th><th><a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 扩展</th></tr>
+<tr><td>命令和 skills</td><td><a class="kw" onclick="showKw('全部')" title="点击查看解释">全部</a></td><td>子集（输入 `/` 以查看可用的）</td></tr>
+<tr><td><a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a> 配置</td><td>是</td><td>部分（通过 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 添加服务器；使用聊天面板中的 `<a class="kw" onclick="showKw('/mcp')" title="点击查看解释">/mcp</a>` 管理现有服务器）</td></tr>
+<tr><td>Checkpoints</td><td>是</td><td>是</td></tr>
+<tr><td>`!` bash <a class="kw" onclick="showKw('快捷键')" title="点击查看解释">快捷键</a></td><td>是</td><td>否</td></tr>
+<tr><td>Tab 完成</td><td>是</td><td>否</td></tr>
+</table></div>
+
+<h4 id="sec-vs-code-23">使用 checkpoints 进行倒带</h4>
+
+<p><a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 扩展支持 checkpoints，它们跟踪 Claude 的文件编辑并让您倒带到之前的状态。将鼠标悬停在任何消息上以显示倒带按钮，然后从三个选项中选择：</p>
+
+<p>* **从此处分叉对话**：从此消息开始新的对话分支，同时保持所有代码更改完整</p>
+<p>* **将代码倒带到此处**：将文件更改恢复到对话中的此点，同时保持完整的对话历史记录</p>
+<p>* **分叉对话并倒带代码**：开始新的对话分支并将文件更改恢复到此点</p>
+
+<p>有关 checkpoints 如何工作及其限制的完整详细信息，请参阅 <a class="kw" onclick="showKw('Checkpointing')" title="点击查看解释">Checkpointing</a>。</p>
+
+<h4 id="sec-vs-code-24">在 VS Code 中运行 CLI</h4>
+
+<p>要在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 中使用 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 同时保持在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 中，请打开集成终端（Windows/Linux 上为 `` Ctrl+` `` 或 Mac 上为 `` Cmd+` ``）并运行 `claude`。<a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 会自动与您的 IDE 集成，以获得差异查看和诊断共享等功能。</p>
+
+<p>安装扩展不会将 `claude` 放在您的 shell PATH 上。扩展为其聊天面板捆绑了 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 的私有副本，但在终端中输入 `claude` 需要<a class="kw" onclick="showKw('独立 CLI 安装')" title="点击查看解释">独立 CLI 安装</a>。运行一次安装，此页面上的命令（包括 `claude mcp add` 和 `claude --resume`）在任何终端中都可以工作。如果安装后仍未找到 `claude`，请<a class="kw" onclick="showKw('验证您的 PATH')" title="点击查看解释">验证您的 PATH</a>。</p>
+
+<p>如果使用外部终端，请在 Claude Code 中运行 `/ide` 以将其连接到 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a>。</p>
+
+<h4 id="sec-vs-code-25">在扩展和 CLI 之间切换</h4>
+
+<p>扩展和 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 共享相同的对话历史记录。要在 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 中继续扩展对话，请在终端中运行 `claude --resume`。这会打开一个交互式选择器，您可以在其中搜索和选择您的对话。</p>
+
+<h4 id="sec-vs-code-26">在提示中包含终端输出</h4>
+
+<p>使用 `@terminal:name` 在您的提示中引用终端输出，其中 `name` 是终端的标题。这让 Claude 可以看到命令输出、错误消息或日志，而无需复制粘贴。</p>
+
+<h4 id="sec-vs-code-27">监控后台进程</h4>
+
+<p>当 Claude 运行长时间运行的命令时，扩展在<a class="kw" onclick="showKw('状态栏')" title="点击查看解释">状态栏</a>中显示进度。但是，与 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 相比，后台任务的可见性有限。为了获得更好的可见性，让 Claude 输出命令，以便您可以在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 的集成终端中运行它。</p>
+
+<h4 id="sec-vs-code-28">使用 MCP 连接到外部工具</h4>
+
+<p><a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a>（Model Context Protocol）servers 为 Claude 提供对外部工具、数据库和 API 的访问。</p>
+
+<p>要添加 <a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a>，请打开集成终端（`` Ctrl+` `` 或 `` Cmd+` ``）并运行 `claude mcp add`。下面的示例添加了 GitHub 的远程 <a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a>，它使用作为标头传递的<a class="kw" onclick="showKw('个人访问令牌')" title="点击查看解释">个人访问令牌</a>进行身份验证：</p>
+
+<pre><code>
+claude mcp add --transport http github https://api.githubcopilot.com/mcp/ \
+  --header &quot;Authorization: Bearer YOUR_GITHUB_PAT&quot;
+</code></pre>
+
+<p>配置后，要求 Claude 使用这些工具（例如，&quot;审查 PR #456&quot;）。</p>
+
+<p>要在不离开 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 的情况下管理 <a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a>s，请在聊天面板中输入 `<a class="kw" onclick="showKw('/mcp')" title="点击查看解释">/mcp</a>`。<a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 管理对话框让您启用或禁用服务器、重新连接到服务器以及管理 <a class="kw" onclick="showKw('OAuth')" title="点击查看解释">OAuth</a> 身份验证。有关可用服务器，请参阅 <a class="kw" onclick="showKw('MCP 文档')" title="点击查看解释">MCP 文档</a>。</p>
+
+<h3 id="sec-vs-code-29">使用 git</h3>
+
+<p>Claude Code 与 git 集成以帮助直接在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 中进行版本控制<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>。要求 Claude 提交更改、创建拉取请求或跨分支工作。</p>
+
+<h4 id="sec-vs-code-30">创建提交和拉取请求</h4>
+
+<p>Claude 可以暂存更改、编写提交消息并根据您的工作创建拉取请求：</p>
+
+<pre><code>
+&gt; commit my changes with a descriptive message
+&gt; create a pr for this feature
+&gt; summarize the changes I&#x27;ve made to the auth module
+</code></pre>
+
+<p>创建拉取请求时，Claude 会根据实际代码更改生成描述，并可以添加有关测试或实现决策的上下文。</p>
+
+<h4 id="sec-vs-code-31">使用 git worktrees 进行并行任务</h4>
+
+<p>使用 `--worktree`（`-w`）标志在隔离的 worktree 中启动 Claude，该 worktree 具有自己的文件和分支：</p>
+
+<pre><code>
+claude --worktree feature-auth
+</code></pre>
+
+<p>每个 worktree 维护独立的文件状态，同时共享 git 历史记录。这可以防止 Claude 实例在处理不同任务时相互干扰。有关更多详细信息，请参阅<a class="kw" onclick="showKw('使用 Git worktrees 运行并行会话')" title="点击查看解释">使用 Git worktrees 运行并行会话</a>。</p>
+
+<h3 id="sec-vs-code-32">使用第三方提供商</h3>
+
+<p>默认情况下，Claude Code 直接连接到 Anthropic 的 API。如果您的组织使用 Amazon Bedrock、Google Cloud 的 <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> Platform 或 Microsoft Foundry 来访问 Claude，请配置扩展以改用您的提供商：</p>
+
+<ol class="steps">
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;禁用登录提示&lt;/div&gt;</p>
+<p>    打开<a class="kw" onclick="showKw('禁用登录提示设置')" title="点击查看解释">禁用登录提示设置</a>并勾选该框。</p>
+
+<p>    您也可以打开 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>（Mac 上为 `Cmd+,` 或 Windows/Linux 上为 `Ctrl+,`），搜索&quot;Claude Code login&quot;，然后勾选**禁用登录提示**。</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;配置您的提供商&lt;/div&gt;</p>
+<p>    按照您的提供商的<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>指南：</p>
+
+<p>    * <a class="kw" onclick="showKw('Amazon Bedrock 上的 Claude Code')" title="点击查看解释">Amazon Bedrock 上的 Claude Code</a></p>
+<p>    * <a class="kw" onclick="showKw('Google Cloud 的 Agent Platform 上的 Claude Code')" title="点击查看解释">Google Cloud 的 Agent Platform 上的 Claude Code</a></p>
+<p>    * <a class="kw" onclick="showKw('Microsoft Foundry 上的 Claude Code')" title="点击查看解释">Microsoft Foundry 上的 Claude Code</a></p>
+
+<p>    这些指南涵盖在 `~/.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 中配置您的提供商，这确保您的<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 扩展和 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 之间共享。</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;/ol&gt;</p>
+
+<h3 id="sec-vs-code-33">安全和隐私</h3>
+
+<p>您的代码保持私密。Claude Code 处理您的代码以提供协助，但不使用它来训练模型。有关数据处理的详细信息以及如何选择退出日志记录，请参阅<a class="kw" onclick="showKw('数据和隐私')" title="点击查看解释">数据和隐私</a>。</p>
+
+<p>启用自动编辑<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>后，Claude Code 可以修改 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 配置文件（如 `<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 或 `tasks.json`），<a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 可能会自动执行。要在处理不受信任的代码时降低风险：</p>
+
+<p>* 为不受信任的工作区启用 <a class="kw" onclick="showKw('VS Code 受限模式')" title="点击查看解释">VS Code 受限模式</a></p>
+<p>* 使用手动批准模式而不是自动接受编辑</p>
+<p>* 在接受更改前仔细审查它们</p>
+
+<h4 id="sec-vs-code-34">内置 IDE MCP server</h4>
+
+<p>当扩展处于活动状态时，它运行一个本地 <a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a>，<a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 会自动连接到该服务器。这是 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 如何在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 的原生差异查看器中打开差异、读取您当前的 @-提及选择，以及 — 当您在 Jupyter notebook 中工作时 — 要求 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 执行单元格的方式。</p>
+
+<p>该服务器名为 `ide`，从 `<a class="kw" onclick="showKw('/mcp')" title="点击查看解释">/mcp</a>` 中隐藏，因为没有什么可配置的。但是，如果您的组织使用 `PreToolUse` hook 来允许列表 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 工具，您需要知道它存在。</p>
+
+<p>**选择和打开文件上下文。** 连接时，<a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 在您发送的每个提示上包含您当前的编辑器选择和活动文件的路径作为上下文。当发生这种情况时，记录显示一行 `⧉ Selected N lines from &lt;file&gt;`。要排除敏感文件（如 `.env`），请为其路径添加一个 <a class="kw" onclick="showKw('Read 拒绝规则')" title="点击查看解释">Read 拒绝规则</a>。匹配的拒绝规则可防止该文件的选定文本和打开文件通知到达 Claude。</p>
+
+<p>**传输和身份验证。** 该服务器绑定到 `127.0.0.1` 上的随机端口，范围在 10000–65535，该端口不可配置。传输是未加密的 `ws://`；因为套接字仅限于本地回环，任何可以捕获流量的进程也可以从锁定文件中读取令牌，所以 TLS 不会增加保护。每次扩展激活都会生成一个新的随机身份验证令牌，将其写入 `~/.claude/ide/</p>
+<p>.lock` 处的锁定文件，<a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 必须将其作为 `X-Claude-Code-Ide-Authorization` 标头提供才能连接。锁定文件在 `0700` 目录中具有 `0600` <a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>，因此只有运行 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 的用户可以读取它。如果<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>了 `CLAUDE_CONFIG_DIR`，锁定文件将改为写入 `$CLAUDE_CONFIG_DIR/ide/`。</p>
+
+<p>**暴露给模型的工具。** 该<a class="kw" onclick="showKw('服务器托管')" title="点击查看解释">服务器托管</a>十几个工具，但只有两个对模型可见。其余的是 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 用于自己的 UI 的内部 RPC — 打开差异、读取选择、保存文件 — 并在工具列表到达 Claude 之前被过滤掉。</p>
+
+<div class='table-wrap'><table>
+<tr><th>工具名称（如 hooks 所见）</th><th>它的作用</th><th>只读</th></tr>
+<tr><td>`mcp__ide__getDiagnostics`</td><td>返回语言服务器诊断 — <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 问题面板中的错误和警告。可选地限定到一个文件。</td><td>是</td></tr>
+<tr><td>`mcp__ide__executeCode`</td><td>在活动 Jupyter notebook 的内核中运行 Python 代码。请参阅下面的确认流程。</td><td>否</td></tr>
+</table></div>
+
+<p>**Jupyter 执行总是先询问。** `mcp__ide__executeCode` 无法静默运行任何内容。在每次调用时，代码被插入为活动 notebook 末尾的新单元格，<a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 将其滚动到视图中，本地 Quick Pick 要求您**执行**或**取消**。取消 — 或用 `Esc` 关闭选择器 — 向 Claude 返回错误，什么都不运行。当没有活动 notebook、Jupyter 扩展（`ms-toolsai.jupyter`）未安装或内核不是 Python 时，该工具也会直接拒绝。</p>
+
+<div class="callout callout-note">
+<p>  Quick Pick 确认与 `PreToolUse` hooks 分开。`mcp__ide__executeCode` 的允许列表条目让 Claude *提议*运行单元格；<a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 内的 Quick Pick 是让它*实际*运行的原因。</p>
+</div>
+
+<p>&lt;a id=&quot;troubleshooting&quot; /&gt;</p>
+
+<h3 id="sec-vs-code-35">修复常见问题</h3>
+
+<h4 id="sec-vs-code-36">扩展无法安装</h4>
+
+<p>* 确保您拥有兼容的 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 版本（1.98.0 或更高版本）</p>
+<p>* 检查 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 是否有权安装扩展</p>
+<p>* 尝试从 <a class="kw" onclick="showKw('VS Code Marketplace')" title="点击查看解释">VS Code Marketplace</a> 直接安装</p>
+
+<h4 id="sec-vs-code-37">Spark 图标不可见</h4>
+
+<p>Spark 图标在**编辑器工具栏**（编辑器右上角）中出现，当您打开文件时。如果您看不到它：</p>
+
+<p>1. **打开文件**：该图标需要打开文件。仅打开文件夹是不够的。</p>
+<p>2. **检查 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 版本**：需要 1.98.0 或更高版本（帮助 → 关于）</p>
+<p>3. **重启 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a>**：从命令面板运行&quot;Developer: Reload Window&quot;</p>
+<p>4. **禁用冲突的扩展**：临时禁用其他 AI 扩展（Cline、Continue 等）</p>
+<p>5. **检查工作区信任**：扩展在受限模式下不工作</p>
+
+<p>或者，点击**<a class="kw" onclick="showKw('状态栏')" title="点击查看解释">状态栏</a>**（右下角）中的&quot;<span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873l-6.158 -3.245" /> </svg></span> Claude Code&quot;。即使没有打开文件也可以使用。您也可以使用**命令面板**（`Cmd+Shift+P` / `Ctrl+Shift+P`）并输入&quot;Claude Code&quot;。</p>
+
+<h4 id="sec-vs-code-38">macOS 上 Cmd+Esc 无效</h4>
+
+<p>在 macOS Tahoe 及更高版本上，系统游戏覆盖<a class="kw" onclick="showKw('快捷键')" title="点击查看解释">快捷键</a>默认绑定到 `Cmd+Esc`，并在按键到达 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 之前拦截它。要释放此<a class="kw" onclick="showKw('快捷键')" title="点击查看解释">快捷键</a>：</p>
+
+<p>1. 打开系统<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a></p>
+<p>2. 转到键盘，然后键盘<a class="kw" onclick="showKw('快捷键')" title="点击查看解释">快捷键</a>，然后游戏控制器</p>
+<p>3. 清除游戏覆盖复选框</p>
+
+<p>或者，将扩展重新绑定到不同的键：打开 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> <a class="kw" onclick="showKw('键盘快捷键编辑器')" title="点击查看解释">键盘快捷键编辑器</a>（`Cmd+K Cmd+S`），搜索 `Claude Code: Focus input`，并分配新的绑定。</p>
+
+<h4 id="sec-vs-code-39">Claude Code 从不响应</h4>
+
+<p>如果 Claude Code 没有响应您的提示：</p>
+
+<p>1. **检查您的互联网连接**：确保您有稳定的互联网连接</p>
+<p>2. **开始新对话**：尝试开始新的对话以查看问题是否仍然存在</p>
+<p>3. **尝试 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a>**：从终端运行 `claude` 以查看是否获得更详细的错误消息</p>
+
+<p>如果问题仍然存在，请<a class="kw" onclick="showKw('在 GitHub 上提交问题')" title="点击查看解释">在 GitHub 上提交问题</a>，并提供有关错误的详细信息。</p>
+
+<h3 id="sec-vs-code-40">卸载扩展</h3>
+
+<p>要卸载 Claude Code 扩展：</p>
+
+<p>1. 打开扩展视图（Mac 上为 `Cmd+Shift+X` 或 Windows/Linux 上为 `Ctrl+Shift+X`）</p>
+<p>2. 搜索&quot;Claude Code&quot;</p>
+<p>3. 点击**卸载**</p>
+
+<p>在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 集成终端中运行 `claude` 会自动重新安装扩展。要保持卸载状态，请在 `<a class="kw" onclick="showKw('/config')" title="点击查看解释">/config</a>` 中关闭**自动安装 IDE 扩展**，或将 <a class="kw" onclick="showKw('autoInstallIdeExtension')" title="点击查看解释">autoInstallIdeExtension</a> <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>为 `false`。您也可以将 <a class="kw" onclick="showKw('CLAUDE_CODE_IDE_SKIP_AUTO_INSTALL')" title="点击查看解释">CLAUDE_CODE_IDE_SKIP_AUTO_INSTALL</a> <a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a><a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>为 `1`。</p>
+
+<p>要也删除扩展数据并重置所有<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>，请删除您平台的扩展存储目录。</p>
+
+<p>在 macOS 上：</p>
+
+<pre><code>
+rm -rf ~/Library/&quot;Application Support&quot;/Code/User/globalStorage/anthropic.claude-code
+</code></pre>
+
+<p>在 Linux 上：</p>
+
+<pre><code>
+rm -rf ~/.config/Code/User/globalStorage/anthropic.claude-code
+</code></pre>
+
+<p>在 Windows 上，在 PowerShell 中：</p>
+
+<pre><code>
+Remove-Item -Recurse -Force &quot;$env:APPDATA\Code\User\globalStorage\anthropic.claude-code&quot;
+</code></pre>
+
+<p>如需更多帮助，请参阅<a class="kw" onclick="showKw('故障排除指南')" title="点击查看解释">故障排除指南</a>。</p>
+
+<h3 id="sec-vs-code-41">后续步骤</h3>
+
+<p>现在您已在 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 中<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>了 Claude Code：</p>
+
+<p>* <a class="kw" onclick="showKw('探索常见工作流')" title="点击查看解释">探索常见工作流</a>以充分利用 Claude Code</p>
+<p>* <a class="kw" onclick="showKw('设置 MCP servers')" title="点击查看解释">设置 MCP servers</a>以使用外部工具扩展 Claude 的功能。使用 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 添加服务器，然后使用聊天面板中的 `<a class="kw" onclick="showKw('/mcp')" title="点击查看解释">/mcp</a>` 管理它们。</p>
+<p>* <a class="kw" onclick="showKw('配置 Claude Code 设置')" title="点击查看解释">配置 Claude Code 设置</a>以自定义允许的命令、hooks 等。这些<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>在扩展和 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 之间共享。</p>
+
+  </main>
+</div>
+
+<nav class="pager">
+  <a href="troubleshooting.html"><span class="dir">← 上一篇</span><span class="ptitle">故障排除</span></a>
+  <a class="next" href="web-quickstart.html"><span class="dir">下一篇 →</span><span class="ptitle">在网络上开始使用 Claude Code</span></a>
+</nav>
+
+<button class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="返回顶部"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 5l0 14" /> <path d="M18 11l-6 -6" /> <path d="M6 11l6 -6" /> </svg></span></button>
+
+<!-- 关键词解释弹窗 -->
+<div class="kw-panel" id="kwPanel">
+  <div class="kwp-head">
+    <span class="kwp-badge" id="kwpBadge"></span>
+    <span class="kwp-title" id="kwpTitle"></span>
+    <button class="kwp-close" onclick="hideKw()">×</button>
+  </div>
+  <div class="kwp-body">
+    <div class="kwp-desc" id="kwpDesc"></div>
+    <a class="kwp-link" id="kwpLink" target="_blank">阅读完整文档<span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l14 0" /> <path d="M13 18l6 -6" /> <path d="M13 6l6 6" /> </svg></span></a>
+  </div>
+  <div class="kwp-bar-wrap"><div class="kwp-bar" id="kwBar"></div></div>
+</div>
+
+<script>
+function toggleDrawer() {
+  document.getElementById('drawer').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+window.addEventListener('scroll', function() {
+  var st = document.getElementById('scrollTop');
+  st.classList.toggle('show', window.scrollY > 400);
+  var h = document.documentElement.scrollHeight - window.innerHeight;
+  var pct = h > 0 ? (window.scrollY / h * 100) : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+});
+
+// ===== 关键词弹窗逻辑 =====
+const KW_DATA = {"Marketplace": {"doc": "plugin-marketplaces", "title": "创建和分发 plugin marketplace", "desc": "**plugin marketplace** 是一个目录，让你能够将 plugins 分发给他人。Marketplace 提供集中式发现、版本跟踪、自动更新以及对多种源类型（包括 git 存储库和本地路径）的支持。本指南展示了如何创建自己的 marketplace，与你的团队或社区共享 plugins。"}, "市场": {"doc": "plugin-marketplaces", "title": "创建和分发 plugin marketplace", "desc": "**plugin marketplace** 是一个目录，让你能够将 plugins 分发给他人。Marketplace 提供集中式发现、版本跟踪、自动更新以及对多种源类型（包括 git 存储库和本地路径）的支持。本指南展示了如何创建自己的 marketplace，与你的团队或社区共享 plugins。"}, "Plugin": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "插件": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "Skill": {"doc": "skills", "title": "使用 skills 扩展 Claude", "desc": "Skills 扩展了 Claude 能做的事情。创建一个 `SKILL.md` 文件，其中包含说明，Claude 会将其添加到其工具包中。Claude 在相关时使用 skills，或者你可以使用 `/skill-name` 直接调用一个。"}, "技能": {"doc": "skills", "title": "使用 skills 扩展 Claude", "desc": "Skills 扩展了 Claude 能做的事情。创建一个 `SKILL.md` 文件，其中包含说明，Claude 会将其添加到其工具包中。Claude 在相关时使用 skills，或者你可以使用 `/skill-name` 直接调用一个。"}, "Agent": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "Subagent": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "子代理": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "Hook": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "钩子": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "MCP": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "CLI": {"doc": "cli-reference", "title": "CLI 参考", "desc": "CLI 命令"}, "斜杠命令": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "快捷键": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "keybindings": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "权限模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Permission Mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "上下文窗口": {"doc": "context-window", "title": "探索上下文窗口", "desc": "了解 Claude Code 的上下文窗口如何工作：上下文包含哪些内容、如何高效利用、以及自动压缩等机制。"}, "Context Window": {"doc": "context-window", "title": "探索上下文窗口", "desc": "了解 Claude Code 的上下文窗口如何工作：上下文包含哪些内容、如何高效利用、以及自动压缩等机制。"}, "设置": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "环境变量": {"doc": "env-vars", "title": "环境变量", "desc": "环境变量可以控制 Claude Code 的行为，例如模型选择、身份验证、请求路由和功能切换。许多相同的行为也可以通过设置文件字段、CLI 标志或会话内命令（如 `/model`）进行配置。"}, "Environment Variables": {"doc": "env-vars", "title": "环境变量", "desc": "环境变量可以控制 Claude Code 的行为，例如模型选择、身份验证、请求路由和功能切换。许多相同的行为也可以通过设置文件字段、CLI 标志或会话内命令（如 `/model`）进行配置。"}, "记忆": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "Memory": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "会话": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "Session": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "状态栏": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "Statusline": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "CLAUDE.md": {"doc": "claude-directory", "title": "探索 .claude 目录", "desc": "Claude Code 在项目根目录读取的指令文件，每次会话都会加载，用来定义项目约定、常用命令和架构上下文。"}, ".claude 目录": {"doc": "claude-directory", "title": "探索 .claude 目录", "desc": "Claude Code 读取 CLAUDE.md、settings.json、hooks、skills、commands、subagents 等配置的目录结构。"}, "keybindings.json": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "settings.json": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "Prompt caching": {"doc": "prompt-caching", "title": "Claude Code 如何使用 prompt caching", "desc": "Prompt caching 使 Claude Code 更快、更经济高效。没有缓存，API 会在每个回合重新处理您的完整历史记录。有了缓存，它会重用已经处理过的内容，只对更改的部分进行新工作。"}, "提示词缓存": {"doc": "prompt-caching", "title": "Claude Code 如何使用 prompt caching", "desc": "Prompt caching 使 Claude Code 更快、更经济高效。没有缓存，API 会在每个回合重新处理您的完整历史记录。有了缓存，它会重用已经处理过的内容，只对更改的部分进行新工作。"}, "提示词库": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类（理解、计划、原型、构建等），帮助快速上手常见任务。"}, "Prompt library": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类（理解、计划、原型、构建等），帮助快速上手常见任务。"}, "提示词": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类，帮助快速上手 Claude Code 常见任务。"}, "auto memory": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "自动记忆": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "后台会话": {"doc": "agent-view", "title": "使用 agent view 管理多个代理", "desc": "Agent view 通过 `claude agents` 打开，是所有后台会话的一个屏幕：什么正在运行、什么需要你的输入、什么已完成。调度新会话，一目了然地查看它们的状态而不是滚动浏览记录，只在需要时才介入。每个后台会话都是一个完整的 Claude Code 对话，在没有终端连接的情况下继续运行，所以你可以随时打开它、回复并离开。"}, "代理视图": {"doc": "agent-view", "title": "使用 agent view 管理多个代理", "desc": "Agent view 通过 `claude agents` 打开，是所有后台会话的一个屏幕：什么正在运行、什么需要你的输入、什么已完成。调度新会话，一目了然地查看它们的状态而不是滚动浏览记录，只在需要时才介入。每个后台会话都是一个完整的 Claude Code 对话，在没有终端连接的情况下继续运行，所以你可以随时打开它、回复并离开。"}, "远程控制": {"doc": "remote-control", "title": "使用 Remote Control 从任何设备继续本地会话", "desc": "Remote Control 处于研究预览阶段，在所有计划中都可用。在 Team 和 Enterprise 上，在所有者在 Claude Code 管理员设置中启用 Remote Control 切换之前，它默认处于关闭状态。"}, "Remote Control": {"doc": "remote-control", "title": "使用 Remote Control 从任何设备继续本地会话", "desc": "Remote Control 处于研究预览阶段，在所有计划中都可用。在 Team 和 Enterprise 上，在所有者在 Claude Code 管理员设置中启用 Remote Control 切换之前，它默认处于关闭状态。"}, "计划任务": {"doc": "scheduled-tasks", "title": "按计划运行提示词", "desc": "计划任务让 Claude 按间隔自动重新运行提示词。使用它们来轮询部署、监督 PR、检查长时间运行的构建，或在会话中稍后提醒自己做某事。要对事件进行实时反应而不是轮询，请参阅 Channels：您的 CI 可以直接将失败推送到会话中。要保持会话工作转向转向直到满足条件而不是按间隔，请参阅 `/goal`。"}, "定期任务": {"doc": "desktop-scheduled-tasks", "title": "在 Claude Code Desktop 中安排定期任务", "desc": "定期任务在您选择的时间和频率自动启动新会话。使用它们进行定期工作，如日常代码审查、依赖项更新检查或从您的日历和收件箱中提取信息的早晨简报。"}, "例程": {"doc": "routines", "title": "使用例程自动化工作", "desc": "Routines 处于研究预览阶段。行为、限制和 API 表面可能会改变。"}, "Routines": {"doc": "routines", "title": "使用例程自动化工作", "desc": "Routines 处于研究预览阶段。行为、限制和 API 表面可能会改变。"}, "代码审查": {"doc": "code-review", "title": "Code Review", "desc": "Code Review 处于研究预览阶段，仅适用于 Team 和 Enterprise 订阅。对于启用了 Zero Data Retention 的组织，此功能不可用。"}, "Code Review": {"doc": "code-review", "title": "Code Review", "desc": "Code Review 处于研究预览阶段，仅适用于 Team 和 Enterprise 订阅。对于启用了 Zero Data Retention 的组织，此功能不可用。"}, "检查点": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "Checkpointing": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "工作流": {"doc": "workflows", "title": "使用动态工作流大规模编排子代理", "desc": "动态工作流需要 Claude Code v2.1.154 或更高版本，在所有付费计划上可用，具有 Anthropic API 访问权限，以及在 Amazon Bedrock、Google Cloud 的 Agent Platform 和 Microsoft Foundry 上可用。在 Pro 上，从 `/config` 中的\"Dynamic workflows\"行启用它们。"}, "Workflows": {"doc": "workflows", "title": "使用动态工作流大规模编排子代理", "desc": "动态工作流需要 Claude Code v2.1.154 或更高版本，在所有付费计划上可用，具有 Anthropic API 访问权限，以及在 Amazon Bedrock、Google Cloud 的 Agent Platform 和 Microsoft Foundry 上可用。在 Pro 上，从 `/config` 中的\"Dynamic workflows\"行启用它们。"}, "最佳实践": {"doc": "best-practices", "title": "Claude Code 最佳实践", "desc": "Claude Code 是一个代理式编码环境。与等待回答问题的聊天机器人不同，Claude Code 可以读取你的文件、运行命令、进行更改，并在你观看、重定向或完全离开的情况下自主解决问题。"}, "Best Practices": {"doc": "best-practices", "title": "Claude Code 最佳实践", "desc": "Claude Code 是一个代理式编码环境。与等待回答问题的聊天机器人不同，Claude Code 可以读取你的文件、运行命令、进行更改，并在你观看、重定向或完全离开的情况下自主解决问题。"}, "交互模式": {"doc": "interactive-mode", "title": "交互模式", "desc": "键盘快捷键"}, "交互式模式": {"doc": "interactive-mode", "title": "交互模式", "desc": "键盘快捷键"}, "常见工作流": {"doc": "common-workflows", "title": "常见工作流程", "desc": "本页收集了日常开发的简短工作流程。有关提示和上下文管理的更高级指导，请参阅最佳实践。"}, "JetBrains": {"doc": "jetbrains", "title": "JetBrains IDEs", "desc": "Claude Code 通过专用插件与 JetBrains IDE 集成，提供交互式差异查看、选择上下文共享等功能。"}, "VS Code": {"doc": "vs-code", "title": "在 VS Code 中使用 Claude Code", "desc": "VS Code 扩展为 Claude Code 提供了原生图形界面，直接集成到您的 IDE 中。这是在 VS Code 中使用 Claude Code 的推荐方式。"}, "GitHub Actions": {"doc": "github-actions", "title": "Claude Code GitHub Actions", "desc": "Claude Code GitHub Actions 为您的 GitHub 工作流带来了 AI 驱动的自动化。只需在任何 PR 或 issue 中简单地提及 `@claude`，Claude 就可以分析您的代码、创建拉取请求、实现功能和修复错误 - 所有这些都遵循您项目的标准。如需在每个 PR 上自动发布评论而无需触发器，请参阅 GitHub Code Review。"}, "GitLab CI": {"doc": "gitlab-ci-cd", "title": "Claude Code GitLab CI/CD", "desc": "Claude Code for GitLab CI/CD 目前处于测试阶段。随着我们完善体验，功能和特性可能会发生变化。"}, "桌面应用": {"doc": "desktop", "title": "Desktop application", "desc": "Claude Desktop 应用有三个选项卡：Chat 用于对话，Cowork 用于 Dispatch 和更长的代理工作，Code 用于软件开发。本页是 Code 选项卡的参考。"}, "计划模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Plan mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "自动模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "auto mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Accept Edits": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "bypassPermissions": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "权限": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "/plugin": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "/mcp": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "/hooks": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "/agents": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "/clear": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/compact": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/config": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "/resume": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/continue": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/fork": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/checkpoint": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "/cost": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/permissions": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "/statusline": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "/keybindings": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "术语表": {"doc": "glossary", "title": "术语表", "desc": "本术语表定义了 Claude Code 术语。每个条目都链接到深入讨论该概念的页面。对于模型级概念（如 tokens、temperature 和 RAG），请参阅平台术语表。"}, "OAuth": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "MCP server": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "MCP Server": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "组织设置": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "托管设置": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "服务器托管": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "快速开始": {"doc": "quickstart", "title": "快速开始", "desc": "本快速开始指南将在几分钟内让您使用 AI 驱动的编码辅助。完成本指南后，您将了解如何使用 Claude Code 完成常见的开发任务。"}, "故障排除": {"doc": "troubleshooting", "title": "故障排除", "desc": "本页涵盖 Claude Code 运行后的性能、稳定性和搜索问题。对于其他问题，请从与您遇到的问题相匹配的页面开始："}, "Troubleshooting": {"doc": "troubleshooting", "title": "故障排除", "desc": "本页涵盖 Claude Code 运行后的性能、稳定性和搜索问题。对于其他问题，请从与您遇到的问题相匹配的页面开始："}, "完整文档": {"doc": "overview", "title": "概述", "desc": "Claude Code 是一个由 AI 驱动的编码助手，可帮助你构建功能、修复错误和自动化开发任务。它理解你的整个代码库，可以跨多个文件和工具工作以完成任务。"}, "概述": {"doc": "overview", "title": "概述", "desc": "Claude Code 是一个由 AI 驱动的编码助手，可帮助你构建功能、修复错误和自动化开发任务。它理解你的整个代码库，可以跨多个文件和工具工作以完成任务。"}};
+  const KW_EXTRA = {"skills": {"doc": "skills", "title": "Skills 技能", "desc": "Claude Code 技能扩展。SKILL.md 提供操作说明，Claude 按需调用完成任务。"}, "Skills": {"doc": "skills", "title": "Skills 技能", "desc": "Claude Code 技能扩展。SKILL.md 提供操作说明，Claude 按需调用完成任务。"}, "skill": {"doc": "skills", "title": "Skill 技能", "desc": "单个技能定义，包含 SKILL.md 说明文件，供 Claude 按需调用。"}, "Hooks": {"doc": "hooks", "title": "Hooks 钩子", "desc": "生命周期钩子。在 Claude Code 操作前后自动运行脚本，如格式化、lint。"}, "hooks": {"doc": "hooks", "title": "Hooks 钩子", "desc": "生命周期钩子。在 Claude Code 操作前后自动运行脚本，如格式化、lint。"}, "hook": {"doc": "hooks", "title": "Hook 钩子", "desc": "单个钩子，监听事件并在操作前后执行命令。"}, "hook 事件": {"doc": "hooks", "title": "Hook 事件", "desc": "钩子可监听的事件，如 PreToolUse、SessionStart 等。"}, "Subagents": {"doc": "sub-agents", "title": "Subagents 子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行，只返回摘要。"}, "subagents": {"doc": "sub-agents", "title": "子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行。"}, "subagent": {"doc": "sub-agents", "title": "子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行。"}, "agent team": {"doc": "agents", "title": "Agent team 代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "agent teams": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "Agent teams": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "代理团队": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "Plugins": {"doc": "plugins", "title": "Plugins 插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包，可共享给团队。"}, "plugins": {"doc": "plugins", "title": "插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包。"}, "plugin": {"doc": "plugins", "title": "插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包。"}, "MCP servers": {"doc": "mcp", "title": "MCP 服务器", "desc": "通过 Model Context Protocol 连接外部工具与数据源的服务器。"}, "MCP 服务器": {"doc": "mcp", "title": "MCP 服务器", "desc": "通过 Model Context Protocol 连接外部工具与数据源的服务器。"}, "Amazon Bedrock": {"doc": "third-party-integrations", "title": "Amazon Bedrock", "desc": "AWS 托管 AI 平台，可运行 Claude 模型并接入 Claude Code。"}, "Microsoft Foundry": {"doc": "third-party-integrations", "title": "Microsoft Foundry", "desc": "微软云 AI 平台，提供模型托管服务，支持 Claude Code 接入。"}, "Claude apps gateway": {"doc": "desktop", "title": "Claude apps gateway", "desc": "Anthropic 官方网关，管理桌面端与网络服务的连接。"}, "Agent SDK": {"doc": "agent-sdk_overview", "title": "Claude Agent SDK", "desc": "官方工具包，用于以编程方式构建和集成 Claude Code 代理。"}, "动态工作流": {"doc": "workflows", "title": "动态工作流", "desc": "通过 JSON/JS 定义步骤，让 Claude 编排子代理执行复杂任务。"}, "LLM 网关": {"doc": "third-party-integrations", "title": "LLM 网关", "desc": "大模型网关，统一路由、代理和管控 LLM API 请求的中间层。"}, "自动内存": {"doc": "memory", "title": "自动内存", "desc": "自动将重要信息写入记忆文档，跨会话保持上下文连续。"}, "Slack": {"doc": "slack", "title": "Slack", "desc": "协作平台。可通过 Claude Code 集成在 Slack 中运行 AI 代理。"}, "Dispatch": {"doc": "desktop", "title": "Dispatch", "desc": "桌面应用功能，将任务分派给代理在后台执行。"}, "Desktop": {"doc": "desktop", "title": "桌面应用", "desc": "Claude Code 桌面应用，提供 Chat、Cowork、Code 图形界面。"}, "Channels": {"doc": "channels", "title": "Channels 频道", "desc": "将 Claude Code 会话接入 Telegram、Discord 等平台的插件系统。"}, "Sandboxing": {"doc": "settings", "title": "沙箱", "desc": "限制 Bash 工具访问范围的安全隔离机制。"}, "沙箱": {"doc": "settings", "title": "沙箱", "desc": "限制工具文件系统访问的安全隔离环境。"}, "非交互模式": {"doc": "cli-reference", "title": "非交互模式", "desc": "通过 -p 参数在脚本中无交互运行 Claude Code，适合自动化。"}, "快速模式": {"doc": "settings", "title": "快速模式", "desc": "提高速率限制的付费模式，响应速度更快。"}, "Plan Mode": {"doc": "permission-modes", "title": "计划模式", "desc": "只分析不执行，先产出修改方案供确认再动手。"}, "Auto mode": {"doc": "permission-modes", "title": "自动模式", "desc": "自动批准低风险操作，减少交互打断，提升效率。"}, "状态行": {"doc": "statusline", "title": "状态行", "desc": "可自定义的底部状态栏，显示上下文、成本等信息。"}, "工具搜索": {"doc": "mcp", "title": "MCP 工具搜索", "desc": "让 Claude 按需搜索并发现更多 MCP 工具，扩展能力。"}, "扩展思考": {"doc": "common-workflows", "title": "扩展思考", "desc": "让 Claude 回答前进行更深入的多步推理，提升复杂问题准确率。"}, "计算机使用": {"doc": "computer-use", "title": "计算机使用", "desc": "让 Claude 控制屏幕、操作应用的实验性功能。"}, "云会话": {"doc": "claude-code-on-the-web", "title": "云会话", "desc": "在 Anthropic 云端运行的 Claude Code 会话。"}, "第三方提供商": {"doc": "third-party-integrations", "title": "第三方提供商", "desc": "通过兼容 API 使用非 Anthropic 模型的服务商。"}, "身份验证": {"doc": "settings", "title": "身份验证", "desc": "Claude Code 登录与凭证验证机制。"}, "网络配置": {"doc": "settings", "title": "网络配置", "desc": "Claude Code 访问网络端点与代理的设置。"}, "语音听写": {"doc": "desktop", "title": "语音听写", "desc": "通过语音转文字向 Claude 下达指令。"}, "权限规则": {"doc": "permission-modes", "title": "权限规则", "desc": "定义允许、询问、拒绝操作的规则。"}, "输出样式": {"doc": "settings", "title": "输出样式", "desc": "自定义 Claude 回复格式的样式文件。"}, "工作量级别": {"doc": "settings", "title": "工作量级别", "desc": "控制模型推理深度的设置。"}, "努力级别": {"doc": "settings", "title": "努力级别", "desc": "控制模型推理深度的设置。"}, "Worktrees": {"doc": "common-workflows", "title": "Git worktree", "desc": "Git 并行工作树，支持多会话同时开发互不干扰。"}, "git worktree": {"doc": "common-workflows", "title": "Git worktree", "desc": "Git 并行工作树，支持多会话同时开发互不干扰。"}, "后台代理": {"doc": "agent-view", "title": "后台代理", "desc": "在后台运行、无需终端连接的 Claude Code 会话。"}, "自动修复": {"doc": "github-actions", "title": "自动修复", "desc": "Claude 自动修复 PR 或代码问题并提交。"}, "顾问工具": {"doc": "code-review", "title": "顾问工具", "desc": "提供代码审查建议的辅助工具。"}, "SSH": {"doc": "remote-control", "title": "SSH", "desc": "安全外壳协议，用于远程连接与加密通信。"}, "连接器": {"doc": "channels", "title": "连接器", "desc": "Claude 连接外部工具和数据源的官方集成。"}, "Artifact": {"doc": "desktop", "title": "Artifact 工件", "desc": "Claude 生成的可共享成果物。"}, "管理会话": {"doc": "sessions", "title": "会话管理", "desc": "保存、恢复、分叉 Claude Code 对话。"}, "命令参考": {"doc": "commands", "title": "命令参考", "desc": "Claude Code 斜杠命令的说明文档。"}, "插件参考": {"doc": "plugins-reference", "title": "插件参考", "desc": "插件组件与配置的参考文档。"}, "自适应推理": {"doc": "settings", "title": "自适应推理", "desc": "根据任务难度动态调整模型推理强度。"}, "环境缓存": {"doc": "settings", "title": "环境缓存", "desc": "缓存已验证的脚本环境，加快工具执行。"}, "扩展上下文": {"doc": "context-window", "title": "扩展上下文", "desc": "增大上下文窗口容量，处理更长内容。"}, "内置命令": {"doc": "commands", "title": "内置命令", "desc": "Claude Code 自带的斜杠命令。"}, "权限设置": {"doc": "permission-modes", "title": "权限设置", "desc": "控制 Claude 操作权限的配置。"}, "环境": {"doc": "env-vars", "title": "环境", "desc": "影响 Claude Code 运行的系统环境配置。"}, "Chrome": {"doc": "chrome", "title": "Chrome 扩展", "desc": "Claude in Chrome 浏览器扩展，在网页中调用 Claude。"}, "iOS": {"doc": "desktop", "title": "iOS 应用", "desc": "Claude 移动端应用，支持远程控制与推送。"}, "Android": {"doc": "desktop", "title": "Android 应用", "desc": "Claude 移动端应用，支持远程控制与推送。"}, "网页": {"doc": "claude-code-on-the-web", "title": "Claude Code 网页版", "desc": "在浏览器中使用的 Claude Code，无需安装 CLI，登录即用。"}, "GitLab": {"doc": "gitlab-ci-cd", "title": "GitLab", "desc": "代码托管平台。可通过 GitLab CI/CD 集成 Claude Code 实现自动化。"}, "CI/CD": {"doc": "github-actions", "title": "CI/CD", "desc": "持续集成/持续交付，自动化完成构建、测试和部署的流水线。"}, "终端 CLI": {"doc": "cli-reference", "title": "终端 CLI", "desc": "命令行界面工具，在终端中直接运行 Claude Code 管理项目。"}, "终端指南": {"doc": "overview", "title": "终端指南", "desc": "终端基础使用入门，介绍如何用命令行操作 Claude Code。"}, "Claude Console": {"doc": "overview", "title": "Anthropic 控制台", "desc": "Anthropic 官方控制台，管理 API 密钥、查看用量和账单。"}, "Claude 订阅": {"doc": "overview", "title": "Claude 订阅", "desc": "Claude 付费套餐（Pro/Max/Team/Enterprise），解锁全部功能。"}, "支持的云提供商": {"doc": "third-party-integrations", "title": "支持的云提供商", "desc": "Amazon Bedrock、Google Cloud 等可托管并运行 Claude 模型的云平台。"}, "凭证管理": {"doc": "settings", "title": "凭证管理", "desc": "管理 API 密钥、登录凭证和身份验证的机制。"}, "Git for Windows": {"doc": "settings", "title": "Git for Windows", "desc": "Windows 版 Git，安装后 Claude Code 可使用 Bash 工具。"}, "Discord": {"doc": "channels", "title": "Discord", "desc": "社区平台。可通过 Channels 插件在 Discord 中使用 Claude Code。"}, "所有界面": {"doc": "overview", "title": "所有界面", "desc": "Claude Code 的多种使用方式：终端、IDE、桌面应用、网页等。"}, "Amazon Bedrock、Google Cloud 的 Agent Platform 或 Microsoft Foundry": {"doc": "third-party-integrations", "title": "三大云平台", "desc": "AWS、谷歌云、微软云三大平台，均可托管 Claude 模型接入 Claude Code。"}, "Claude Pro、Max、Team 或 Enterprise": {"doc": "overview", "title": "Claude 订阅套餐", "desc": "Claude 的付费订阅层级，提供不同额度的模型访问与功能。"}, "Troubleshoot installation": {"doc": "troubleshoot-install", "title": "安装故障排除", "desc": "安装 Claude Code 出错时的排查指南与替代安装方法。"}, "终端": {"doc": "cli-reference", "title": "终端", "desc": "命令行环境，Claude Code 的主要使用场景。"}, "GitHub Actions": {"doc": "github-actions", "title": "GitHub Actions", "desc": "GitHub 的 CI/CD 自动化平台，可集成 Claude Code 自动审查和修复。"}, "JetBrains IDE": {"doc": "jetbrains", "title": "JetBrains IDE", "desc": "JetBrains 系列 IDE（IDEA、PyCharm 等）的 Claude Code 插件。"}, "apt, dnf, or apk": {"doc": "setup", "title": "Linux 包管理器", "desc": "Linux 包管理器：apt 用于 Debian/Ubuntu，dnf 用于 Fedora。"}, "CLI 参考": {"doc": "cli-reference", "title": "CLI 参考", "desc": "Claude Code 命令行参考，列出全部命令、参数与用法。"}};
+let kwTimer = null;
+function showKw(kw) {
+  const d = KW_DATA[kw] || KW_EXTRA[kw];
+  if (!d) {
+    document.getElementById('kwpBadge').textContent = kw;
+    document.getElementById('kwpTitle').textContent = kw;
+    document.getElementById('kwpDesc').textContent = '暂无该词条详细解释，可前往官方文档查阅。';
+    document.getElementById('kwpLink').style.display = 'none';
+    const panel = document.getElementById('kwPanel');
+    panel.style.width = '320px';
+    panel.classList.add('open');
+    const bar = document.getElementById('kwBar');
+    bar.style.transition = 'none';
+    bar.style.width = '100%';
+    void bar.offsetWidth;
+    bar.style.transition = 'width 4s linear';
+    bar.style.width = '0%';
+    clearTimeout(kwTimer);
+    kwTimer = setTimeout(hideKw, 4000);
+    return;
+  }
+  document.getElementById('kwpBadge').textContent = kw;
+  document.getElementById('kwpTitle').textContent = d.title;
+  document.getElementById('kwpDesc').textContent = d.desc;
+  var _kwpPfx = location.pathname.indexOf('/doc/') !== -1 || location.pathname.endsWith('/doc/') ? '' : 'doc/';
+  document.getElementById('kwpLink').style.display = '';
+  document.getElementById('kwpLink').href = _kwpPfx + d.doc + '.html';
+  // 弹窗宽度随内容自适应（280-480px）
+  const panel = document.getElementById('kwPanel');
+  const estW = Math.min(480, Math.max(300, 280 + d.desc.length * 0.5));
+  panel.style.width = estW + 'px';
+  // 进度条时长按文本长度：每55字1秒，限4-14秒
+  const dur = Math.min(14, Math.max(4, Math.round(d.desc.length / 55)));
+  panel.classList.add('open');
+  // 重置进度条动画
+  const bar = document.getElementById('kwBar');
+  bar.style.transition = 'none';
+  bar.style.width = '100%';
+  void bar.offsetWidth;
+  bar.style.transition = 'width ' + dur + 's linear';
+  bar.style.width = '0%';
+  clearTimeout(kwTimer);
+  kwTimer = setTimeout(hideKw, dur * 1000);
+}
+function hideKw() {
+  document.getElementById('kwPanel').classList.remove('open');
+  clearTimeout(kwTimer);
+}
+
+// ===== 错误汇报 =====
+function openRpt() {
+  var page = location.pathname.split('/').pop() || 'index.html';
+  document.getElementById('rptPage').textContent = page;
+  document.getElementById('rptDesc').value = '';
+  document.getElementById('rptContact').value = '';
+  document.getElementById('rptForm').style.display = '';
+  document.getElementById('rptOk').style.display = 'none';
+  document.getElementById('rptOverlay').classList.add('show');
+}
+function closeRpt() {
+  document.getElementById('rptOverlay').classList.remove('show');
+}
+function submitRpt() {
+  var desc = document.getElementById('rptDesc').value.trim();
+  if (!desc) { document.getElementById('rptDesc').focus(); return; }
+  var btn = document.getElementById('rptBtn');
+  btn.disabled = true; btn.textContent = '提交中...';
+  var payload = {
+    page: document.getElementById('rptPage').textContent,
+    desc: desc,
+    contact: document.getElementById('rptContact').value.trim(),
+    time: new Date().toLocaleString('zh-CN', {hour12:false}),
+    user_agent: navigator.userAgent
+  };
+  fetch('/api/report', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  }).then(function(r){ return r.json(); }).then(function(d) {
+    btn.disabled = false; btn.textContent = '提交汇报';
+    document.getElementById('rptForm').style.display = 'none';
+    document.getElementById('rptOk').style.display = 'block';
+    setTimeout(closeRpt, 1800);
+  }).catch(function(e) {
+    btn.disabled = false; btn.textContent = '提交汇报';
+    alert('汇报失败，请重试：' + e);
+  });
+}
+</script>
+<!-- 错误汇报弹窗 -->
+<div class="rpt-overlay" id="rptOverlay" onclick="if(event.target===this)closeRpt()">
+  <div class="rpt-modal">
+    <div class="rpt-head">
+      <span class="rpt-title"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9 9v-1a3 3 0 0 1 6 0v1" /> <path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /> <path d="M3 13l4 0" /> <path d="M17 13l4 0" /> <path d="M12 20l0 -6" /> <path d="M4 19l3.35 -2" /> <path d="M20 19l-3.35 -2" /> <path d="M4 7l3.75 2.4" /> <path d="M20 7l-3.75 2.4" /> </svg></span> 文档有误？向服务器汇报！</span>
+      <button class="rpt-close" onclick="closeRpt()">×</button>
+    </div>
+    <div class="rpt-body" id="rptForm">
+      <div class="rpt-field">
+        <label>问题页面</label>
+        <div class="rpt-page" id="rptPage"></div>
+      </div>
+      <div class="rpt-field">
+        <label>问题描述</label>
+        <textarea id="rptDesc" placeholder="请描述你发现的问题：哪个词错了？哪里跳转不对？内容过时了？"></textarea>
+      </div>
+      <div class="rpt-field">
+        <label>联系方式（选填）</label>
+        <input id="rptContact" type="text" placeholder="QQ号 / 邮箱等，方便反馈处理结果">
+      </div>
+      <div class="rpt-tip">提交后内容会发送到服务器 reports/ 目录，管理员会尽快处理喵~</div>
+      <button class="rpt-submit" id="rptBtn" onclick="submitRpt()">提交汇报</button>
+    </div>
+    <div class="rpt-ok" id="rptOk" style="display:none;">
+      <div class="rpt-ok-icon"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span></div>
+      <div class="rpt-ok-title">汇报成功！</div>
+      <div class="rpt-ok-desc">感谢主人的反馈，问题已记录到服务器</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

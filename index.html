@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f1117">
+<title>Claude Code 知识库</title>
+<style>
+:root {
+  --bg: #0f1117; --bg2: #16181f; --card: #1b1e26; --card2: #20242e;
+  --border: #2a2e3a; --text: #e2e4ea; --text2: #9aa0ad; --muted: #6b7280;
+  --accent: #8b7cff; --accent2: #a99dff; --code-bg: #0c0e13;
+  --kw-bg: rgba(139,124,255,0.15); --kw-hover: rgba(139,124,255,0.28);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { scroll-behavior:smooth; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); }
+.icon { display:inline-flex; vertical-align:-0.2em; width:1.1em; height:1.1em; margin-right:6px; }
+.icon svg { width:100%; height:100%; }
+.topbar { position:fixed; top:0; left:0; right:0; z-index:100; background:var(--bg2); color:var(--text); display:flex; align-items:center; padding:0 16px; height:50px; box-shadow:0 2px 8px rgba(0,0,0,0.5); border-bottom:1px solid var(--border); }
+.topbar .logo { font-weight:700; font-size:16px; flex:1; display:flex; align-items:center; }
+.topbar .logo .icon { color:var(--accent); }
+.hamburger { background:none; border:none; color:var(--text); cursor:pointer; padding:8px; line-height:1; display:inline-flex; align-items:center; }
+.hamburger .icon { margin:0; width:1.6em; height:1.6em; }
+.drawer { position:fixed; top:0; left:0; bottom:0; width:250px; background:var(--bg2); color:var(--text); z-index:200; transform:translateX(-100%); transition:transform 0.25s ease; overflow-y:auto; padding-top:60px; border-right:1px solid var(--border); }
+.drawer.open { transform:translateX(0); }
+.drawer nav a { display:flex; align-items:center; padding:12px 20px; color:var(--text2); text-decoration:none; font-size:15px; }
+.drawer nav a:hover, .drawer nav a:active { color:var(--text); background:var(--card2); }
+.drawer nav a .icon { color:var(--accent); }
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:150; display:none; }
+.overlay.show { display:block; }
+.sidebar { display:none; }
+.main { padding:60px 16px 40px; max-width:900px; margin:0 auto; }
+h1 { font-size:24px; margin-bottom:8px; line-height:1.3; }
+.subtitle { color:var(--muted); font-size:13px; margin-bottom:20px; line-height:1.6; }
+.card { background:var(--card); border-radius:12px; padding:18px; margin-bottom:16px; border:1px solid var(--border); box-shadow:0 2px 12px rgba(0,0,0,0.3); }
+h2 { font-size:19px; margin-bottom:12px; padding-bottom:8px; border-bottom:2px solid var(--accent); display:flex; align-items:center; color:var(--text); }
+h2 .icon { color:var(--accent); }
+h3 { font-size:16px; margin:16px 0 8px; color:var(--text); }
+h4 { font-size:14px; margin:10px 0 6px; color:var(--accent2); }
+p { line-height:1.75; margin:6px 0; font-size:15px; color:var(--text); }
+pre { background:var(--code-bg); color:#d5d8e0; padding:12px 14px; border-radius:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; font-size:12.5px; line-height:1.6; margin:10px 0; white-space:pre; border:1px solid var(--border); }
+code { font-family:"JetBrains Mono",Consolas,monospace; }
+blockquote { border-left:4px solid var(--accent); padding:8px 14px; background:rgba(139,124,255,0.08); margin:10px 0; color:var(--text2); font-size:14px; border-radius:0 8px 8px 0; }
+li { margin-left:22px; line-height:1.8; font-size:15px; color:var(--text); }
+.table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; margin:10px 0; border-radius:8px; border:1px solid var(--border); }
+.note-table { width:100%; border-collapse:collapse; font-size:13px; min-width:420px; }
+.note-table th, .note-table td { border-bottom:1px solid var(--border); padding:8px 12px; text-align:left; white-space:normal; color:var(--text); }
+.note-table th { background:var(--card2); color:var(--accent2); position:sticky; top:0; }
+.kw { color:#c4b5fd; background:var(--kw-bg); border-bottom:1px dashed var(--accent); padding:1px 4px; border-radius:4px; text-decoration:none; cursor:pointer; font-weight:500; transition:all 0.15s; }
+.kw:hover, .kw:active { background:var(--kw-hover); color:#fff; }
+.doc-card { background:var(--card); border-radius:10px; padding:14px 16px; margin-bottom:10px; border:1px solid var(--border); cursor:pointer; transition:0.2s; }
+.doc-card:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 4px 16px rgba(139,124,255,0.15); }
+.doc-header { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.doc-title { font-weight:600; font-size:14.5px; flex:1; display:flex; align-items:center; color:var(--text); }
+.doc-icon { color:var(--accent); opacity:0.8; flex-shrink:0; }
+.doc-size { font-size:11px; color:var(--muted); background:var(--card2); padding:2px 8px; border-radius:10px; flex-shrink:0; }
+.doc-desc { color:var(--text2); font-size:13px; line-height:1.6; margin-top:6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.doc-file { color:var(--muted); font-size:11px; margin-top:6px; font-family:monospace; word-break:break-all; }
+.index-list { list-style:none; padding:0; }
+.index-list li { margin:4px 0; }
+.index-list a { color:var(--accent2); text-decoration:none; font-size:14.5px; display:block; padding:4px 0; }
+.index-list a:hover { color:var(--accent); }
+.cat-title { color:var(--text2); font-size:15px; margin:14px 0 6px; }
+.search-wrap { position:relative; margin-bottom:12px; }
+.search-wrap .icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); width:1.1em; height:1.1em; }
+.search-box { width:100%; padding:11px 14px 11px 38px; border:1px solid var(--border); border-radius:10px; font-size:15px; background:var(--bg2); color:var(--text); }
+.search-box:focus { outline:none; border-color:var(--accent); }
+.search-box::placeholder { color:var(--muted); }
+.scroll-top { position:fixed; right:16px; bottom:20px; width:44px; height:44px; border-radius:50%; background:var(--card2); color:var(--text); border:1px solid var(--border); box-shadow:0 3px 12px rgba(0,0,0,0.4); display:none; z-index:90; align-items:center; justify-content:center; cursor:pointer; }
+.scroll-top.show { display:flex; }
+.scroll-top .icon { margin:0; width:1.4em; height:1.4em; }
+/* 关键词弹窗 */
+.kw-panel { position:fixed; left:0; top:50%; transform:translate(-110%,-50%); z-index:400; background:var(--card); border:1px solid var(--accent); border-left:none; border-radius:0 16px 16px 0; box-shadow:0 8px 40px rgba(0,0,0,0.6); transition:transform 0.35s cubic-bezier(0.22,1,0.36,1); max-height:70vh; display:flex; flex-direction:column; }
+.kw-panel.open { transform:translate(0,-50%); }
+.kw-panel .kwp-head { display:flex; align-items:center; gap:8px; padding:14px 18px 10px; border-bottom:1px solid var(--border); }
+.kw-panel .kwp-badge { background:var(--kw-bg); color:var(--accent2); font-size:12px; font-weight:700; padding:3px 10px; border-radius:10px; flex-shrink:0; }
+.kw-panel .kwp-title { font-size:15px; font-weight:600; color:var(--text); flex:1; line-height:1.4; }
+.kw-panel .kwp-close { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:0 4px; line-height:1; flex-shrink:0; }
+.kw-panel .kwp-close:hover { color:var(--text); }
+.kw-panel .kwp-body { padding:14px 18px; overflow-y:auto; flex:1; }
+.kw-panel .kwp-desc { font-size:14px; line-height:1.8; color:var(--text2); }
+.kw-panel .kwp-link { display:inline-flex; align-items:center; margin-top:12px; color:var(--accent2); text-decoration:none; font-size:13px; font-weight:600; }
+.kw-panel .kwp-link:hover { color:var(--accent); }
+.kw-panel .kwp-bar-wrap { height:4px; background:var(--card2); border-radius:0 0 16px 0; overflow:hidden; flex-shrink:0; }
+.kw-panel .kwp-bar { height:100%; width:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:0 0 16px 0; }
+@media (min-width: 768px) {
+  .drawer, .overlay { display:none; }
+  .sidebar { display:block; width:250px; background:var(--bg2); color:var(--text); padding:20px 0; position:sticky; top:0; height:100vh; overflow-y:auto; flex-shrink:0; border-right:1px solid var(--border); }
+  .container { display:flex; min-height:100vh; }
+  .sidebar h2 { padding:0 20px 15px; font-size:18px; border-bottom:1px solid var(--border); display:flex; align-items:center; }
+  .sidebar h2 .icon { color:var(--accent); }
+  .sidebar nav a { display:flex; align-items:center; padding:8px 20px; color:var(--text2); text-decoration:none; font-size:14px; }
+  .sidebar nav a:hover { color:var(--text); background:var(--card2); }
+  .sidebar nav a .icon { color:var(--accent); }
+  .main { padding:40px 40px; }
+  h1 { font-size:28px; }
+  .card { padding:24px; }
+}
+
+/* 雨云友情链接 */
+.footer { max-width:900px; margin:0 auto; padding:24px 16px 32px; text-align:center; border-top:1px solid var(--border); }
+.footer .fy-badge { display:inline-flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:10px 20px; transition:0.2s; }
+.footer .fy-badge:hover { border-color:var(--accent); transform:translateY(-2px); }
+.footer .fy-logo { width:28px; height:28px; border-radius:8px; background:linear-gradient(135deg,#4facfe,#00f2fe); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; color:#fff; flex-shrink:0; }
+.footer .fy-text { text-align:left; line-height:1.5; }
+.footer .fy-text .t1 { font-size:13px; color:var(--text); font-weight:600; }
+.footer .fy-text .t2 { font-size:11px; color:var(--muted); }
+.footer a { text-decoration:none; }
+
+
+/* ===== 错误汇报 ===== */
+.btn-report { display:inline-flex; align-items:center; gap:4px; background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12.5px; transition:0.15s; }
+.btn-report:hover { color:var(--text); border-color:var(--accent); background:var(--card2); }
+.rpt-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:500; display:none; align-items:center; justify-content:center; padding:20px; overflow-y:auto; }
+.rpt-overlay.show { display:flex; }
+.rpt-modal { background:var(--card); border:1px solid var(--accent); border-radius:16px; width:100%; max-width:460px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.7); }
+.rpt-head { display:flex; align-items:center; gap:8px; padding:16px 20px; border-bottom:1px solid var(--border); }
+.rpt-head .rpt-title { font-size:16px; font-weight:700; color:var(--text); flex:1; }
+.rpt-close { background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1; }
+.rpt-close:hover { color:var(--text); }
+.rpt-body { padding:18px 20px; }
+.rpt-field { margin-bottom:14px; }
+.rpt-field label { display:block; font-size:13px; color:var(--text2); margin-bottom:6px; }
+.rpt-field .rpt-page { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:13px; color:var(--accent2); word-break:break-all; }
+.rpt-field input, .rpt-field textarea { width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:14px; color:var(--text); font-family:inherit; resize:vertical; }
+.rpt-field input:focus, .rpt-field textarea:focus { outline:none; border-color:var(--accent); }
+.rpt-field textarea { min-height:90px; }
+.rpt-tip { font-size:12px; color:var(--muted); margin-top:4px; }
+.rpt-submit { width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px; font-size:15px; font-weight:600; cursor:pointer; transition:0.15s; }
+.rpt-submit:hover { background:var(--accent2); }
+.rpt-submit:disabled { opacity:0.5; cursor:not-allowed; }
+.rpt-ok { text-align:center; padding:30px 20px; }
+.rpt-ok .rpt-ok-icon { font-size:42px; margin-bottom:12px; }
+.rpt-ok .rpt-ok-title { font-size:17px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.rpt-ok .rpt-ok-desc { font-size:13px; color:var(--text2); }
+
+
+
+.clog-list { margin-top:10px; }
+.clog-item { display:flex; align-items:baseline; gap:12px; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13.5px; }
+.clog-item:last-child { border-bottom:none; }
+.clog-ver { color:var(--accent); font-weight:700; flex-shrink:0; font-size:12px; background:var(--kw-bg); padding:2px 8px; border-radius:8px; }
+.clog-date { color:var(--muted); flex-shrink:0; font-size:12px; }
+.clog-desc { color:var(--text2); line-height:1.6; }
+
+
+
+/* ===== 错误汇报 ===== */
+.btn-report { display:inline-flex; align-items:center; gap:4px; background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12.5px; transition:0.15s; }
+.btn-report:hover { color:var(--text); border-color:var(--accent); background:var(--card2); }
+.rpt-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:500; display:none; align-items:center; justify-content:center; padding:20px; }
+.rpt-overlay.show { display:flex; }
+.rpt-modal { background:var(--card); border:1px solid var(--accent); border-radius:16px; width:100%; max-width:460px; box-shadow:0 20px 60px rgba(0,0,0,0.7); overflow:hidden; }
+.rpt-head { display:flex; align-items:center; gap:8px; padding:16px 20px; border-bottom:1px solid var(--border); }
+.rpt-head .rpt-title { font-size:16px; font-weight:700; color:var(--text); flex:1; }
+.rpt-close { background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1; }
+.rpt-close:hover { color:var(--text); }
+.rpt-body { padding:18px 20px; }
+.rpt-field { margin-bottom:14px; }
+.rpt-field label { display:block; font-size:13px; color:var(--text2); margin-bottom:6px; }
+.rpt-field .rpt-page { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:13px; color:var(--accent2); word-break:break-all; }
+.rpt-field input, .rpt-field textarea { width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:14px; color:var(--text); font-family:inherit; resize:vertical; }
+.rpt-field input:focus, .rpt-field textarea:focus { outline:none; border-color:var(--accent); }
+.rpt-field textarea { min-height:90px; }
+.rpt-tip { font-size:12px; color:var(--muted); margin-top:4px; }
+.rpt-submit { width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px; font-size:15px; font-weight:600; cursor:pointer; transition:0.15s; }
+.rpt-submit:hover { background:var(--accent2); }
+.rpt-submit:disabled { opacity:0.5; cursor:not-allowed; }
+.rpt-ok { text-align:center; padding:30px 20px; }
+.rpt-ok .rpt-ok-icon { font-size:42px; margin-bottom:12px; }
+.rpt-ok .rpt-ok-title { font-size:17px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.rpt-ok .rpt-ok-desc { font-size:13px; color:var(--text2); }
+
+
+.clog-list { margin-top:10px; }
+.clog-item { display:flex; align-items:baseline; gap:12px; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13.5px; }
+.clog-item:last-child { border-bottom:none; }
+.clog-ver { color:var(--accent); font-weight:700; flex-shrink:0; font-size:12px; background:var(--kw-bg); padding:2px 8px; border-radius:8px; }
+.clog-date { color:var(--muted); flex-shrink:0; font-size:12px; }
+.clog-desc { color:var(--text2); line-height:1.6; }
+.dot { display:inline-block; width:0.85em; height:0.85em; border-radius:50%; vertical-align:-0.1em; margin:0 2px; }
+.dot-red { background:#f03e3e; } .dot-yellow { background:#f59f00; } .dot-purple { background:#9c36b5; }
+
+
+/* ===== 错误汇报 ===== */
+.btn-report { display:inline-flex; align-items:center; gap:4px; background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12.5px; transition:0.15s; }
+.btn-report:hover { color:var(--text); border-color:var(--accent); background:var(--card2); }
+.rpt-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:500; display:none; align-items:center; justify-content:center; padding:20px; }
+.rpt-overlay.show { display:flex; }
+.rpt-modal { background:var(--card); border:1px solid var(--accent); border-radius:16px; width:100%; max-width:460px; box-shadow:0 20px 60px rgba(0,0,0,0.7); overflow:hidden; }
+.rpt-head { display:flex; align-items:center; gap:8px; padding:16px 20px; border-bottom:1px solid var(--border); }
+.rpt-head .rpt-title { font-size:16px; font-weight:700; color:var(--text); flex:1; }
+.rpt-close { background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1; }
+.rpt-close:hover { color:var(--text); }
+.rpt-body { padding:18px 20px; }
+.rpt-field { margin-bottom:14px; }
+.rpt-field label { display:block; font-size:13px; color:var(--text2); margin-bottom:6px; }
+.rpt-field .rpt-page { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:13px; color:var(--accent2); word-break:break-all; }
+.rpt-field input, .rpt-field textarea { width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:14px; color:var(--text); font-family:inherit; resize:vertical; }
+.rpt-field input:focus, .rpt-field textarea:focus { outline:none; border-color:var(--accent); }
+.rpt-field textarea { min-height:90px; }
+.rpt-tip { font-size:12px; color:var(--muted); margin-top:4px; }
+.rpt-submit { width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px; font-size:15px; font-weight:600; cursor:pointer; transition:0.15s; }
+.rpt-submit:hover { background:var(--accent2); }
+.rpt-submit:disabled { opacity:0.5; cursor:not-allowed; }
+.rpt-ok { text-align:center; padding:30px 20px; }
+.rpt-ok .rpt-ok-icon { font-size:42px; margin-bottom:12px; }
+.rpt-ok .rpt-ok-title { font-size:17px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.rpt-ok .rpt-ok-desc { font-size:13px; color:var(--text2); }
+
+
+
+.clog-list { margin-top:10px; }
+.clog-item { display:flex; align-items:baseline; gap:12px; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13.5px; }
+.clog-item:last-child { border-bottom:none; }
+.clog-ver { color:var(--accent); font-weight:700; flex-shrink:0; font-size:12px; background:var(--kw-bg); padding:2px 8px; border-radius:8px; }
+.clog-date { color:var(--muted); flex-shrink:0; font-size:12px; }
+.clog-desc { color:var(--text2); line-height:1.6; }
+.dot { display:inline-block; width:0.85em; height:0.85em; border-radius:50%; vertical-align:-0.1em; margin:0 2px; }
+.dot-red { background:#f03e3e; } .dot-yellow { background:#f59f00; } .dot-purple { background:#9c36b5; }
+
+.card a:not(.kw):not(.doc-card):not(.index-list a) { color:var(--accent2); text-decoration:none; border-bottom:1px dotted var(--accent); }
+.card a:not(.kw):hover { color:#fff; }
+
+
+
+/* ===== 错误汇报 ===== */
+.btn-report { display:inline-flex; align-items:center; gap:4px; background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12.5px; transition:0.15s; }
+.btn-report:hover { color:var(--text); border-color:var(--accent); background:var(--card2); }
+.rpt-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:500; display:none; align-items:center; justify-content:center; padding:20px; }
+.rpt-overlay.show { display:flex; }
+.rpt-modal { background:var(--card); border:1px solid var(--accent); border-radius:16px; width:100%; max-width:460px; box-shadow:0 20px 60px rgba(0,0,0,0.7); overflow:hidden; }
+.rpt-head { display:flex; align-items:center; gap:8px; padding:16px 20px; border-bottom:1px solid var(--border); }
+.rpt-head .rpt-title { font-size:16px; font-weight:700; color:var(--text); flex:1; }
+.rpt-close { background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1; }
+.rpt-close:hover { color:var(--text); }
+.rpt-body { padding:18px 20px; }
+.rpt-field { margin-bottom:14px; }
+.rpt-field label { display:block; font-size:13px; color:var(--text2); margin-bottom:6px; }
+.rpt-field .rpt-page { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:13px; color:var(--accent2); word-break:break-all; }
+.rpt-field input, .rpt-field textarea { width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:14px; color:var(--text); font-family:inherit; resize:vertical; }
+.rpt-field input:focus, .rpt-field textarea:focus { outline:none; border-color:var(--accent); }
+.rpt-field textarea { min-height:90px; }
+.rpt-tip { font-size:12px; color:var(--muted); margin-top:4px; }
+.rpt-submit { width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px; font-size:15px; font-weight:600; cursor:pointer; transition:0.15s; }
+.rpt-submit:hover { background:var(--accent2); }
+.rpt-submit:disabled { opacity:0.5; cursor:not-allowed; }
+.rpt-ok { text-align:center; padding:30px 20px; }
+.rpt-ok .rpt-ok-icon { font-size:42px; margin-bottom:12px; }
+.rpt-ok .rpt-ok-title { font-size:17px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.rpt-ok .rpt-ok-desc { font-size:13px; color:var(--text2); }
+
+
+
+.clog-list { margin-top:10px; }
+.clog-item { display:flex; align-items:baseline; gap:12px; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13.5px; }
+.clog-item:last-child { border-bottom:none; }
+.clog-ver { color:var(--accent); font-weight:700; flex-shrink:0; font-size:12px; background:var(--kw-bg); padding:2px 8px; border-radius:8px; }
+.clog-date { color:var(--muted); flex-shrink:0; font-size:12px; }
+.clog-desc { color:var(--text2); line-height:1.6; }
+.dot { display:inline-block; width:0.85em; height:0.85em; border-radius:50%; vertical-align:-0.1em; margin:0 2px; }
+.dot-red { background:#f03e3e; } .dot-yellow { background:#f59f00; } .dot-purple { background:#9c36b5; }
+.article a { color:#a78bfa; text-decoration:underline; text-underline-offset:3px; transition:color 0.15s; }
+.article a:hover { color:#c4b5fd; }
+.article a:visited { color:#a78bfa; }
+.article a.kw { color:#c4b5fd; text-decoration:none; }
+
+
+
+/* ===== 错误汇报 ===== */
+.btn-report { display:inline-flex; align-items:center; gap:4px; background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12.5px; transition:0.15s; }
+.btn-report:hover { color:var(--text); border-color:var(--accent); background:var(--card2); }
+.rpt-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:500; display:none; align-items:center; justify-content:center; padding:20px; }
+.rpt-overlay.show { display:flex; }
+.rpt-modal { background:var(--card); border:1px solid var(--accent); border-radius:16px; width:100%; max-width:460px; box-shadow:0 20px 60px rgba(0,0,0,0.7); overflow:hidden; }
+.rpt-head { display:flex; align-items:center; gap:8px; padding:16px 20px; border-bottom:1px solid var(--border); }
+.rpt-head .rpt-title { font-size:16px; font-weight:700; color:var(--text); flex:1; }
+.rpt-close { background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1; }
+.rpt-close:hover { color:var(--text); }
+.rpt-body { padding:18px 20px; }
+.rpt-field { margin-bottom:14px; }
+.rpt-field label { display:block; font-size:13px; color:var(--text2); margin-bottom:6px; }
+.rpt-field .rpt-page { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:13px; color:var(--accent2); word-break:break-all; }
+.rpt-field input, .rpt-field textarea { width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:14px; color:var(--text); font-family:inherit; resize:vertical; }
+.rpt-field input:focus, .rpt-field textarea:focus { outline:none; border-color:var(--accent); }
+.rpt-field textarea { min-height:90px; }
+.rpt-tip { font-size:12px; color:var(--muted); margin-top:4px; }
+.rpt-submit { width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px; font-size:15px; font-weight:600; cursor:pointer; transition:0.15s; }
+.rpt-submit:hover { background:var(--accent2); }
+.rpt-submit:disabled { opacity:0.5; cursor:not-allowed; }
+.rpt-ok { text-align:center; padding:30px 20px; }
+.rpt-ok .rpt-ok-icon { font-size:42px; margin-bottom:12px; }
+.rpt-ok .rpt-ok-title { font-size:17px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.rpt-ok .rpt-ok-desc { font-size:13px; color:var(--text2); }
+
+
+
+.clog-list { margin-top:10px; }
+.clog-item { display:flex; align-items:baseline; gap:12px; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13.5px; }
+.clog-item:last-child { border-bottom:none; }
+.clog-ver { color:var(--accent); font-weight:700; flex-shrink:0; font-size:12px; background:var(--kw-bg); padding:2px 8px; border-radius:8px; }
+.clog-date { color:var(--muted); flex-shrink:0; font-size:12px; }
+.clog-desc { color:var(--text2); line-height:1.6; }
+.dot { display:inline-block; width:0.85em; height:0.85em; border-radius:50%; vertical-align:-0.1em; margin:0 2px; }
+.dot-red { background:#f03e3e; } .dot-yellow { background:#f59f00; } .dot-purple { background:#9c36b5; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <span class="logo"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6l0 13" /> <path d="M12 6l0 13" /> <path d="M21 6l0 13" /> </svg></span>Claude Code 知识库</span>
+  <button class="hamburger" onclick="toggleDrawer()" aria-label="菜单"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M4 6l16 0" /> <path d="M4 12l16 0" /> <path d="M4 18l16 0" /> </svg></span></button>
+</header>
+<aside class="drawer" id="drawer">
+  <nav>
+    <a href="#index" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>文档索引</a>
+    <a href="#changelog" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 8l0 4l2 2" /> <path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5" /> </svg></span>更新日志</a>
+    <a href="#manual" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M19 4v16h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12" /> <path d="M19 16h-12a2 2 0 0 0 -2 2" /> <path d="M9 8h6" /> </svg></span>入门手册</a>
+    <a href="#docs" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>全部文档简介</a>
+    <a href="#" onclick="closeDrawer();openRpt()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9 9v-1a3 3 0 0 1 6 0v1" /> <path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /> <path d="M3 13l4 0" /> <path d="M17 13l4 0" /> <path d="M12 20l0 -6" /> <path d="M4 19l3.35 -2" /> <path d="M20 19l-3.35 -2" /> <path d="M4 7l3.75 2.4" /> <path d="M20 7l-3.75 2.4" /> </svg></span>文档有误？汇报</a>
+  </nav>
+</aside>
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+
+<div class="container">
+  <aside class="sidebar">
+    <h2><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6l0 13" /> <path d="M12 6l0 13" /> <path d="M21 6l0 13" /> </svg></span>Claude Code 知识库</h2>
+    <nav>
+      <a href="#index"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>文档索引</a>
+      <a href="#changelog"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 8l0 4l2 2" /> <path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5" /> </svg></span>更新日志</a>
+      <a href="#manual"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M19 4v16h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12" /> <path d="M19 16h-12a2 2 0 0 0 -2 2" /> <path d="M9 8h6" /> </svg></span>入门手册</a>
+      <a href="#docs"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>全部文档简介</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>Claude Code 知识库</h1>
+    <p class="subtitle">官方中文文档（64 篇） + 入门手册 · 更新于 2026-08-05 10:09 · 本地离线可用 · <span style="color:var(--accent2)">紫色虚线词 = 98个专业词汇可点击解释</span></p>
+
+    <div class="card" id="index">
+      <h2><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>文档索引</h2>
+      <div class="search-wrap">
+        <span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /> <path d="M21 21l-6 -6" /> </svg></span>
+        <input type="text" class="search-box" placeholder="搜索文档..." oninput="searchDocs(this.value)">
+      </div>
+      <h3 class="cat-title">入门与基础</h3>
+<ul class="index-list">
+<li><a href="doc/overview.html">概述</a></li>
+<li><a href="doc/quickstart.html">快速开始</a></li>
+<li><a href="doc/how-claude-code-works.html">Claude Code 如何工作</a></li>
+<li><a href="doc/features-overview.html">扩展 Claude Code</a></li>
+<li><a href="doc/glossary.html">术语表</a></li>
+<li><a href="doc/best-practices.html">Claude Code 最佳实践</a></li>
+<li><a href="doc/common-workflows.html">常见工作流程</a></li>
+<li><a href="doc/interactive-mode.html">交互模式</a></li>
+<li><a href="doc/whats-new.html">最新动态</a></li>
+</ul>
+<h3 class="cat-title">CLI与命令</h3>
+<ul class="index-list">
+<li><a href="doc/cli-reference.html">CLI 参考</a></li>
+<li><a href="doc/commands.html">命令</a></li>
+<li><a href="doc/keybindings.html">自定义快捷键</a></li>
+<li><a href="doc/settings.html">Claude Code 设置</a></li>
+<li><a href="doc/env-vars.html">环境变量</a></li>
+<li><a href="doc/statusline.html">自定义你的状态行</a></li>
+<li><a href="doc/permission-modes.html">选择权限模式</a></li>
+<li><a href="doc/permissions.html">配置权限</a></li>
+<li><a href="doc/sessions.html">管理会话</a></li>
+<li><a href="doc/context-window.html">探索上下文窗口</a></li>
+<li><a href="doc/checkpointing.html">Checkpointing</a></li>
+</ul>
+<h3 class="cat-title">扩展体系</h3>
+<ul class="index-list">
+<li><a href="doc/plugins.html">创建插件</a></li>
+<li><a href="doc/discover-plugins.html">通过市场发现和安装预构建插件</a></li>
+<li><a href="doc/plugins-reference.html">Plugins 参考</a></li>
+<li><a href="doc/plugin-marketplaces.html">创建和分发 plugin marketplace</a></li>
+<li><a href="doc/skills.html">使用 skills 扩展 Claude</a></li>
+<li><a href="doc/sub-agents.html">创建自定义 subagents</a></li>
+<li><a href="doc/hooks.html">Hooks 参考</a></li>
+<li><a href="doc/hooks-guide.html">使用 hooks 自动化操作</a></li>
+<li><a href="doc/mcp.html">通过 MCP 将 Claude Code 连接到工具</a></li>
+<li><a href="doc/mcp-quickstart.html">连接到 MCP 服务器</a></li>
+<li><a href="doc/agents.html">并行运行代理</a></li>
+<li><a href="doc/agent-view.html">使用 agent view 管理多个代理</a></li>
+<li><a href="doc/agent-sdk_overview.html">Agent SDK 概览</a></li>
+</ul>
+<h3 class="cat-title">工作流与自动化</h3>
+<ul class="index-list">
+<li><a href="doc/workflows.html">使用动态工作流大规模编排子代理</a></li>
+<li><a href="doc/routines.html">使用例程自动化工作</a></li>
+<li><a href="doc/scheduled-tasks.html">按计划运行提示词</a></li>
+<li><a href="doc/desktop-scheduled-tasks.html">在 Claude Code Desktop 中安排定期任务</a></li>
+<li><a href="doc/prompt-caching.html">Claude Code 如何使用 prompt caching</a></li>
+<li><a href="doc/prompt-library.html">提示词库</a></li>
+<li><a href="doc/memory.html">Claude 如何记住你的项目</a></li>
+<li><a href="doc/code-review.html">Code Review</a></li>
+<li><a href="doc/goal.html">让 Claude 朝着目标工作</a></li>
+<li><a href="doc/third-party-integrations.html">企业部署概览</a></li>
+</ul>
+<h3 class="cat-title">平台与集成</h3>
+<ul class="index-list">
+<li><a href="doc/vs-code.html">在 VS Code 中使用 Claude Code</a></li>
+<li><a href="doc/jetbrains.html">JetBrains IDEs</a></li>
+<li><a href="doc/desktop.html">Desktop application</a></li>
+<li><a href="doc/desktop-quickstart.html">开始使用桌面应用</a></li>
+<li><a href="doc/chrome.html">在 Chrome 中使用 Claude Code</a></li>
+<li><a href="doc/slack.html">Slack 中的 Claude Code</a></li>
+<li><a href="doc/platforms.html">平台和集成</a></li>
+<li><a href="doc/github-actions.html">Claude Code GitHub Actions</a></li>
+<li><a href="doc/gitlab-ci-cd.html">Claude Code GitLab CI/CD</a></li>
+<li><a href="doc/claude-code-on-the-web.html">在网络上使用 Claude Code</a></li>
+<li><a href="doc/web-quickstart.html">在网络上开始使用 Claude Code</a></li>
+<li><a href="doc/computer-use.html">让 Claude 从 CLI 使用您的计算机</a></li>
+<li><a href="doc/remote-control.html">使用 Remote Control 从任何设备继续本地会话</a></li>
+</ul>
+<h3 class="cat-title">部署与运维</h3>
+<ul class="index-list">
+<li><a href="doc/setup.html">高级设置</a></li>
+<li><a href="doc/admin-setup.html">为您的组织设置 Claude Code</a></li>
+<li><a href="doc/legal-and-compliance.html">法律和合规</a></li>
+<li><a href="doc/troubleshooting.html">故障排除</a></li>
+<li><a href="doc/troubleshoot-install.html">排查安装和登录问题</a></li>
+<li><a href="doc/claude-directory.html">探索 .claude 目录</a></li>
+<li><a href="doc/zero-data-retention.html">零数据保留</a></li>
+<li><a href="doc/channels.html">使用 channels 将事件推送到运行中的会话</a></li>
+</ul>
+
+    </div>
+
+    
+    <div class="card" id="changelog">
+      <h2><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 8l0 4l2 2" /> <path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5" /> </svg></span>更新日志</h2>
+      <div class="clog-list">
+        <div class="clog-item"><span class="clog-ver">v1.5</span><span class="clog-date">2026-08-05</span><span class="clog-desc">修复markdown链接转换、表格/列表链接遗漏、正文emoji全部SVG化、新增goal/hooks-guide/zero-data-retention文档</span></div>
+        <div class="clog-item"><span class="clog-ver">v1.4</span><span class="clog-date">2026-08-05</span><span class="clog-desc">统一顶栏、错误汇报系统、更新日志、更新日期</span></div>
+        <div class="clog-item"><span class="clog-ver">v1.3</span><span class="clog-date">2026-08-05</span><span class="clog-desc">98个专业词汇、关键词弹窗、雨云友情链接</span></div>
+        <div class="clog-item"><span class="clog-ver">v1.2</span><span class="clog-date">2026-08-05</span><span class="clog-desc">64个独立阅读器页面、暗色主题、MDX组件转换</span></div>
+        <div class="clog-item"><span class="clog-ver">v1.1</span><span class="clog-date">2026-08-05</span><span class="clog-desc">移动端适配、Tabler图标库</span></div>
+        <div class="clog-item"><span class="clog-ver">v1.0</span><span class="clog-date">2026-08-05</span><span class="clog-desc">初始版本：官方中文文档+入门手册</span></div>
+      </div>
+    </div>
+
+
+    <div class="card" id="manual">
+      <h2><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M19 4v16h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12" /> <path d="M19 16h-12a2 2 0 0 0 -2 2" /> <path d="M9 8h6" /> </svg></span>入门手册</h2>
+      <h2>Claude Code 扩展体系入门笔记</h2>
+
+<blockquote>整理自官方文档（code.claude.com/docs/zh-CN），2026-08 抓取</blockquote>
+<blockquote>本文档配套完整官方文档：`claude_docs/md/` 目录下 50+ 个 markdown 文件</blockquote>
+
+<p>---</p>
+
+<h3>一、核心概念：三层扩展体系</h3>
+
+<pre><code>
+Marketplace（市场）  →  插件的注册表/索引（类比：npm registry、VS Code Marketplace）
+    ↓
+Plugin（插件）       →  安装的最小单位（自包含目录，可版本化、可分发）
+    ↓
+Skill / Agent / Hook / MCP Server / Command（具体能力）
+</code></pre>
+
+<p>**一句话理解：** <a class="kw" onclick="showKw('市场')" title="点击查看解释">市场</a>告诉你&quot;有什么<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>可用&quot;，<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>是&quot;一包功能&quot;，装好<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>后里面带着各种 skills（<a class="kw" onclick="showKw('技能')" title="点击查看解释">技能</a>）、agents（<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>）、hooks（<a class="kw" onclick="showKw('钩子')" title="点击查看解释">钩子</a>）、<a class="kw" onclick="showKw('<a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> server')" title="点击查看解释"><a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> server</a>s（外部工具连接）。</p>
+
+<div class='table-wrap'><table>
+<tr><th>层</th><th>类比</th><th>本质</th></tr>
+<tr><td>Marketplace</td><td>应用商店</td><td>一个 GitHub 仓库，根目录有 `.claude-plugin/marketplace.json`</td></tr>
+<tr><td>Plugin</td><td>一个App</td><td>自包含目录 + `.claude-plugin/plugin.json` 清单</td></tr>
+<tr><td>Skill</td><td>App里的一个功能</td><td>最小能力单元（markdown 指令文件）</td></tr>
+</table></div>
+
+<p>---</p>
+
+<h3>二、基本语法：CLI 命令</h3>
+
+<h4>启动与会话</h4>
+<pre><code>
+claude                      # 交互式启动
+claude &quot;query&quot;              # 直接提问（打印模式）
+claude -p &quot;query&quot;           # 打印模式（-p = --print）
+claude --continue / -c      # 继续当前目录最近的会话
+claude --resume &lt;id&gt;        # 恢复指定会话
+claude --resume             # 从列表中选择恢复
+claude --fork-session       # 恢复时创建新会话ID（配合 --resume/--continue）
+</code></pre>
+
+<h4>会话管理</h4>
+<pre><code>
+claude attach &lt;id&gt;          # 附加到后台会话
+claude logs &lt;id&gt;            # 打印后台会话最近输出
+claude stop &lt;id&gt;            # 停止后台会话（别名 claude kill）
+claude rm &lt;id&gt;              # 删除会话（记录保留，可用 --resume 找回）
+claude respawn &lt;id&gt;         # 重启会话保持对话完整
+claude daemon status        # 查看后台会话supervisor状态
+claude daemon stop --any    # 停止supervisor
+claude doctor               # 打印安装/设置诊断
+</code></pre>
+
+<h4>插件与MCP</h4>
+<pre><code>
+claude plugin install github@claude-plugins-official   # 安装插件
+claude plugin list          # 列出插件
+claude plugin prune         # 清理未使用插件
+claude plugin validate      # 校验插件JSON
+claude plugin marketplace add &lt;repo&gt;   # 添加市场
+claude mcp                  # 配置 MCP 服务器
+claude mcp login &lt;name&gt;     # MCP OAuth登录
+</code></pre>
+
+<h4>其他常用</h4>
+<pre><code>
+claude project purge [path] # 清除项目本地状态（--dry-run预览）
+claude setup-token          # 为CI生成长期OAuth令牌
+claude ultrareview [target] # 非交互运行代码审查（--json）
+claude --bg &quot;task&quot;          # 后台代理模式
+claude --exec &#x27;pytest -x&#x27;   # 作为后台作业运行shell命令
+</code></pre>
+
+<h4>常用 CLI 标志</h4>
+<pre><code>
+--add-dir &lt;dir&gt;                 # 添加额外工作目录
+--agent &lt;name&gt;                  # 指定代理
+--allowedTools &quot;Bash(git *)&quot;    # 免提示权限的工具（模式匹配）
+--disallowedTools &quot;Edit&quot;        # 拒绝的工具
+--dangerously-skip-permissions  # 跳过所有权限提示（等于 bypassPermissions 模式）
+--append-system-prompt &quot;...&quot;    # 追加系统提示词
+--append-system-prompt-file ./rules.txt
+--max-turns 3                   # 限制代理轮数（打印模式）
+--max-budget-usd 5.00           # 预算上限
+--output-format json|stream-json  # 输出格式
+--json-schema &#x27;{&quot;type&quot;:&quot;object&quot;}&#x27; # 结构化JSON输出
+--effort high                   # 工作量级别 low/medium/high/xhigh/max
+--fallback-model sonnet,haiku   # 模型回退链
+--model &lt;model&gt;                 # 指定模型
+--permission-mode &lt;mode&gt;        # 权限模式
+--print/-p                      # 打印模式
+--continue/-c                   # 继续会话
+--debug                         # 调试模式
+--init                          # 运行setup hooks
+--bare                          # 极简模式（跳过skills/plugins/MCP等发现）
+--ide                           # 自动连接IDE
+</code></pre>
+
+<p>---</p>
+
+<h3>三、常用斜杠命令（会话内）</h3>
+
+<pre><code>
+/help               # 帮助
+/clear              # 清空对话
+/compact            # 压缩上下文
+/context            # 查看上下文使用情况
+/config             # 查看配置
+/model              # 切换模型
+/effort             # 设置工作量
+/init               # 初始化 CLAUDE.md
+/mcp                # MCP配置面板
+/plugin             # 插件管理菜单
+/hooks              # hooks配置
+/agents             # 子代理列表
+/agents create      # 创建子代理
+/permissions        # 查看权限
+/cost               # 查看费用
+/usage              # 查看使用量
+/statusline         # 状态栏配置
+/keybindings        # 打开快捷键配置
+/diff               # 查看改动
+/branch             # 切换git分支
+/checkpoint         # 检查点
+/doctor             # 诊断
+/login /logout      # 登录/登出
+/exit               # 退出
+/vim                # 切换vim模式（如可用）
+</code></pre>
+
+<p>---</p>
+
+<h3>四、快捷键（keybindings）</h3>
+
+<p>**配置文件：** `~/.claude/<a class="kw" onclick="showKw('<a class="kw" onclick="showKw('keybindings')" title="点击查看解释">keybindings</a>.json')" title="点击查看解释"><a class="kw" onclick="showKw('keybindings')" title="点击查看解释">keybindings</a>.json</a>`（运行 `<a class="kw" onclick="showKw('/<a class="kw" onclick="showKw('keybindings')" title="点击查看解释">keybindings</a>')" title="点击查看解释">/<a class="kw" onclick="showKw('keybindings')" title="点击查看解释">keybindings</a></a>` 创建/打开）</p>
+<p>**热重载：** 修改自动生效，无需重启</p>
+
+<h4>默认快捷键速查</h4>
+
+<div class='table-wrap'><table>
+<tr><th>快捷键</th><th>操作</th></tr>
+<tr><td>`Ctrl+C`</td><td>取消当前操作（app:interrupt）</td></tr>
+<tr><td>`Ctrl+D`</td><td>退出 Claude Code（app:exit）</td></tr>
+<tr><td>`Ctrl+T`</td><td>切换待办清单（app:toggleTodos）</td></tr>
+<tr><td>`Ctrl+O`</td><td>切换详细记录（app:toggleTranscript）</td></tr>
+<tr><td>`Ctrl+R`</td><td>打开历史搜索（history:search）</td></tr>
+<tr><td>`↑` / `↓`</td><td>上一条/下一条历史（history:previous/next）</td></tr>
+<tr><td>`Esc`</td><td>取消当前输入（chat:cancel）</td></tr>
+<tr><td>`Ctrl+L`</td><td>强制全屏重绘保留输入（chat:clearInput）</td></tr>
+<tr><td>`Shift+Tab`</td><td>循环权限模式（chat:cycleMode）</td></tr>
+<tr><td>`Ctrl+X Ctrl+K`</td><td>终止所有后台子代理（chat:killAgents）</td></tr>
+</table></div>
+
+<h4>自定义快捷键示例</h4>
+<pre><code>
+{
+  &quot;$schema&quot;: &quot;https://www.schemastore.org/claude-code-keybindings.json&quot;,
+  &quot;bindings&quot;: [
+    {
+      &quot;context&quot;: &quot;Chat&quot;,
+      &quot;bindings&quot;: {
+        &quot;ctrl+e&quot;: &quot;chat:externalEditor&quot;,
+        &quot;ctrl+u&quot;: null
+      }
+    }
+  ]
+}
+</code></pre>
+
+<p>**<a class="kw" onclick="showKw('快捷键')" title="点击查看解释">快捷键</a>命名规范：** `小写修饰符+键`，如 `ctrl+shift+p`、`meta+p`（Windows/Linux 用 `ctrl`，macOS 用 `meta`）</p>
+
+<p>---</p>
+
+<h3>五、插件体系详解</h3>
+
+<h4>5.1 市场如何工作（两步走）</h4>
+<p>1. **添加<a class="kw" onclick="showKw('市场')" title="点击查看解释">市场</a>**（注册目录，可浏览）</p>
+<p>2. **安装单个<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>**（从目录中选择下载）</p>
+
+<p>类比：添加应用商店 → 商店可见 → 从中选应用下载。</p>
+
+<h4>5.2 官方市场（自动可用，无需添加！）</h4>
+<li>市场名：`claude-plugins-official`</li>
+<li>启动 Claude Code 后自动可用</li>
+<li>浏览：运行 `/plugin` 进入&quot;发现&quot;选项卡，或访问 claude.com/plugins</li>
+<li>安装：`/plugin install &lt;name&gt;@claude-plugins-official`</li>
+
+<h4>5.3 添加社区市场</h4>
+<pre><code>
+/plugin marketplace add &lt;github-owner&gt;/&lt;repo&gt;
+/plugin marketplace add https://github.com/xxx/yyy   # 完整URL也可
+/plugin marketplace list      # 查看已添加市场
+/plugin marketplace remove &lt;name&gt;   # 移除市场
+/plugin marketplace update    # 更新市场目录
+</code></pre>
+
+<h4>5.4 插件安装全流程</h4>
+<pre><code>
+/plugin                          # 打开插件管理菜单
+/plugin install &lt;name&gt;@&lt;market&gt;  # 安装：/plugin install github@claude-plugins-official
+/reload-plugins                  # 刷新使插件生效
+/plugin list                     # 验证已安装
+/plugin update &lt;name&gt;            # 更新插件
+/plugin disable &lt;name&gt;           # 禁用插件
+</code></pre>
+
+<h4>5.5 插件本地位置（Windows）</h4>
+<pre><code>
+C:\Users\&lt;用户名&gt;\.claude\plugins\
+</code></pre>
+<p>手动安装：把<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>目录/zip放到这里。</p>
+
+<p>---</p>
+
+<h3>六、创建自己的插件（快速开始）</h3>
+
+<pre><code>
+my-first-plugin/
+├── .claude-plugin/
+│   └── plugin.json      # 插件清单（名称/描述/版本）
+└── skills/
+    └── hello/
+        └── SKILL.md     # skill定义
+</code></pre>
+
+<p>**plugin.json 示例：**</p>
+<pre><code>
+{
+  &quot;name&quot;: &quot;my-first-plugin&quot;,
+  &quot;description&quot;: &quot;我的第一个插件&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;
+}
+</code></pre>
+
+<p>**测试：**</p>
+<pre><code>
+claude --plugin-dir ./my-first-plugin
+# 然后运行 /hello 测试skill
+</code></pre>
+
+<p>**独立配置 vs <a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>对比：**</p>
+<div class='table-wrap'><table>
+<tr><th>方法</th><th>Skill名称</th><th>适合</th></tr>
+<tr><td>独立（`.claude/`目录）</td><td>`/hello`</td><td>个人工作流、快速实验</td></tr>
+<tr><td>插件（自包含目录）</td><td>`/plugin-name:hello`</td><td>团队共享、社区分发、版本化</td></tr>
+</table></div>
+
+<p>**建议流程：** 先在 `.claude/` 独立配置快速迭代 → 稳定后转成<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>分发。</p>
+
+<p>---</p>
+
+<h3>七、Skill / Agent / Hook / MCP 快速认知</h3>
+
+<h4>Skill（技能）</h4>
+<li>最小能力单元，本质是 markdown 指令文件（SKILL.md）</li>
+<li>位置：`~/.claude/skills/` 或插件内 `skills/` 目录</li>
+<li>通过 `/skill-name` 调用或自动触发</li>
+
+<h4>Agent / Subagent（子代理）</h4>
+<li>独立配置的专用代理，带自己的 system prompt</li>
+<li>创建：`/agents create` 或 `.claude/agents/` 目录</li>
+<li>前台/后台运行：`/agents` 或 `Ctrl+X Ctrl+K` 终止</li>
+
+<h4>Hook（钩子）</h4>
+<li>在事件（SessionStart、PreToolUse、PostToolUse等）触发时执行脚本</li>
+<li>配置：`.claude/settings.json` 或 `/hooks`</li>
+<li>参考文档：`md/hooks.md`（207KB，内容最详实）</li>
+
+<h4>MCP Server（外部工具连接）</h4>
+<li>Model Context Protocol，连接外部工具/数据源</li>
+<li>配置：`claude mcp add &lt;name&gt; &lt;command&gt;` 或 `/mcp`</li>
+<li>参考文档：`md/mcp.md`、`md/mcp-quickstart.md`</li>
+
+<p>---</p>
+
+<h3>八、给新手的学习路径建议</h3>
+
+<p>1. **读**：本文档 + `md/overview.md` + `md/how-claude-code-works.md`</p>
+<p>2. **用**：敲 `<a class="kw" onclick="showKw('/plugin')" title="点击查看解释">/plugin</a> marketplace list` 看看官方<a class="kw" onclick="showKw('市场')" title="点击查看解释">市场</a>（你之前用了一个月都不知道它默认存在！）</p>
+<p>3. **试**：从官方<a class="kw" onclick="showKw('市场')" title="点击查看解释">市场</a>装 1-2 个<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>，观察它往 `~/.claude<a class="kw" onclick="showKw('/plugin')" title="点击查看解释">/plugin</a>s/` 里放了什么</p>
+<p>4. **抄**：把官方<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>源码当教材读（anthropics/claude-plugins-official）</p>
+<p>5. **造**：照着第六节模板做一个自己的玩具<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>，跑通一次全懂了</p>
+
+<p>---</p>
+
+<h3>附录：本地文档索引（claude_docs/md/）</h3>
+
+<div class='table-wrap'><table>
+<tr><th>文件</th><th>内容</th><th>大小</th></tr>
+<tr><td>cli-reference.md</td><td>CLI完整参考（命令+标志）</td><td>68KB</td></tr>
+<tr><td>commands.md</td><td>斜杠命令全集</td><td>106KB</td></tr>
+<tr><td>keybindings.md</td><td>快捷键配置</td><td>26KB</td></tr>
+<tr><td>plugins.md</td><td>创建插件指南</td><td>25KB</td></tr>
+<tr><td>plugins-reference.md</td><td>插件CLI参考</td><td>79KB</td></tr>
+<tr><td>discover-plugins.md</td><td>市场安装插件</td><td>26KB</td></tr>
+<tr><td>plugin-marketplaces.md</td><td>创建分发市场</td><td>67KB</td></tr>
+<tr><td>hooks.md</td><td>钩子系统详解</td><td>207KB</td></tr>
+<tr><td>skills.md</td><td>技能系统</td><td>~KB</td></tr>
+<tr><td>mcp.md / mcp-quickstart.md</td><td>MCP配置</td><td>~KB</td></tr>
+<tr><td>settings.md</td><td>全部设置项</td><td>198KB</td></tr>
+<tr><td>env-vars.md</td><td>环境变量大全</td><td>235KB</td></tr>
+<tr><td>sub-agents.md</td><td>子代理</td><td>~KB</td></tr>
+<tr><td>memory.md</td><td>记忆系统</td><td>~KB</td></tr>
+<tr><td>+ 其余 30+ 个页面</td><td>详见目录</td><td>合计 2MB+</td></tr>
+</table></div>
+
+<blockquote>全部文档抓取自 https://code.claude.com/docs/zh-CN/{page}.md（Mintlify 支持 .md 后缀直接输出纯净 markdown）</blockquote>
+
+    </div>
+
+    <div class="card" id="docs">
+      <h2><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>全部文档简介</h2>
+      <p style="font-size:13px;color:var(--muted);">点击卡片打开完整文档阅读</p>
+      <div id="doc-list">
+        <div class="doc-card" onclick="location.href='doc/admin-setup.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>为您的组织设置 Claude Code</span>
+    <span class="doc-size">26KB</span>
+  </div>
+  <div class="doc-desc">Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。</div>
+  <div class="doc-file">admin-setup.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/agent-sdk_overview.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>Agent SDK 概览</span>
+    <span class="doc-size">25KB</span>
+  </div>
+  <div class="doc-desc">构建能够自主读取文件、运行命令、搜索网络、编辑代码等的 AI 代理。Agent SDK 为您提供了与 Claude Code 相同的工具、代理循环和上下文管理，可在 Python 和 TypeScript 中编程。有关代理工具设计背后的思考，请参阅博客上的 [A harness </div>
+  <div class="doc-file">agent-sdk_overview.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/agent-view.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>使用 agent view 管理多个代理</span>
+    <span class="doc-size">90KB</span>
+  </div>
+  <div class="doc-desc">Agent view 通过 `claude agents` 打开，是所有后台会话的一个屏幕：什么正在运行、什么需要你的输入、什么已完成。调度新会话，一目了然地查看它们的状态而不是滚动浏览记录，只在需要时才介入。每个后台会话都是一个完整的 Claude Code 对话，在没有终端连</div>
+  <div class="doc-file">agent-view.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/agents.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>并行运行代理</span>
+    <span class="doc-size">7KB</span>
+  </div>
+  <div class="doc-desc">子代理、代理视图、代理团队 和 动态工作流 各自以不同的方式并行化工作。</div>
+  <div class="doc-file">agents.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/best-practices.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>Claude Code 最佳实践</span>
+    <span class="doc-size">36KB</span>
+  </div>
+  <div class="doc-desc">Claude Code 是一个代理式编码环境。与等待回答问题的聊天机器人不同，Claude Code 可以读取你的文件、运行命令、进行更改，并在你观看、重定向或完全离开的情况下自主解决问题。</div>
+  <div class="doc-file">best-practices.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/channels.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>使用 channels 将事件推送到运行中的会话</span>
+    <span class="doc-size">21KB</span>
+  </div>
+  <div class="doc-desc">Channels 处于研究预览阶段。它们需要通过 claude.ai 或控制台 API 密钥进行 Anthropic 身份验证，在 Amazon Bedrock、Google Cloud 的 Agent Platform 或 Micros</div>
+  <div class="doc-file">channels.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/checkpointing.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>Checkpointing</span>
+    <span class="doc-size">6KB</span>
+  </div>
+  <div class="doc-desc">Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。</div>
+  <div class="doc-file">checkpointing.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/chrome.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>在 Chrome 中使用 Claude Code</span>
+    <span class="doc-size">13KB</span>
+  </div>
+  <div class="doc-desc">Claude Code 与 Claude in Chrome 浏览器扩展程序 集成，为您提供从 CLI 或 [V</div>
+  <div class="doc-file">chrome.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/claude-code-on-the-web.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>在网络上使用 Claude Code</span>
+    <span class="doc-size">55KB</span>
+  </div>
+  <div class="doc-desc">Claude Code on the web 处于研究预览阶段，适用于 Pro、Max 和 Team 用户，以及拥有高级席位或 Chat + Claude Code 席位的 Enterprise 用户。</div>
+  <div class="doc-file">claude-code-on-the-web.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/claude-directory.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>探索 .claude 目录</span>
+    <span class="doc-size">82KB</span>
+  </div>
+  <div class="doc-desc">const A = useMemo(() =&gt; ({href, children}) =&gt; &lt;a href={href} style={{</div>
+  <div class="doc-file">claude-directory.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/cli-reference.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>CLI 参考</span>
+    <span class="doc-size">67KB</span>
+  </div>
+  <div class="doc-desc">CLI 命令</div>
+  <div class="doc-file">cli-reference.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/code-review.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>Code Review</span>
+    <span class="doc-size">22KB</span>
+  </div>
+  <div class="doc-desc">Code Review 处于研究预览阶段，仅适用于 Team 和 Enterprise 订阅。对于启用了 [Zero Data Retention](/docs/zh-CN/zero-</div>
+  <div class="doc-file">code-review.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/commands.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>命令</span>
+    <span class="doc-size">104KB</span>
+  </div>
+  <div class="doc-desc">命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。</div>
+  <div class="doc-file">commands.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/common-workflows.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>常见工作流程</span>
+    <span class="doc-size">17KB</span>
+  </div>
+  <div class="doc-desc">本页收集了日常开发的简短工作流程。有关提示和上下文管理的更高级指导，请参阅最佳实践。</div>
+  <div class="doc-file">common-workflows.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/computer-use.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>让 Claude 从 CLI 使用您的计算机</span>
+    <span class="doc-size">13KB</span>
+  </div>
+  <div class="doc-desc">Computer use 是 macOS 上的研究预览版，需要 Pro 或 Max 计划。它在 Team 或 Enterprise 计划上不可用。它需要交互式会话，因此在使用 `-p` 标志的非交互式模式下不可用。</div>
+  <div class="doc-file">computer-use.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/context-window.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>探索上下文窗口</span>
+    <span class="doc-size">57KB</span>
+  </div>
+  <div class="doc-desc">const MAX = 200000;</div>
+  <div class="doc-file">context-window.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/desktop-quickstart.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>开始使用桌面应用</span>
+    <span class="doc-size">11KB</span>
+  </div>
+  <div class="doc-desc">桌面应用为您提供具有图形界面的 Claude Code，专为并行运行多个会话而构建：用于管理并行工作的侧边栏、带有集成终端和文件编辑器的拖放布局、可视化差异审查、实时应用预览、GitHub PR 监控和自动合并以及计划任务。无需终端。</div>
+  <div class="doc-file">desktop-quickstart.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/desktop-scheduled-tasks.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>在 Claude Code Desktop 中安排定期任务</span>
+    <span class="doc-size">11KB</span>
+  </div>
+  <div class="doc-desc">定期任务在您选择的时间和频率自动启动新会话。使用它们进行定期工作，如日常代码审查、依赖项更新检查或从您的日历和收件箱中提取信息的早晨简报。</div>
+  <div class="doc-file">desktop-scheduled-tasks.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/desktop.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>Desktop application</span>
+    <span class="doc-size">78KB</span>
+  </div>
+  <div class="doc-desc">Claude Desktop 应用有三个选项卡：**Chat** 用于对话，**Cowork** 用于 Dispatch 和更长的代理工作，**Code** 用于软件开发。本页是 Code 选项卡的参考。</div>
+  <div class="doc-file">desktop.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/discover-plugins.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>通过市场发现和安装预构建插件</span>
+    <span class="doc-size">26KB</span>
+  </div>
+  <div class="doc-desc">插件通过 skills、agents、hooks 和 MCP servers 扩展 Claude Code。插件市场是帮助您发现和安装这些扩展的目录，无需自己构建。</div>
+  <div class="doc-file">discover-plugins.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/env-vars.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>环境变量</span>
+    <span class="doc-size">229KB</span>
+  </div>
+  <div class="doc-desc">环境变量可以控制 Claude Code 的行为，例如模型选择、身份验证、请求路由和功能切换。许多相同的行为也可以通过设置文件字段、CLI 标志或会话内命令（如 `/mode</div>
+  <div class="doc-file">env-vars.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/features-overview.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>扩展 Claude Code</span>
+    <span class="doc-size">28KB</span>
+  </div>
+  <div class="doc-desc">Claude Code 结合了一个能够推理代码的模型和内置工具，用于文件操作、搜索、执行和网络访问。内置工具涵盖了大多数编码任务。本指南涵盖扩展层：您添加的功能，用于自定义 Claude 的知识</div>
+  <div class="doc-file">features-overview.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/github-actions.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>Claude Code GitHub Actions</span>
+    <span class="doc-size">29KB</span>
+  </div>
+  <div class="doc-desc">Claude Code GitHub Actions 为您的 GitHub 工作流带来了 AI 驱动的自动化。只需在任何 PR 或 issue 中简单地提及 `@claude`，Claude 就可以分析您的代码、创建拉取请求、实现功能和修复错误 - 所有这些都遵循您项目的标准。如</div>
+  <div class="doc-file">github-actions.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/gitlab-ci-cd.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>Claude Code GitLab CI/CD</span>
+    <span class="doc-size">19KB</span>
+  </div>
+  <div class="doc-desc">Claude Code for GitLab CI/CD 目前处于测试阶段。随着我们完善体验，功能和特性可能会发生变化。</div>
+  <div class="doc-file">gitlab-ci-cd.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/glossary.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>术语表</span>
+    <span class="doc-size">22KB</span>
+  </div>
+  <div class="doc-desc">本术语表定义了 Claude Code 术语。每个条目都链接到深入讨论该概念的页面。对于模型级概念（如 tokens、temperature 和 RAG），请参阅[平台术语表](https://platform.claude.com/docs/zh-CN/about-claude</div>
+  <div class="doc-file">glossary.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/goal.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>让 Claude 朝着目标工作</span>
+    <span class="doc-size">9KB</span>
+  </div>
+  <div class="doc-desc">`/goal` 需要 Claude Code v2.1.139 或更高版本。</div>
+  <div class="doc-file">goal.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/hooks-guide.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>使用 hooks 自动化操作</span>
+    <span class="doc-size">58KB</span>
+  </div>
+  <div class="doc-desc">Hooks 是用户定义的 shell 命令，在 Claude Code 生命周期中的特定点执行。它们对 Claude Code 的行为提供确定性控制，确保某些操作始终发生，而不是依赖 LLM 选择运行它们。使用 hooks 来强制执行项目规则、自动化重复任务，并将 Claude </div>
+  <div class="doc-file">hooks-guide.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/hooks.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>Hooks 参考</span>
+    <span class="doc-size">202KB</span>
+  </div>
+  <div class="doc-desc">有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。</div>
+  <div class="doc-file">hooks.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/how-claude-code-works.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>Claude Code 如何工作</span>
+    <span class="doc-size">19KB</span>
+  </div>
+  <div class="doc-desc">Claude Code 是一个在您的终端中运行的代理助手。虽然它在编码方面表现出色，但它可以帮助您完成从命令行可以做的任何事情：编写文档、运行构建、搜索文件、研究主题等。</div>
+  <div class="doc-file">how-claude-code-works.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/interactive-mode.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>交互模式</span>
+    <span class="doc-size">34KB</span>
+  </div>
+  <div class="doc-desc">键盘快捷键</div>
+  <div class="doc-file">interactive-mode.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/jetbrains.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>JetBrains IDEs</span>
+    <span class="doc-size">11KB</span>
+  </div>
+  <div class="doc-desc">Claude Code 通过专用插件与 JetBrains IDE 集成，提供交互式差异查看、选择上下文共享等功能。</div>
+  <div class="doc-file">jetbrains.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/keybindings.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>自定义快捷键</span>
+    <span class="doc-size">26KB</span>
+  </div>
+  <div class="doc-desc">Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。</div>
+  <div class="doc-file">keybindings.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/legal-and-compliance.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>法律和合规</span>
+    <span class="doc-size">4KB</span>
+  </div>
+  <div class="doc-desc">法律协议</div>
+  <div class="doc-file">legal-and-compliance.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/mcp-quickstart.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>连接到 MCP 服务器</span>
+    <span class="doc-size">22KB</span>
+  </div>
+  <div class="doc-desc">Model Context Protocol (MCP) 让 Claude Code 能够使用超出其内置工具集的工具，例如搜索问题跟踪器、查询数据库或控制网络浏览器。这些工具来自 MC</div>
+  <div class="doc-file">mcp-quickstart.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/mcp.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>通过 MCP 将 Claude Code 连接到工具</span>
+    <span class="doc-size">68KB</span>
+  </div>
+  <div class="doc-desc">Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Clau</div>
+  <div class="doc-file">mcp.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/memory.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>Claude 如何记住你的项目</span>
+    <span class="doc-size">29KB</span>
+  </div>
+  <div class="doc-desc">每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识：</div>
+  <div class="doc-file">memory.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/overview.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>概述</span>
+    <span class="doc-size">16KB</span>
+  </div>
+  <div class="doc-desc">Claude Code 是一个由 AI 驱动的编码助手，可帮助你构建功能、修复错误和自动化开发任务。它理解你的整个代码库，可以跨多个文件和工具工作以完成任务。</div>
+  <div class="doc-file">overview.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/permission-modes.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>选择权限模式</span>
+    <span class="doc-size">40KB</span>
+  </div>
+  <div class="doc-desc">当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。</div>
+  <div class="doc-file">permission-modes.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/permissions.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>配置权限</span>
+    <span class="doc-size">49KB</span>
+  </div>
+  <div class="doc-desc">Claude Code 支持细粒度权限，因此您可以精确指定代理允许执行的操作和不允许执行的操作。权限设置可以检入版本控制并分发给组织中的所有开发人员，也可以由个别开发人员自定义。</div>
+  <div class="doc-file">permissions.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/platforms.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>平台和集成</span>
+    <span class="doc-size">11KB</span>
+  </div>
+  <div class="doc-desc">Claude Code 在任何地方运行相同的底层引擎，但每个界面都针对不同的工作方式进行了优化。本页面帮助您为工作流选择合适的平台，并连接您已经使用的工具。</div>
+  <div class="doc-file">platforms.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/plugin-marketplaces.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>创建和分发 plugin marketplace</span>
+    <span class="doc-size">65KB</span>
+  </div>
+  <div class="doc-desc">**plugin marketplace** 是一个目录，让你能够将 plugins 分发给他人。Marketplace 提供集中式发现、版本跟踪、自动更新以及对多种源类型（包括 git 存储库和本地路径）的支持。本指南展示了如何创建自己的 marketplace，与你的团队或社</div>
+  <div class="doc-file">plugin-marketplaces.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/plugins-reference.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>Plugins 参考</span>
+    <span class="doc-size">77KB</span>
+  </div>
+  <div class="doc-desc">想要安装插件？请参阅发现和安装插件。如需创建插件，请参阅Plugins。如需分发插件，请参阅[Plugin marketplaces](/docs/zh-CN/plugi</div>
+  <div class="doc-file">plugins-reference.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/plugins.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>创建插件</span>
+    <span class="doc-size">25KB</span>
+  </div>
+  <div class="doc-desc">Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。</div>
+  <div class="doc-file">plugins.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/prompt-caching.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>Claude Code 如何使用 prompt caching</span>
+    <span class="doc-size">26KB</span>
+  </div>
+  <div class="doc-desc">Prompt caching 使 Claude Code 更快、更经济高效。没有缓存，API 会在每个回合重新处理您的完整历史记录。有了缓存，它会重用已经处理过的内容，只对更改的部分进行新工作。</div>
+  <div class="doc-file">prompt-caching.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/prompt-library.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>提示词库</span>
+    <span class="doc-size">54KB</span>
+  </div>
+  <div class="doc-desc">const RAW = useMemo(() =&gt; [{</div>
+  <div class="doc-file">prompt-library.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/quickstart.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>快速开始</span>
+    <span class="doc-size">16KB</span>
+  </div>
+  <div class="doc-desc">本快速开始指南将在几分钟内让您使用 AI 驱动的编码辅助。完成本指南后，您将了解如何使用 Claude Code 完成常见的开发任务。</div>
+  <div class="doc-file">quickstart.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/remote-control.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>使用 Remote Control 从任何设备继续本地会话</span>
+    <span class="doc-size">35KB</span>
+  </div>
+  <div class="doc-desc">Remote Control 处于研究预览阶段，在所有计划中都可用。在 Team 和 Enterprise 上，在所有者在 Claude Code 管理员设置中启用 Remote Co</div>
+  <div class="doc-file">remote-control.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/routines.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>使用例程自动化工作</span>
+    <span class="doc-size">28KB</span>
+  </div>
+  <div class="doc-desc">Routines 处于研究预览阶段。行为、限制和 API 表面可能会改变。</div>
+  <div class="doc-file">routines.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/scheduled-tasks.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>按计划运行提示词</span>
+    <span class="doc-size">16KB</span>
+  </div>
+  <div class="doc-desc">计划任务让 Claude 按间隔自动重新运行提示词。使用它们来轮询部署、监督 PR、检查长时间运行的构建，或在会话中稍后提醒自己做某事。要对事件进行实时反应而不是轮询，请参阅 Channels：您的 CI 可以直接将失败推送到会话中</div>
+  <div class="doc-file">scheduled-tasks.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/sessions.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>管理会话</span>
+    <span class="doc-size">13KB</span>
+  </div>
+  <div class="doc-desc">会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。</div>
+  <div class="doc-file">sessions.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/settings.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>Claude Code 设置</span>
+    <span class="doc-size">194KB</span>
+  </div>
+  <div class="doc-desc">Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `ke</div>
+  <div class="doc-file">settings.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/setup.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>高级设置</span>
+    <span class="doc-size">28KB</span>
+  </div>
+  <div class="doc-desc">本页面涵盖系统要求、特定平台安装详情、更新和卸载。有关首次会话的引导式演练，请参阅快速入门。如果您从未使用过终端，请参阅终端指南。</div>
+  <div class="doc-file">setup.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/skills.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>使用 skills 扩展 Claude</span>
+    <span class="doc-size">60KB</span>
+  </div>
+  <div class="doc-desc">Skills 扩展了 Claude 能做的事情。创建一个 `SKILL.md` 文件，其中包含说明，Claude 会将其添加到其工具包中。Claude 在相关时使用 skills，或者你可以使用 `/skill-name` 直接调用一个。</div>
+  <div class="doc-file">skills.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/slack.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>Slack 中的 Claude Code</span>
+    <span class="doc-size">14KB</span>
+  </div>
+  <div class="doc-desc">Slack 中的 Claude Code 正在被 Claude Tag 替代，用于 Team 和 Enterprise 工作区。Claude Tag 以您组织的共享身份运行 @Claude，具有管理员配置的访问权</div>
+  <div class="doc-file">slack.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/statusline.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>自定义你的状态行</span>
+    <span class="doc-size">56KB</span>
+  </div>
+  <div class="doc-desc">状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。</div>
+  <div class="doc-file">statusline.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/sub-agents.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>创建自定义 subagents</span>
+    <span class="doc-size">74KB</span>
+  </div>
+  <div class="doc-desc">Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指</div>
+  <div class="doc-file">sub-agents.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/third-party-integrations.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>企业部署概览</span>
+    <span class="doc-size">16KB</span>
+  </div>
+  <div class="doc-desc">const utm = content =&gt; `utm_source=claude_code&amp;utm_medium=docs&amp;utm_content=${surface}_${content}`;</div>
+  <div class="doc-file">third-party-integrations.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/troubleshoot-install.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>排查安装和登录问题</span>
+    <span class="doc-size">47KB</span>
+  </div>
+  <div class="doc-desc">如果安装失败或无法登录，请在下面找到您的错误。有关 Claude Code 正常工作后的运行时问题，请参阅 Troubleshooting。有关配置问题（例如设置未应用或 hooks 未触发），请参阅 [Debug y</div>
+  <div class="doc-file">troubleshoot-install.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/troubleshooting.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>故障排除</span>
+    <span class="doc-size">9KB</span>
+  </div>
+  <div class="doc-desc">本页涵盖 Claude Code 运行后的性能、稳定性和搜索问题。对于其他问题，请从与您遇到的问题相匹配的页面开始：</div>
+  <div class="doc-file">troubleshooting.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/vs-code.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>在 VS Code 中使用 Claude Code</span>
+    <span class="doc-size">43KB</span>
+  </div>
+  <div class="doc-desc">VS Code 扩展为 Claude Code 提供了原生图形界面，直接集成到您的 IDE 中。这是在 VS Code 中使用 Claude Code 的推荐方式。</div>
+  <div class="doc-file">vs-code.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/web-quickstart.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>在网络上开始使用 Claude Code</span>
+    <span class="doc-size">18KB</span>
+  </div>
+  <div class="doc-desc">Claude Code on the web 处于研究预览阶段，适用于 Pro、Max 和 Team 用户，以及拥有高级席位或 Chat + Claude Code 席位的企业用户。</div>
+  <div class="doc-file">web-quickstart.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/whats-new.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>最新动态</span>
+    <span class="doc-size">10KB</span>
+  </div>
+  <div class="doc-desc">每周开发摘要突出了最有可能改变您工作方式的功能。每个条目都包括可运行的代码、简短的演示和完整文档的链接。有关每个错误修复和次要改进，请参阅更新日志。</div>
+  <div class="doc-file">whats-new.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/workflows.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>使用动态工作流大规模编排子代理</span>
+    <span class="doc-size">24KB</span>
+  </div>
+  <div class="doc-desc">动态工作流需要 Claude Code v2.1.154 或更高版本，在所有付费计划上可用，具有 Anthropic API 访问权限，以及在 Amazon Bedrock、Google Cloud 的 Agent Platform 和 Microsoft Foundry 上可用</div>
+  <div class="doc-file">workflows.md</div>
+</div>
+<div class="doc-card" onclick="location.href='doc/zero-data-retention.html'">
+  <div class="doc-header">
+    <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>零数据保留</span>
+    <span class="doc-size">7KB</span>
+  </div>
+  <div class="doc-desc">零数据保留 (ZDR) 在通过 Claude for Enterprise 使用 Claude Code 时可用。启用 ZDR 后，Claude Code 会话期间生成的提示和模型响应会实时处理，在返回响应后不会由 Anthropic 存储，除非需要遵守法律或防止滥用。</div>
+  <div class="doc-file">zero-data-retention.md</div>
+</div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<button class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="返回顶部"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 5l0 14" /> <path d="M18 11l-6 -6" /> <path d="M6 11l6 -6" /> </svg></span></button>
+
+<!-- 错误汇报弹窗 -->
+<div class="rpt-overlay" id="rptOverlay" onclick="if(event.target===this)closeRpt()">
+  <div class="rpt-modal">
+    <div class="rpt-head">
+      <span class="rpt-title">📮 文档有误？向服务器汇报！</span>
+      <button class="rpt-close" onclick="closeRpt()">×</button>
+    </div>
+    <div class="rpt-body" id="rptForm">
+      <div class="rpt-field">
+        <label>问题页面</label>
+        <div class="rpt-page" id="rptPage"></div>
+      </div>
+      <div class="rpt-field">
+        <label>问题描述</label>
+        <textarea id="rptDesc" placeholder="请描述你发现的问题：哪个词错了？哪里跳转不对？内容过时了？"></textarea>
+      </div>
+      <div class="rpt-field">
+        <label>联系方式（选填）</label>
+        <input id="rptContact" type="text" placeholder="QQ号 / 邮箱等，方便反馈处理结果">
+      </div>
+      <div class="rpt-tip">提交后内容会发送到服务器 reports/ 目录，管理员会尽快处理喵~</div>
+      <button class="rpt-submit" id="rptBtn" onclick="submitRpt()">提交汇报</button>
+    </div>
+    <div class="rpt-ok" id="rptOk" style="display:none;">
+      <div class="rpt-ok-icon">✅</div>
+      <div class="rpt-ok-title">汇报成功！</div>
+      <div class="rpt-ok-desc">感谢反馈，问题已记录到服务器</div>
+    </div>
+  </div>
+</div>
+
+<!-- 关键词弹窗 -->
+<div class="kw-panel" id="kwPanel">
+  <div class="kwp-head">
+    <span class="kwp-badge" id="kwpBadge"></span>
+    <span class="kwp-title" id="kwpTitle"></span>
+    <button class="kwp-close" onclick="hideKw()">×</button>
+  </div>
+  <div class="kwp-body">
+    <div class="kwp-desc" id="kwpDesc"></div>
+    <a class="kwp-link" id="kwpLink" target="_blank">阅读完整文档<span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l14 0" /> <path d="M13 18l6 -6" /> <path d="M13 6l6 6" /> </svg></span></a>
+  </div>
+  <div class="kwp-bar-wrap"><div class="kwp-bar" id="kwBar"></div></div>
+</div>
+
+<!-- 雨云友情链接 -->
+<footer class="footer">
+  <a href="https://www.rainyun.com/" target="_blank" rel="noopener">
+    <div class="fy-badge">
+      <div class="fy-logo">雨</div>
+      <div class="fy-text">
+        <div class="t1">本站由 雨云 提供计算服务</div>
+        <div class="t2">开服开网站就选润雨云 · rainyun.com</div>
+      </div>
+    </div>
+  </a>
+</footer>
+
+<script>
+const KW_DATA = {"Marketplace": {"doc": "plugin-marketplaces", "title": "创建和分发 plugin marketplace", "desc": "**plugin marketplace** 是一个目录，让你能够将 plugins 分发给他人。Marketplace 提供集中式发现、版本跟踪、自动更新以及对多种源类型（包括 git 存储库和本地路径）的支持。本指南展示了如何创建自己的 marketplace，与你的团队或社区共享 plugins。"}, "市场": {"doc": "plugin-marketplaces", "title": "创建和分发 plugin marketplace", "desc": "**plugin marketplace** 是一个目录，让你能够将 plugins 分发给他人。Marketplace 提供集中式发现、版本跟踪、自动更新以及对多种源类型（包括 git 存储库和本地路径）的支持。本指南展示了如何创建自己的 marketplace，与你的团队或社区共享 plugins。"}, "Plugin": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "插件": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "Skill": {"doc": "skills", "title": "使用 skills 扩展 Claude", "desc": "Skills 扩展了 Claude 能做的事情。创建一个 `SKILL.md` 文件，其中包含说明，Claude 会将其添加到其工具包中。Claude 在相关时使用 skills，或者你可以使用 `/skill-name` 直接调用一个。"}, "技能": {"doc": "skills", "title": "使用 skills 扩展 Claude", "desc": "Skills 扩展了 Claude 能做的事情。创建一个 `SKILL.md` 文件，其中包含说明，Claude 会将其添加到其工具包中。Claude 在相关时使用 skills，或者你可以使用 `/skill-name` 直接调用一个。"}, "Agent": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "Subagent": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "子代理": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "Hook": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "钩子": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "MCP": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "CLI": {"doc": "cli-reference", "title": "CLI 参考", "desc": "CLI 命令"}, "斜杠命令": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "快捷键": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "keybindings": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "权限模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Permission Mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "上下文窗口": {"doc": "context-window", "title": "探索上下文窗口", "desc": "了解 Claude Code 的上下文窗口如何工作：上下文包含哪些内容、如何高效利用、以及自动压缩等机制。"}, "Context Window": {"doc": "context-window", "title": "探索上下文窗口", "desc": "了解 Claude Code 的上下文窗口如何工作：上下文包含哪些内容、如何高效利用、以及自动压缩等机制。"}, "设置": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "环境变量": {"doc": "env-vars", "title": "环境变量", "desc": "环境变量可以控制 Claude Code 的行为，例如模型选择、身份验证、请求路由和功能切换。许多相同的行为也可以通过设置文件字段、CLI 标志或会话内命令（如 `/model`）进行配置。"}, "Environment Variables": {"doc": "env-vars", "title": "环境变量", "desc": "环境变量可以控制 Claude Code 的行为，例如模型选择、身份验证、请求路由和功能切换。许多相同的行为也可以通过设置文件字段、CLI 标志或会话内命令（如 `/model`）进行配置。"}, "记忆": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "Memory": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "会话": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "Session": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "状态栏": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "Statusline": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "CLAUDE.md": {"doc": "claude-directory", "title": "探索 .claude 目录", "desc": "Claude Code 在项目根目录读取的指令文件，每次会话都会加载，用来定义项目约定、常用命令和架构上下文。"}, ".claude 目录": {"doc": "claude-directory", "title": "探索 .claude 目录", "desc": "Claude Code 读取 CLAUDE.md、settings.json、hooks、skills、commands、subagents 等配置的目录结构。"}, "keybindings.json": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "settings.json": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "Prompt caching": {"doc": "prompt-caching", "title": "Claude Code 如何使用 prompt caching", "desc": "Prompt caching 使 Claude Code 更快、更经济高效。没有缓存，API 会在每个回合重新处理您的完整历史记录。有了缓存，它会重用已经处理过的内容，只对更改的部分进行新工作。"}, "提示词缓存": {"doc": "prompt-caching", "title": "Claude Code 如何使用 prompt caching", "desc": "Prompt caching 使 Claude Code 更快、更经济高效。没有缓存，API 会在每个回合重新处理您的完整历史记录。有了缓存，它会重用已经处理过的内容，只对更改的部分进行新工作。"}, "提示词库": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类（理解、计划、原型、构建等），帮助快速上手常见任务。"}, "Prompt library": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类（理解、计划、原型、构建等），帮助快速上手常见任务。"}, "提示词": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类，帮助快速上手 Claude Code 常见任务。"}, "auto memory": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "自动记忆": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "后台会话": {"doc": "agent-view", "title": "使用 agent view 管理多个代理", "desc": "Agent view 通过 `claude agents` 打开，是所有后台会话的一个屏幕：什么正在运行、什么需要你的输入、什么已完成。调度新会话，一目了然地查看它们的状态而不是滚动浏览记录，只在需要时才介入。每个后台会话都是一个完整的 Claude Code 对话，在没有终端连接的情况下继续运行，所以你可以随时打开它、回复并离开。"}, "代理视图": {"doc": "agent-view", "title": "使用 agent view 管理多个代理", "desc": "Agent view 通过 `claude agents` 打开，是所有后台会话的一个屏幕：什么正在运行、什么需要你的输入、什么已完成。调度新会话，一目了然地查看它们的状态而不是滚动浏览记录，只在需要时才介入。每个后台会话都是一个完整的 Claude Code 对话，在没有终端连接的情况下继续运行，所以你可以随时打开它、回复并离开。"}, "远程控制": {"doc": "remote-control", "title": "使用 Remote Control 从任何设备继续本地会话", "desc": "Remote Control 处于研究预览阶段，在所有计划中都可用。在 Team 和 Enterprise 上，在所有者在 Claude Code 管理员设置中启用 Remote Control 切换之前，它默认处于关闭状态。"}, "Remote Control": {"doc": "remote-control", "title": "使用 Remote Control 从任何设备继续本地会话", "desc": "Remote Control 处于研究预览阶段，在所有计划中都可用。在 Team 和 Enterprise 上，在所有者在 Claude Code 管理员设置中启用 Remote Control 切换之前，它默认处于关闭状态。"}, "计划任务": {"doc": "scheduled-tasks", "title": "按计划运行提示词", "desc": "计划任务让 Claude 按间隔自动重新运行提示词。使用它们来轮询部署、监督 PR、检查长时间运行的构建，或在会话中稍后提醒自己做某事。要对事件进行实时反应而不是轮询，请参阅 Channels：您的 CI 可以直接将失败推送到会话中。要保持会话工作转向转向直到满足条件而不是按间隔，请参阅 `/goal`。"}, "定期任务": {"doc": "desktop-scheduled-tasks", "title": "在 Claude Code Desktop 中安排定期任务", "desc": "定期任务在您选择的时间和频率自动启动新会话。使用它们进行定期工作，如日常代码审查、依赖项更新检查或从您的日历和收件箱中提取信息的早晨简报。"}, "例程": {"doc": "routines", "title": "使用例程自动化工作", "desc": "Routines 处于研究预览阶段。行为、限制和 API 表面可能会改变。"}, "Routines": {"doc": "routines", "title": "使用例程自动化工作", "desc": "Routines 处于研究预览阶段。行为、限制和 API 表面可能会改变。"}, "代码审查": {"doc": "code-review", "title": "Code Review", "desc": "Code Review 处于研究预览阶段，仅适用于 Team 和 Enterprise 订阅。对于启用了 Zero Data Retention 的组织，此功能不可用。"}, "Code Review": {"doc": "code-review", "title": "Code Review", "desc": "Code Review 处于研究预览阶段，仅适用于 Team 和 Enterprise 订阅。对于启用了 Zero Data Retention 的组织，此功能不可用。"}, "检查点": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "Checkpointing": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "工作流": {"doc": "workflows", "title": "使用动态工作流大规模编排子代理", "desc": "动态工作流需要 Claude Code v2.1.154 或更高版本，在所有付费计划上可用，具有 Anthropic API 访问权限，以及在 Amazon Bedrock、Google Cloud 的 Agent Platform 和 Microsoft Foundry 上可用。在 Pro 上，从 `/config` 中的\"Dynamic workflows\"行启用它们。"}, "Workflows": {"doc": "workflows", "title": "使用动态工作流大规模编排子代理", "desc": "动态工作流需要 Claude Code v2.1.154 或更高版本，在所有付费计划上可用，具有 Anthropic API 访问权限，以及在 Amazon Bedrock、Google Cloud 的 Agent Platform 和 Microsoft Foundry 上可用。在 Pro 上，从 `/config` 中的\"Dynamic workflows\"行启用它们。"}, "最佳实践": {"doc": "best-practices", "title": "Claude Code 最佳实践", "desc": "Claude Code 是一个代理式编码环境。与等待回答问题的聊天机器人不同，Claude Code 可以读取你的文件、运行命令、进行更改，并在你观看、重定向或完全离开的情况下自主解决问题。"}, "Best Practices": {"doc": "best-practices", "title": "Claude Code 最佳实践", "desc": "Claude Code 是一个代理式编码环境。与等待回答问题的聊天机器人不同，Claude Code 可以读取你的文件、运行命令、进行更改，并在你观看、重定向或完全离开的情况下自主解决问题。"}, "交互模式": {"doc": "interactive-mode", "title": "交互模式", "desc": "键盘快捷键"}, "交互式模式": {"doc": "interactive-mode", "title": "交互模式", "desc": "键盘快捷键"}, "常见工作流": {"doc": "common-workflows", "title": "常见工作流程", "desc": "本页收集了日常开发的简短工作流程。有关提示和上下文管理的更高级指导，请参阅最佳实践。"}, "JetBrains": {"doc": "jetbrains", "title": "JetBrains IDEs", "desc": "Claude Code 通过专用插件与 JetBrains IDE 集成，提供交互式差异查看、选择上下文共享等功能。"}, "VS Code": {"doc": "vs-code", "title": "在 VS Code 中使用 Claude Code", "desc": "VS Code 扩展为 Claude Code 提供了原生图形界面，直接集成到您的 IDE 中。这是在 VS Code 中使用 Claude Code 的推荐方式。"}, "GitHub Actions": {"doc": "github-actions", "title": "Claude Code GitHub Actions", "desc": "Claude Code GitHub Actions 为您的 GitHub 工作流带来了 AI 驱动的自动化。只需在任何 PR 或 issue 中简单地提及 `@claude`，Claude 就可以分析您的代码、创建拉取请求、实现功能和修复错误 - 所有这些都遵循您项目的标准。如需在每个 PR 上自动发布评论而无需触发器，请参阅 GitHub Code Review。"}, "GitLab CI": {"doc": "gitlab-ci-cd", "title": "Claude Code GitLab CI/CD", "desc": "Claude Code for GitLab CI/CD 目前处于测试阶段。随着我们完善体验，功能和特性可能会发生变化。"}, "桌面应用": {"doc": "desktop", "title": "Desktop application", "desc": "Claude Desktop 应用有三个选项卡：Chat 用于对话，Cowork 用于 Dispatch 和更长的代理工作，Code 用于软件开发。本页是 Code 选项卡的参考。"}, "计划模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Plan mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "自动模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "auto mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Accept Edits": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "bypassPermissions": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "权限": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "/plugin": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "/mcp": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "/hooks": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "/agents": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "/clear": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/compact": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/config": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "/resume": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/continue": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/fork": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/checkpoint": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "/cost": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/permissions": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "/statusline": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "/keybindings": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "术语表": {"doc": "glossary", "title": "术语表", "desc": "本术语表定义了 Claude Code 术语。每个条目都链接到深入讨论该概念的页面。对于模型级概念（如 tokens、temperature 和 RAG），请参阅平台术语表。"}, "OAuth": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "MCP server": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "MCP Server": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "组织设置": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "托管设置": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "服务器托管": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "快速开始": {"doc": "quickstart", "title": "快速开始", "desc": "本快速开始指南将在几分钟内让您使用 AI 驱动的编码辅助。完成本指南后，您将了解如何使用 Claude Code 完成常见的开发任务。"}, "故障排除": {"doc": "troubleshooting", "title": "故障排除", "desc": "本页涵盖 Claude Code 运行后的性能、稳定性和搜索问题。对于其他问题，请从与您遇到的问题相匹配的页面开始："}, "Troubleshooting": {"doc": "troubleshooting", "title": "故障排除", "desc": "本页涵盖 Claude Code 运行后的性能、稳定性和搜索问题。对于其他问题，请从与您遇到的问题相匹配的页面开始："}, "完整文档": {"doc": "overview", "title": "概述", "desc": "Claude Code 是一个由 AI 驱动的编码助手，可帮助你构建功能、修复错误和自动化开发任务。它理解你的整个代码库，可以跨多个文件和工具工作以完成任务。"}, "概述": {"doc": "overview", "title": "概述", "desc": "Claude Code 是一个由 AI 驱动的编码助手，可帮助你构建功能、修复错误和自动化开发任务。它理解你的整个代码库，可以跨多个文件和工具工作以完成任务。"}};
+  const KW_EXTRA = {"skills": {"doc": "skills", "title": "Skills 技能", "desc": "Claude Code 技能扩展。SKILL.md 提供操作说明，Claude 按需调用完成任务。"}, "Skills": {"doc": "skills", "title": "Skills 技能", "desc": "Claude Code 技能扩展。SKILL.md 提供操作说明，Claude 按需调用完成任务。"}, "skill": {"doc": "skills", "title": "Skill 技能", "desc": "单个技能定义，包含 SKILL.md 说明文件，供 Claude 按需调用。"}, "Hooks": {"doc": "hooks", "title": "Hooks 钩子", "desc": "生命周期钩子。在 Claude Code 操作前后自动运行脚本，如格式化、lint。"}, "hooks": {"doc": "hooks", "title": "Hooks 钩子", "desc": "生命周期钩子。在 Claude Code 操作前后自动运行脚本，如格式化、lint。"}, "hook": {"doc": "hooks", "title": "Hook 钩子", "desc": "单个钩子，监听事件并在操作前后执行命令。"}, "hook 事件": {"doc": "hooks", "title": "Hook 事件", "desc": "钩子可监听的事件，如 PreToolUse、SessionStart 等。"}, "Subagents": {"doc": "sub-agents", "title": "Subagents 子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行，只返回摘要。"}, "subagents": {"doc": "sub-agents", "title": "子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行。"}, "subagent": {"doc": "sub-agents", "title": "子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行。"}, "agent team": {"doc": "agents", "title": "Agent team 代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "agent teams": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "Agent teams": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "代理团队": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "Plugins": {"doc": "plugins", "title": "Plugins 插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包，可共享给团队。"}, "plugins": {"doc": "plugins", "title": "插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包。"}, "plugin": {"doc": "plugins", "title": "插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包。"}, "MCP servers": {"doc": "mcp", "title": "MCP 服务器", "desc": "通过 Model Context Protocol 连接外部工具与数据源的服务器。"}, "MCP 服务器": {"doc": "mcp", "title": "MCP 服务器", "desc": "通过 Model Context Protocol 连接外部工具与数据源的服务器。"}, "Amazon Bedrock": {"doc": "third-party-integrations", "title": "Amazon Bedrock", "desc": "AWS 托管 AI 平台，可运行 Claude 模型并接入 Claude Code。"}, "Microsoft Foundry": {"doc": "third-party-integrations", "title": "Microsoft Foundry", "desc": "微软云 AI 平台，提供模型托管服务，支持 Claude Code 接入。"}, "Claude apps gateway": {"doc": "desktop", "title": "Claude apps gateway", "desc": "Anthropic 官方网关，管理桌面端与网络服务的连接。"}, "Agent SDK": {"doc": "agent-sdk_overview", "title": "Claude Agent SDK", "desc": "官方工具包，用于以编程方式构建和集成 Claude Code 代理。"}, "动态工作流": {"doc": "workflows", "title": "动态工作流", "desc": "通过 JSON/JS 定义步骤，让 Claude 编排子代理执行复杂任务。"}, "LLM 网关": {"doc": "third-party-integrations", "title": "LLM 网关", "desc": "大模型网关，统一路由、代理和管控 LLM API 请求的中间层。"}, "自动内存": {"doc": "memory", "title": "自动内存", "desc": "自动将重要信息写入记忆文档，跨会话保持上下文连续。"}, "Slack": {"doc": "slack", "title": "Slack", "desc": "协作平台。可通过 Claude Code 集成在 Slack 中运行 AI 代理。"}, "Dispatch": {"doc": "desktop", "title": "Dispatch", "desc": "桌面应用功能，将任务分派给代理在后台执行。"}, "Desktop": {"doc": "desktop", "title": "桌面应用", "desc": "Claude Code 桌面应用，提供 Chat、Cowork、Code 图形界面。"}, "Channels": {"doc": "channels", "title": "Channels 频道", "desc": "将 Claude Code 会话接入 Telegram、Discord 等平台的插件系统。"}, "Sandboxing": {"doc": "settings", "title": "沙箱", "desc": "限制 Bash 工具访问范围的安全隔离机制。"}, "沙箱": {"doc": "settings", "title": "沙箱", "desc": "限制工具文件系统访问的安全隔离环境。"}, "非交互模式": {"doc": "cli-reference", "title": "非交互模式", "desc": "通过 -p 参数在脚本中无交互运行 Claude Code，适合自动化。"}, "快速模式": {"doc": "settings", "title": "快速模式", "desc": "提高速率限制的付费模式，响应速度更快。"}, "Plan Mode": {"doc": "permission-modes", "title": "计划模式", "desc": "只分析不执行，先产出修改方案供确认再动手。"}, "Auto mode": {"doc": "permission-modes", "title": "自动模式", "desc": "自动批准低风险操作，减少交互打断，提升效率。"}, "状态行": {"doc": "statusline", "title": "状态行", "desc": "可自定义的底部状态栏，显示上下文、成本等信息。"}, "工具搜索": {"doc": "mcp", "title": "MCP 工具搜索", "desc": "让 Claude 按需搜索并发现更多 MCP 工具，扩展能力。"}, "扩展思考": {"doc": "common-workflows", "title": "扩展思考", "desc": "让 Claude 回答前进行更深入的多步推理，提升复杂问题准确率。"}, "计算机使用": {"doc": "computer-use", "title": "计算机使用", "desc": "让 Claude 控制屏幕、操作应用的实验性功能。"}, "云会话": {"doc": "claude-code-on-the-web", "title": "云会话", "desc": "在 Anthropic 云端运行的 Claude Code 会话。"}, "第三方提供商": {"doc": "third-party-integrations", "title": "第三方提供商", "desc": "通过兼容 API 使用非 Anthropic 模型的服务商。"}, "身份验证": {"doc": "settings", "title": "身份验证", "desc": "Claude Code 登录与凭证验证机制。"}, "网络配置": {"doc": "settings", "title": "网络配置", "desc": "Claude Code 访问网络端点与代理的设置。"}, "语音听写": {"doc": "desktop", "title": "语音听写", "desc": "通过语音转文字向 Claude 下达指令。"}, "权限规则": {"doc": "permission-modes", "title": "权限规则", "desc": "定义允许、询问、拒绝操作的规则。"}, "输出样式": {"doc": "settings", "title": "输出样式", "desc": "自定义 Claude 回复格式的样式文件。"}, "工作量级别": {"doc": "settings", "title": "工作量级别", "desc": "控制模型推理深度的设置。"}, "努力级别": {"doc": "settings", "title": "努力级别", "desc": "控制模型推理深度的设置。"}, "Worktrees": {"doc": "common-workflows", "title": "Git worktree", "desc": "Git 并行工作树，支持多会话同时开发互不干扰。"}, "git worktree": {"doc": "common-workflows", "title": "Git worktree", "desc": "Git 并行工作树，支持多会话同时开发互不干扰。"}, "后台代理": {"doc": "agent-view", "title": "后台代理", "desc": "在后台运行、无需终端连接的 Claude Code 会话。"}, "自动修复": {"doc": "github-actions", "title": "自动修复", "desc": "Claude 自动修复 PR 或代码问题并提交。"}, "顾问工具": {"doc": "code-review", "title": "顾问工具", "desc": "提供代码审查建议的辅助工具。"}, "SSH": {"doc": "remote-control", "title": "SSH", "desc": "安全外壳协议，用于远程连接与加密通信。"}, "连接器": {"doc": "channels", "title": "连接器", "desc": "Claude 连接外部工具和数据源的官方集成。"}, "Artifact": {"doc": "desktop", "title": "Artifact 工件", "desc": "Claude 生成的可共享成果物。"}, "管理会话": {"doc": "sessions", "title": "会话管理", "desc": "保存、恢复、分叉 Claude Code 对话。"}, "命令参考": {"doc": "commands", "title": "命令参考", "desc": "Claude Code 斜杠命令的说明文档。"}, "插件参考": {"doc": "plugins-reference", "title": "插件参考", "desc": "插件组件与配置的参考文档。"}, "自适应推理": {"doc": "settings", "title": "自适应推理", "desc": "根据任务难度动态调整模型推理强度。"}, "环境缓存": {"doc": "settings", "title": "环境缓存", "desc": "缓存已验证的脚本环境，加快工具执行。"}, "扩展上下文": {"doc": "context-window", "title": "扩展上下文", "desc": "增大上下文窗口容量，处理更长内容。"}, "内置命令": {"doc": "commands", "title": "内置命令", "desc": "Claude Code 自带的斜杠命令。"}, "权限设置": {"doc": "permission-modes", "title": "权限设置", "desc": "控制 Claude 操作权限的配置。"}, "环境": {"doc": "env-vars", "title": "环境", "desc": "影响 Claude Code 运行的系统环境配置。"}, "Chrome": {"doc": "chrome", "title": "Chrome 扩展", "desc": "Claude in Chrome 浏览器扩展，在网页中调用 Claude。"}, "iOS": {"doc": "desktop", "title": "iOS 应用", "desc": "Claude 移动端应用，支持远程控制与推送。"}, "Android": {"doc": "desktop", "title": "Android 应用", "desc": "Claude 移动端应用，支持远程控制与推送。"}};
+let kwTimer = null;
+function showKw(kw) {
+  const d = KW_DATA[kw] || KW_EXTRA[kw]; if (!d) return;
+  document.getElementById('kwpBadge').textContent = kw;
+  document.getElementById('kwpTitle').textContent = d.title;
+  document.getElementById('kwpDesc').textContent = d.desc;
+  var _kwpPfx = location.pathname.indexOf('/doc/') !== -1 || location.pathname.endsWith('/doc/') ? '' : 'doc/';
+  document.getElementById('kwpLink').href = _kwpPfx + d.doc + '.html';
+  const panel = document.getElementById('kwPanel');
+  const estW = Math.min(480, Math.max(300, 280 + d.desc.length * 0.5));
+  panel.style.width = estW + 'px';
+  const dur = Math.min(14, Math.max(4, Math.round(d.desc.length / 55)));
+  panel.classList.add('open');
+  const bar = document.getElementById('kwBar');
+  bar.style.transition = 'none'; bar.style.width = '100%';
+  void bar.offsetWidth;
+  bar.style.transition = 'width ' + dur + 's linear'; bar.style.width = '0%';
+  clearTimeout(kwTimer);
+  kwTimer = setTimeout(hideKw, dur * 1000);
+}
+function hideKw() {
+  document.getElementById('kwPanel').classList.remove('open');
+  clearTimeout(kwTimer);
+}
+function toggleDrawer() {
+  document.getElementById('drawer').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+function searchDocs(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('.doc-card').forEach(card => {
+    card.style.display = card.textContent.toLowerCase().includes(q) ? 'block' : 'none';
+  });
+}
+window.addEventListener('scroll', () => {
+  document.getElementById('scrollTop').classList.toggle('show', window.scrollY > 400);
+});
+
+
+
+// ===== 错误汇报 =====
+function openRpt() {
+  var page = location.pathname.split('/').pop() || 'index.html';
+  document.getElementById('rptPage').textContent = page;
+  document.getElementById('rptDesc').value = '';
+  document.getElementById('rptContact').value = '';
+  document.getElementById('rptForm').style.display = '';
+  document.getElementById('rptOk').style.display = 'none';
+  document.getElementById('rptOverlay').classList.add('show');
+}
+function closeRpt() {
+  document.getElementById('rptOverlay').classList.remove('show');
+}
+function submitRpt() {
+  var desc = document.getElementById('rptDesc').value.trim();
+  if (!desc) { document.getElementById('rptDesc').focus(); return; }
+  var btn = document.getElementById('rptBtn');
+  btn.disabled = true; btn.textContent = '提交中...';
+  var payload = {
+    page: document.getElementById('rptPage').textContent,
+    desc: desc,
+    contact: document.getElementById('rptContact').value.trim(),
+    time: new Date().toLocaleString('zh-CN', {hour12:false}),
+    user_agent: navigator.userAgent
+  };
+  fetch('/api/report', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  }).then(function(r){ return r.json(); }).then(function(d) {
+    btn.disabled = false; btn.textContent = '提交汇报';
+    document.getElementById('rptForm').style.display = 'none';
+    document.getElementById('rptOk').style.display = 'block';
+    setTimeout(closeRpt, 1800);
+  }).catch(function(e) {
+    btn.disabled = false; btn.textContent = '提交汇报';
+    alert('汇报失败，请重试：' + e);
+  });
+}
+
+</script>
+</body>
+</html>

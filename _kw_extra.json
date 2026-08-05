@@ -1,0 +1,447 @@
+{
+  "skills": {
+    "doc": "skills",
+    "title": "Skills 技能",
+    "desc": "Claude Code 技能扩展。SKILL.md 提供操作说明，Claude 按需调用完成任务。"
+  },
+  "Skills": {
+    "doc": "skills",
+    "title": "Skills 技能",
+    "desc": "Claude Code 技能扩展。SKILL.md 提供操作说明，Claude 按需调用完成任务。"
+  },
+  "skill": {
+    "doc": "skills",
+    "title": "Skill 技能",
+    "desc": "单个技能定义，包含 SKILL.md 说明文件，供 Claude 按需调用。"
+  },
+  "Hooks": {
+    "doc": "hooks",
+    "title": "Hooks 钩子",
+    "desc": "生命周期钩子。在 Claude Code 操作前后自动运行脚本，如格式化、lint。"
+  },
+  "hooks": {
+    "doc": "hooks",
+    "title": "Hooks 钩子",
+    "desc": "生命周期钩子。在 Claude Code 操作前后自动运行脚本，如格式化、lint。"
+  },
+  "hook": {
+    "doc": "hooks",
+    "title": "Hook 钩子",
+    "desc": "单个钩子，监听事件并在操作前后执行命令。"
+  },
+  "hook 事件": {
+    "doc": "hooks",
+    "title": "Hook 事件",
+    "desc": "钩子可监听的事件，如 PreToolUse、SessionStart 等。"
+  },
+  "Subagents": {
+    "doc": "sub-agents",
+    "title": "Subagents 子代理",
+    "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行，只返回摘要。"
+  },
+  "subagents": {
+    "doc": "sub-agents",
+    "title": "子代理",
+    "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行。"
+  },
+  "subagent": {
+    "doc": "sub-agents",
+    "title": "子代理",
+    "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行。"
+  },
+  "agent team": {
+    "doc": "agents",
+    "title": "Agent team 代理团队",
+    "desc": "多个代理协作组成的团队，协同完成复杂任务。"
+  },
+  "agent teams": {
+    "doc": "agents",
+    "title": "代理团队",
+    "desc": "多个代理协作组成的团队，协同完成复杂任务。"
+  },
+  "Agent teams": {
+    "doc": "agents",
+    "title": "代理团队",
+    "desc": "多个代理协作组成的团队，协同完成复杂任务。"
+  },
+  "代理团队": {
+    "doc": "agents",
+    "title": "代理团队",
+    "desc": "多个代理协作组成的团队，协同完成复杂任务。"
+  },
+  "Plugins": {
+    "doc": "plugins",
+    "title": "Plugins 插件",
+    "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包，可共享给团队。"
+  },
+  "plugins": {
+    "doc": "plugins",
+    "title": "插件",
+    "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包。"
+  },
+  "plugin": {
+    "doc": "plugins",
+    "title": "插件",
+    "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包。"
+  },
+  "MCP servers": {
+    "doc": "mcp",
+    "title": "MCP 服务器",
+    "desc": "通过 Model Context Protocol 连接外部工具与数据源的服务器。"
+  },
+  "MCP 服务器": {
+    "doc": "mcp",
+    "title": "MCP 服务器",
+    "desc": "通过 Model Context Protocol 连接外部工具与数据源的服务器。"
+  },
+  "Amazon Bedrock": {
+    "doc": "third-party-integrations",
+    "title": "Amazon Bedrock",
+    "desc": "AWS 托管 AI 平台，可运行 Claude 模型并接入 Claude Code。"
+  },
+  "Microsoft Foundry": {
+    "doc": "third-party-integrations",
+    "title": "Microsoft Foundry",
+    "desc": "微软云 AI 平台，提供模型托管服务，支持 Claude Code 接入。"
+  },
+  "Claude apps gateway": {
+    "doc": "desktop",
+    "title": "Claude apps gateway",
+    "desc": "Anthropic 官方网关，管理桌面端与网络服务的连接。"
+  },
+  "Agent SDK": {
+    "doc": "agent-sdk_overview",
+    "title": "Claude Agent SDK",
+    "desc": "官方工具包，用于以编程方式构建和集成 Claude Code 代理。"
+  },
+  "动态工作流": {
+    "doc": "workflows",
+    "title": "动态工作流",
+    "desc": "通过 JSON/JS 定义步骤，让 Claude 编排子代理执行复杂任务。"
+  },
+  "LLM 网关": {
+    "doc": "third-party-integrations",
+    "title": "LLM 网关",
+    "desc": "大模型网关，统一路由、代理和管控 LLM API 请求的中间层。"
+  },
+  "自动内存": {
+    "doc": "memory",
+    "title": "自动内存",
+    "desc": "自动将重要信息写入记忆文档，跨会话保持上下文连续。"
+  },
+  "Slack": {
+    "doc": "slack",
+    "title": "Slack",
+    "desc": "协作平台。可通过 Claude Code 集成在 Slack 中运行 AI 代理。"
+  },
+  "Dispatch": {
+    "doc": "desktop",
+    "title": "Dispatch",
+    "desc": "桌面应用功能，将任务分派给代理在后台执行。"
+  },
+  "Desktop": {
+    "doc": "desktop",
+    "title": "桌面应用",
+    "desc": "Claude Code 桌面应用，提供 Chat、Cowork、Code 图形界面。"
+  },
+  "Channels": {
+    "doc": "channels",
+    "title": "Channels 频道",
+    "desc": "将 Claude Code 会话接入 Telegram、Discord 等平台的插件系统。"
+  },
+  "Sandboxing": {
+    "doc": "settings",
+    "title": "沙箱",
+    "desc": "限制 Bash 工具访问范围的安全隔离机制。"
+  },
+  "沙箱": {
+    "doc": "settings",
+    "title": "沙箱",
+    "desc": "限制工具文件系统访问的安全隔离环境。"
+  },
+  "非交互模式": {
+    "doc": "cli-reference",
+    "title": "非交互模式",
+    "desc": "通过 -p 参数在脚本中无交互运行 Claude Code，适合自动化。"
+  },
+  "快速模式": {
+    "doc": "settings",
+    "title": "快速模式",
+    "desc": "提高速率限制的付费模式，响应速度更快。"
+  },
+  "Plan Mode": {
+    "doc": "permission-modes",
+    "title": "计划模式",
+    "desc": "只分析不执行，先产出修改方案供确认再动手。"
+  },
+  "Auto mode": {
+    "doc": "permission-modes",
+    "title": "自动模式",
+    "desc": "自动批准低风险操作，减少交互打断，提升效率。"
+  },
+  "状态行": {
+    "doc": "statusline",
+    "title": "状态行",
+    "desc": "可自定义的底部状态栏，显示上下文、成本等信息。"
+  },
+  "工具搜索": {
+    "doc": "mcp",
+    "title": "MCP 工具搜索",
+    "desc": "让 Claude 按需搜索并发现更多 MCP 工具，扩展能力。"
+  },
+  "扩展思考": {
+    "doc": "common-workflows",
+    "title": "扩展思考",
+    "desc": "让 Claude 回答前进行更深入的多步推理，提升复杂问题准确率。"
+  },
+  "计算机使用": {
+    "doc": "computer-use",
+    "title": "计算机使用",
+    "desc": "让 Claude 控制屏幕、操作应用的实验性功能。"
+  },
+  "云会话": {
+    "doc": "claude-code-on-the-web",
+    "title": "云会话",
+    "desc": "在 Anthropic 云端运行的 Claude Code 会话。"
+  },
+  "第三方提供商": {
+    "doc": "third-party-integrations",
+    "title": "第三方提供商",
+    "desc": "通过兼容 API 使用非 Anthropic 模型的服务商。"
+  },
+  "身份验证": {
+    "doc": "settings",
+    "title": "身份验证",
+    "desc": "Claude Code 登录与凭证验证机制。"
+  },
+  "网络配置": {
+    "doc": "settings",
+    "title": "网络配置",
+    "desc": "Claude Code 访问网络端点与代理的设置。"
+  },
+  "语音听写": {
+    "doc": "desktop",
+    "title": "语音听写",
+    "desc": "通过语音转文字向 Claude 下达指令。"
+  },
+  "权限规则": {
+    "doc": "permission-modes",
+    "title": "权限规则",
+    "desc": "定义允许、询问、拒绝操作的规则。"
+  },
+  "输出样式": {
+    "doc": "settings",
+    "title": "输出样式",
+    "desc": "自定义 Claude 回复格式的样式文件。"
+  },
+  "工作量级别": {
+    "doc": "settings",
+    "title": "工作量级别",
+    "desc": "控制模型推理深度的设置。"
+  },
+  "努力级别": {
+    "doc": "settings",
+    "title": "努力级别",
+    "desc": "控制模型推理深度的设置。"
+  },
+  "Worktrees": {
+    "doc": "common-workflows",
+    "title": "Git worktree",
+    "desc": "Git 并行工作树，支持多会话同时开发互不干扰。"
+  },
+  "git worktree": {
+    "doc": "common-workflows",
+    "title": "Git worktree",
+    "desc": "Git 并行工作树，支持多会话同时开发互不干扰。"
+  },
+  "后台代理": {
+    "doc": "agent-view",
+    "title": "后台代理",
+    "desc": "在后台运行、无需终端连接的 Claude Code 会话。"
+  },
+  "自动修复": {
+    "doc": "github-actions",
+    "title": "自动修复",
+    "desc": "Claude 自动修复 PR 或代码问题并提交。"
+  },
+  "顾问工具": {
+    "doc": "code-review",
+    "title": "顾问工具",
+    "desc": "提供代码审查建议的辅助工具。"
+  },
+  "SSH": {
+    "doc": "remote-control",
+    "title": "SSH",
+    "desc": "安全外壳协议，用于远程连接与加密通信。"
+  },
+  "连接器": {
+    "doc": "channels",
+    "title": "连接器",
+    "desc": "Claude 连接外部工具和数据源的官方集成。"
+  },
+  "Artifact": {
+    "doc": "desktop",
+    "title": "Artifact 工件",
+    "desc": "Claude 生成的可共享成果物。"
+  },
+  "管理会话": {
+    "doc": "sessions",
+    "title": "会话管理",
+    "desc": "保存、恢复、分叉 Claude Code 对话。"
+  },
+  "命令参考": {
+    "doc": "commands",
+    "title": "命令参考",
+    "desc": "Claude Code 斜杠命令的说明文档。"
+  },
+  "插件参考": {
+    "doc": "plugins-reference",
+    "title": "插件参考",
+    "desc": "插件组件与配置的参考文档。"
+  },
+  "自适应推理": {
+    "doc": "settings",
+    "title": "自适应推理",
+    "desc": "根据任务难度动态调整模型推理强度。"
+  },
+  "环境缓存": {
+    "doc": "settings",
+    "title": "环境缓存",
+    "desc": "缓存已验证的脚本环境，加快工具执行。"
+  },
+  "扩展上下文": {
+    "doc": "context-window",
+    "title": "扩展上下文",
+    "desc": "增大上下文窗口容量，处理更长内容。"
+  },
+  "内置命令": {
+    "doc": "commands",
+    "title": "内置命令",
+    "desc": "Claude Code 自带的斜杠命令。"
+  },
+  "权限设置": {
+    "doc": "permission-modes",
+    "title": "权限设置",
+    "desc": "控制 Claude 操作权限的配置。"
+  },
+  "环境": {
+    "doc": "env-vars",
+    "title": "环境",
+    "desc": "影响 Claude Code 运行的系统环境配置。"
+  },
+  "Chrome": {
+    "doc": "chrome",
+    "title": "Chrome 扩展",
+    "desc": "Claude in Chrome 浏览器扩展，在网页中调用 Claude。"
+  },
+  "iOS": {
+    "doc": "desktop",
+    "title": "iOS 应用",
+    "desc": "Claude 移动端应用，支持远程控制与推送。"
+  },
+  "Android": {
+    "doc": "desktop",
+    "title": "Android 应用",
+    "desc": "Claude 移动端应用，支持远程控制与推送。"
+  },
+  "网页": {
+    "doc": "claude-code-on-the-web",
+    "title": "Claude Code 网页版",
+    "desc": "在浏览器中使用的 Claude Code，无需安装 CLI，登录即用。"
+  },
+  "GitLab": {
+    "doc": "gitlab-ci-cd",
+    "title": "GitLab",
+    "desc": "代码托管平台。可通过 GitLab CI/CD 集成 Claude Code 实现自动化。"
+  },
+  "CI/CD": {
+    "doc": "github-actions",
+    "title": "CI/CD",
+    "desc": "持续集成/持续交付，自动化完成构建、测试和部署的流水线。"
+  },
+  "终端 CLI": {
+    "doc": "cli-reference",
+    "title": "终端 CLI",
+    "desc": "命令行界面工具，在终端中直接运行 Claude Code 管理项目。"
+  },
+  "终端指南": {
+    "doc": "overview",
+    "title": "终端指南",
+    "desc": "终端基础使用入门，介绍如何用命令行操作 Claude Code。"
+  },
+  "Claude Console": {
+    "doc": "overview",
+    "title": "Anthropic 控制台",
+    "desc": "Anthropic 官方控制台，管理 API 密钥、查看用量和账单。"
+  },
+  "Claude 订阅": {
+    "doc": "overview",
+    "title": "Claude 订阅",
+    "desc": "Claude 付费套餐（Pro/Max/Team/Enterprise），解锁全部功能。"
+  },
+  "支持的云提供商": {
+    "doc": "third-party-integrations",
+    "title": "支持的云提供商",
+    "desc": "Amazon Bedrock、Google Cloud 等可托管并运行 Claude 模型的云平台。"
+  },
+  "凭证管理": {
+    "doc": "settings",
+    "title": "凭证管理",
+    "desc": "管理 API 密钥、登录凭证和身份验证的机制。"
+  },
+  "Git for Windows": {
+    "doc": "settings",
+    "title": "Git for Windows",
+    "desc": "Windows 版 Git，安装后 Claude Code 可使用 Bash 工具。"
+  },
+  "Discord": {
+    "doc": "channels",
+    "title": "Discord",
+    "desc": "社区平台。可通过 Channels 插件在 Discord 中使用 Claude Code。"
+  },
+  "所有界面": {
+    "doc": "overview",
+    "title": "所有界面",
+    "desc": "Claude Code 的多种使用方式：终端、IDE、桌面应用、网页等。"
+  },
+  "Amazon Bedrock、Google Cloud 的 Agent Platform 或 Microsoft Foundry": {
+    "doc": "third-party-integrations",
+    "title": "三大云平台",
+    "desc": "AWS、谷歌云、微软云三大平台，均可托管 Claude 模型接入 Claude Code。"
+  },
+  "Claude Pro、Max、Team 或 Enterprise": {
+    "doc": "overview",
+    "title": "Claude 订阅套餐",
+    "desc": "Claude 的付费订阅层级，提供不同额度的模型访问与功能。"
+  },
+  "Troubleshoot installation": {
+    "doc": "troubleshoot-install",
+    "title": "安装故障排除",
+    "desc": "安装 Claude Code 出错时的排查指南与替代安装方法。"
+  },
+  "终端": {
+    "doc": "cli-reference",
+    "title": "终端",
+    "desc": "命令行环境，Claude Code 的主要使用场景。"
+  },
+  "GitHub Actions": {
+    "doc": "github-actions",
+    "title": "GitHub Actions",
+    "desc": "GitHub 的 CI/CD 自动化平台，可集成 Claude Code 自动审查和修复。"
+  },
+  "JetBrains IDE": {
+    "doc": "jetbrains",
+    "title": "JetBrains IDE",
+    "desc": "JetBrains 系列 IDE（IDEA、PyCharm 等）的 Claude Code 插件。"
+  },
+  "apt, dnf, or apk": {
+    "doc": "setup",
+    "title": "Linux 包管理器",
+    "desc": "Linux 包管理器：apt 用于 Debian/Ubuntu，dnf 用于 Fedora。"
+  },
+  "CLI 参考": {
+    "doc": "cli-reference",
+    "title": "CLI 参考",
+    "desc": "Claude Code 命令行参考，列出全部命令、参数与用法。"
+  }
+}

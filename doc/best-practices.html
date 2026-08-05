@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f1117">
+<title>Claude Code 最佳实践 - Claude Code 知识库</title>
+<style>
+:root {
+  --bg: #0f1117; --bg2: #16181f; --card: #1b1e26; --card2: #20242e;
+  --border: #2a2e3a; --text: #e2e4ea; --text2: #9aa0ad; --muted: #6b7280;
+  --accent: #8b7cff; --accent2: #a99dff; --code-bg: #0c0e13;
+  --kw-bg: rgba(139,124,255,0.15); --kw-hover: rgba(139,124,255,0.28);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { scroll-behavior:smooth; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); }
+.icon { display:inline-flex; vertical-align:-0.2em; width:1.1em; height:1.1em; margin-right:6px; }
+.icon svg { width:100%; height:100%; }
+.progress-bar { position:fixed; top:0; left:0; height:3px; background:var(--accent); width:0%; z-index:300; transition:width 0.1s linear; }
+.topbar { position:fixed; top:0; left:0; right:0; z-index:200; background:rgba(22,24,31,0.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 12px; height:52px; }
+.topbar .tb-home { display:flex; align-items:center; color:var(--text2); text-decoration:none; font-size:14px; padding:6px 10px; border-radius:8px; }
+.topbar .tb-home:hover { color:var(--text); background:var(--card2); }
+.topbar .tb-title { flex:1; text-align:center; font-size:15px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 10px; }
+.topbar .tb-toc { background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:13px; display:flex; align-items:center; }
+.topbar .tb-toc:hover { color:var(--text); border-color:var(--accent); }
+.reader { display:flex; padding-top:52px; min-height:100vh; }
+.toc-side { width:240px; flex-shrink:0; position:sticky; top:52px; height:calc(100vh - 52px); overflow-y:auto; padding:20px 12px; border-right:1px solid var(--border); background:var(--bg); display:none; }
+.toc-side h3 { font-size:13px; color:var(--muted); margin-bottom:10px; padding-left:8px; letter-spacing:1px; }
+.toc-side a { display:block; color:var(--text2); text-decoration:none; padding:6px 8px; border-radius:6px; font-size:13px; line-height:1.5; border-left:2px solid transparent; }
+.toc-side a:hover { color:var(--text); background:var(--card2); border-left-color:var(--accent); }
+.toc-drawer { position:fixed; top:0; right:-300px; width:280px; max-width:85vw; height:100vh; background:var(--bg2); z-index:250; transition:right 0.25s ease; overflow-y:auto; padding:70px 16px 30px; border-left:1px solid var(--border); }
+.toc-drawer.open { right:0; }
+.toc-drawer h3 { font-size:14px; color:var(--muted); margin-bottom:12px; }
+.toc-drawer a { display:block; color:var(--text2); text-decoration:none; padding:8px 6px; border-radius:6px; font-size:14px; line-height:1.5; }
+.toc-drawer a:hover { color:var(--text); background:var(--card2); }
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:240; display:none; }
+.overlay.show { display:block; }
+.article { flex:1; max-width:760px; margin:0 auto; padding:40px 24px 80px; min-width:0; }
+.article h1 { font-size:26px; margin-bottom:6px; line-height:1.4; }
+.article .doc-meta { color:var(--muted); font-size:13px; margin-bottom:28px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+.article h2 { font-size:21px; margin:36px 0 14px; color:var(--text); line-height:1.4; }
+.article h3 { font-size:18px; margin:28px 0 12px; color:var(--text); }
+.article h4 { font-size:16px; margin:22px 0 10px; color:var(--accent2); }
+.article p { font-size:16.5px; line-height:1.95; margin:14px 0; color:var(--text); }
+.article li { margin-left:24px; line-height:1.9; font-size:16px; color:var(--text); }
+.article a { color:#a78bfa; text-decoration:underline; text-underline-offset:3px; transition:color 0.15s; }
+.article a:hover { color:#c4b5fd; }
+.article a:visited { color:#a78bfa; }
+.article a.kw { color:#c4b5fd; text-decoration:none; }
+.article blockquote { border-left:4px solid var(--accent); padding:10px 16px; background:rgba(139,124,255,0.08); margin:16px 0; color:var(--text2); font-size:15px; border-radius:0 8px 8px 0; }
+.article pre { background:var(--code-bg); color:#d5d8e0; padding:16px 18px; border-radius:10px; overflow-x:auto; -webkit-overflow-scrolling:touch; font-size:13.5px; line-height:1.7; margin:16px 0; white-space:pre; border:1px solid var(--border); }
+.article code { font-family:"JetBrains Mono",Consolas,monospace; }
+.article .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; margin:16px 0; border-radius:8px; border:1px solid var(--border); }
+.article table { width:100%; border-collapse:collapse; font-size:14px; min-width:420px; }
+.article th, .article td { border-bottom:1px solid var(--border); padding:9px 12px; text-align:left; color:var(--text); line-height:1.7; }
+.article th { background:var(--card2); color:var(--accent2); }
+.kw { color:#c4b5fd; background:var(--kw-bg); border-bottom:1px dashed var(--accent); padding:1px 4px; border-radius:4px; text-decoration:none; cursor:pointer; font-weight:500; transition:all 0.15s; }
+.kw:hover { background:var(--kw-hover); color:#fff; }
+.pager { max-width:760px; margin:0 auto; padding:0 24px 60px; display:flex; gap:12px; }
+.pager a { flex:1; display:block; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 18px; text-decoration:none; transition:0.2s; }
+.pager a:hover { border-color:var(--accent); transform:translateY(-2px); }
+.pager .dir { font-size:12px; color:var(--muted); display:block; margin-bottom:6px; }
+.pager .ptitle { font-size:15px; color:var(--text); font-weight:600; display:block; }
+.pager a.next { text-align:right; }
+.pager a:empty { display:none; }
+.scroll-top { position:fixed; right:16px; bottom:20px; width:44px; height:44px; border-radius:50%; background:var(--card2); color:var(--text); border:1px solid var(--border); box-shadow:0 3px 12px rgba(0,0,0,0.4); display:none; z-index:90; align-items:center; justify-content:center; cursor:pointer; }
+.scroll-top.show { display:flex; }
+.scroll-top .icon { margin:0; width:1.4em; height:1.4em; }
+
+.hamburger { background:none; border:none; color:var(--text); cursor:pointer; padding:8px; line-height:1; display:inline-flex; align-items:center; }
+.topbar .logo { display:flex; align-items:center; font-weight:700; font-size:15px; color:var(--text); flex-shrink:0; }
+.topbar .logo .icon { color:var(--accent); }
+.drawer { position:fixed; top:0; left:0; bottom:0; width:250px; background:var(--bg2); color:var(--text); z-index:250; transform:translateX(-100%); transition:transform 0.25s ease; overflow-y:auto; padding-top:60px; border-right:1px solid var(--border); }
+.drawer.open { transform:translateX(0); }
+.drawer nav a { display:flex; align-items:center; padding:12px 20px; color:var(--text2); text-decoration:none; font-size:15px; }
+.drawer nav a:hover, .drawer nav a:active { color:var(--text); background:var(--card2); }
+.drawer a { display:block; color:var(--text2); text-decoration:none; padding:7px 20px; font-size:13.5px; line-height:1.5; }
+.drawer a:hover { color:var(--text); background:var(--card2); }
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:240; display:none; }
+.overlay.show { display:block; }
+
+
+/* ===== MDX组件样式 ===== */
+.card-group { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin:16px 0; }
+.mg-card { display:flex; align-items:flex-start; gap:10px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; text-decoration:none; transition:0.2s; }
+.mg-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+.mg-icon { font-size:20px; flex-shrink:0; color:var(--accent); }
+.mg-card-title { font-size:14px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.mg-card-desc { font-size:12.5px; color:var(--text2); line-height:1.5; }
+.callout { border-left:4px solid var(--accent); padding:10px 16px; margin:14px 0; border-radius:0 8px 8px 0; font-size:14.5px; line-height:1.7; color:var(--text2); }
+.callout-tip { border-left-color:#4caf50; background:rgba(76,175,80,0.08); }
+.callout-note { border-left-color:#42a5f5; background:rgba(66,165,245,0.08); }
+.callout-warning { border-left-color:#ff9800; background:rgba(255,152,0,0.08); }
+.callout-info { border-left-color:#8b7cff; background:rgba(139,124,255,0.08); }
+.steps { list-style:none; counter-reset:step; margin:16px 0; padding:0; }
+.steps > li { position:relative; padding:0 0 16px 44px; margin:0; }
+.steps > li::before { counter-increment:step; content:counter(step); position:absolute; left:0; top:2px; width:28px; height:28px; border-radius:50%; background:var(--accent); color:#fff; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.step-title { font-weight:600; color:var(--text); margin-bottom:6px; font-size:15px; }
+.tabs { margin:16px 0; }
+.tab-item { background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:10px; overflow:hidden; }
+.tab-label { padding:9px 14px; font-size:13px; font-weight:600; color:var(--accent2); background:var(--card2); border-bottom:1px solid var(--border); }
+.tab-body { padding:12px 14px; }
+.acc-group { margin:16px 0; }
+.acc { background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; overflow:hidden; }
+.acc summary { padding:12px 16px; cursor:pointer; font-size:14px; font-weight:600; color:var(--text); }
+.acc summary:hover { background:var(--card2); }
+.acc[open] summary { border-bottom:1px solid var(--border); }
+.article kbd { background:var(--card2); border:1px solid var(--border); border-bottom-width:2px; border-radius:5px; padding:1px 7px; font-size:12px; font-family:inherit; color:var(--text); }
+
+
+.dot { display:inline-block; width:0.85em; height:0.85em; border-radius:50%; vertical-align:-0.1em; margin:0 2px; }
+.dot-red { background:#f03e3e; }
+.dot-yellow { background:#f59f00; }
+.dot-purple { background:#9c36b5; }
+
+@media (min-width: 1024px) { .toc-side { display:block; } .tb-toc { display:none; } }
+@media (max-width: 1023px) { .article { padding:32px 18px 60px; } .article p { font-size:16px; } }
+
+
+/* ===== 关键词弹窗 ===== */
+.kw-panel { position:fixed; left:0; top:50%; transform:translate(-110%,-50%); z-index:400; background:var(--card); border:1px solid var(--accent); border-left:none; border-radius:0 16px 16px 0; box-shadow:0 8px 40px rgba(0,0,0,0.6); transition:transform 0.35s cubic-bezier(0.22,1,0.36,1); max-height:70vh; display:flex; flex-direction:column; }
+.kw-panel.open { transform:translate(0,-50%); }
+.kw-panel .kwp-head { display:flex; align-items:center; gap:8px; padding:14px 18px 10px; border-bottom:1px solid var(--border); }
+.kw-panel .kwp-badge { background:var(--kw-bg); color:var(--accent2); font-size:12px; font-weight:700; padding:3px 10px; border-radius:10px; flex-shrink:0; }
+.kw-panel .kwp-title { font-size:15px; font-weight:600; color:var(--text); flex:1; line-height:1.4; }
+.kw-panel .kwp-close { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:0 4px; line-height:1; flex-shrink:0; }
+.kw-panel .kwp-close:hover { color:var(--text); }
+.kw-panel .kwp-body { padding:14px 18px; overflow-y:auto; flex:1; }
+.kw-panel .kwp-desc { font-size:14px; line-height:1.8; color:var(--text2); }
+.kw-panel .kwp-link { display:inline-flex; align-items:center; margin-top:12px; color:var(--accent2); text-decoration:none; font-size:13px; font-weight:600; }
+.kw-panel .kwp-link:hover { color:var(--accent); }
+.kw-panel .kwp-bar-wrap { height:4px; background:var(--card2); border-radius:0 0 16px 0; overflow:hidden; flex-shrink:0; }
+.kw-panel .kwp-bar { height:100%; width:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:0 0 16px 0; }
+/* ===== 错误汇报 ===== */
+.btn-report { display:inline-flex; align-items:center; gap:4px; background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12.5px; transition:0.15s; }
+.btn-report:hover { color:var(--text); border-color:var(--accent); background:var(--card2); }
+.rpt-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:500; display:none; align-items:center; justify-content:center; padding:20px; }
+.rpt-overlay.show { display:flex; }
+.rpt-modal { background:var(--card); border:1px solid var(--accent); border-radius:16px; width:100%; max-width:460px; box-shadow:0 20px 60px rgba(0,0,0,0.7); overflow:hidden; }
+.rpt-head { display:flex; align-items:center; gap:8px; padding:16px 20px; border-bottom:1px solid var(--border); }
+.rpt-head .rpt-title { font-size:16px; font-weight:700; color:var(--text); flex:1; }
+.rpt-close { background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1; }
+.rpt-close:hover { color:var(--text); }
+.rpt-body { padding:18px 20px; }
+.rpt-field { margin-bottom:14px; }
+.rpt-field label { display:block; font-size:13px; color:var(--text2); margin-bottom:6px; }
+.rpt-field .rpt-page { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:13px; color:var(--accent2); word-break:break-all; }
+.rpt-field input, .rpt-field textarea { width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:14px; color:var(--text); font-family:inherit; resize:vertical; }
+.rpt-field input:focus, .rpt-field textarea:focus { outline:none; border-color:var(--accent); }
+.rpt-field textarea { min-height:90px; }
+.rpt-tip { font-size:12px; color:var(--muted); margin-top:4px; }
+.rpt-submit { width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px; font-size:15px; font-weight:600; cursor:pointer; transition:0.15s; }
+.rpt-submit:hover { background:var(--accent2); }
+.rpt-submit:disabled { opacity:0.5; cursor:not-allowed; }
+.rpt-ok { text-align:center; padding:30px 20px; }
+.rpt-ok .rpt-ok-icon { font-size:42px; margin-bottom:12px; }
+.rpt-ok .rpt-ok-title { font-size:17px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.rpt-ok .rpt-ok-desc { font-size:13px; color:var(--text2); }
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar"></div>
+<header class="topbar">
+  <span class="logo"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6l0 13" /> <path d="M12 6l0 13" /> <path d="M21 6l0 13" /> </svg></span>Claude Code 知识库</span>
+  <div class="tb-title">Claude Code 最佳实践</div>
+  <button class="hamburger" onclick="toggleDrawer()" aria-label="菜单"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M4 6l16 0" /> <path d="M4 12l16 0" /> <path d="M4 18l16 0" /> </svg></span></button>
+</header>
+<aside class="drawer" id="drawer">
+  <nav>
+    <a href="../index.html" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l-2 0l9 -9l9 9l-2 0" /> <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /> <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /> </svg></span>返回首页</a>
+    <a href="../index.html#index" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>文档索引</a>
+    <a href="../index.html#manual" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M19 4v16h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12" /> <path d="M19 16h-12a2 2 0 0 0 -2 2" /> <path d="M9 8h6" /> </svg></span>入门手册</a>
+    <a href="../index.html#docs" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>全部文档</a>
+    <a href="#" onclick="closeDrawer();openRpt()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9 9v-1a3 3 0 0 1 6 0v1" /> <path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /> <path d="M3 13l4 0" /> <path d="M17 13l4 0" /> <path d="M12 20l0 -6" /> <path d="M4 19l3.35 -2" /> <path d="M20 19l-3.35 -2" /> <path d="M4 7l3.75 2.4" /> <path d="M20 7l-3.75 2.4" /> </svg></span>文档有误？汇报</a>
+  </nav>
+  <div style="margin:14px 20px 6px;font-size:12px;color:var(--muted);letter-spacing:1px;">本文目录</div>
+  <a href="#sec-best-practices-1" style="padding-left:0px;font-size:13px;">Claude Code 最佳实践</a>
+<a href="#sec-best-practices-2" style="padding-left:14px;font-size:13.5px;">给 Claude 一种验证其工作的方式</a>
+<a href="#sec-best-practices-3" style="padding-left:14px;font-size:13.5px;">先探索，再规划，最后编码</a>
+<a href="#sec-best-practices-4" style="padding-left:14px;font-size:13.5px;">在提示中提供具体的上下文</a>
+<a href="#sec-best-practices-5" style="padding-left:28px;font-size:13px;">提供丰富的内容</a>
+<a href="#sec-best-practices-6" style="padding-left:14px;font-size:13.5px;">配置你的环境</a>
+<a href="#sec-best-practices-7" style="padding-left:28px;font-size:13px;">编写有效的 CLAUDE.md</a>
+<a href="#sec-best-practices-8" style="padding-left:28px;font-size:13px;">配置权限</a>
+<a href="#sec-best-practices-9" style="padding-left:28px;font-size:13px;">使用 CLI 工具</a>
+<a href="#sec-best-practices-10" style="padding-left:28px;font-size:13px;">连接 MCP 服务器</a>
+<a href="#sec-best-practices-11" style="padding-left:28px;font-size:13px;">设置 hooks</a>
+<a href="#sec-best-practices-12" style="padding-left:28px;font-size:13px;">创建 skills</a>
+<a href="#sec-best-practices-13" style="padding-left:28px;font-size:13px;">创建自定义 subagents</a>
+<a href="#sec-best-practices-14" style="padding-left:28px;font-size:13px;">安装 plugins</a>
+<a href="#sec-best-practices-15" style="padding-left:14px;font-size:13.5px;">有效沟通</a>
+<a href="#sec-best-practices-16" style="padding-left:28px;font-size:13px;">提出代码库问题</a>
+<a href="#sec-best-practices-17" style="padding-left:28px;font-size:13px;">让 Claude 采访你</a>
+<a href="#sec-best-practices-18" style="padding-left:14px;font-size:13.5px;">管理你的会话</a>
+<a href="#sec-best-practices-19" style="padding-left:28px;font-size:13px;">尽早且经常改正方向</a>
+<a href="#sec-best-practices-20" style="padding-left:28px;font-size:13px;">积极管理 context</a>
+<a href="#sec-best-practices-21" style="padding-left:28px;font-size:13px;">使用 subagents 进行调查</a>
+<a href="#sec-best-practices-22" style="padding-left:28px;font-size:13px;">使用检查点进行 Rewind</a>
+<a href="#sec-best-practices-23" style="padding-left:28px;font-size:13px;">恢复对话</a>
+<a href="#sec-best-practices-24" style="padding-left:14px;font-size:13.5px;">自动化和扩展</a>
+<a href="#sec-best-practices-25" style="padding-left:28px;font-size:13px;">运行非交互模式</a>
+<a href="#sec-best-practices-26" style="padding-left:28px;font-size:13px;">运行多个 Claude 会话</a>
+<a href="#sec-best-practices-27" style="padding-left:28px;font-size:13px;">跨文件扇出</a>
+<a href="#sec-best-practices-28" style="padding-left:28px;font-size:13px;">使用 auto mode 自主运行</a>
+<a href="#sec-best-practices-29" style="padding-left:28px;font-size:13px;">添加对抗性审查步骤</a>
+<a href="#sec-best-practices-30" style="padding-left:14px;font-size:13.5px;">避免常见失败模式</a>
+<a href="#sec-best-practices-31" style="padding-left:14px;font-size:13.5px;">培养你的直觉</a>
+<a href="#sec-best-practices-32" style="padding-left:14px;font-size:13.5px;">相关资源</a>
+</aside>
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+
+<div class="reader">
+  <aside class="toc-side">
+    <h3>本文目录</h3>
+    <a href="#sec-best-practices-1" style="padding-left:0px;font-size:13px;">Claude Code 最佳实践</a>
+<a href="#sec-best-practices-2" style="padding-left:14px;font-size:13.5px;">给 Claude 一种验证其工作的方式</a>
+<a href="#sec-best-practices-3" style="padding-left:14px;font-size:13.5px;">先探索，再规划，最后编码</a>
+<a href="#sec-best-practices-4" style="padding-left:14px;font-size:13.5px;">在提示中提供具体的上下文</a>
+<a href="#sec-best-practices-5" style="padding-left:28px;font-size:13px;">提供丰富的内容</a>
+<a href="#sec-best-practices-6" style="padding-left:14px;font-size:13.5px;">配置你的环境</a>
+<a href="#sec-best-practices-7" style="padding-left:28px;font-size:13px;">编写有效的 CLAUDE.md</a>
+<a href="#sec-best-practices-8" style="padding-left:28px;font-size:13px;">配置权限</a>
+<a href="#sec-best-practices-9" style="padding-left:28px;font-size:13px;">使用 CLI 工具</a>
+<a href="#sec-best-practices-10" style="padding-left:28px;font-size:13px;">连接 MCP 服务器</a>
+<a href="#sec-best-practices-11" style="padding-left:28px;font-size:13px;">设置 hooks</a>
+<a href="#sec-best-practices-12" style="padding-left:28px;font-size:13px;">创建 skills</a>
+<a href="#sec-best-practices-13" style="padding-left:28px;font-size:13px;">创建自定义 subagents</a>
+<a href="#sec-best-practices-14" style="padding-left:28px;font-size:13px;">安装 plugins</a>
+<a href="#sec-best-practices-15" style="padding-left:14px;font-size:13.5px;">有效沟通</a>
+<a href="#sec-best-practices-16" style="padding-left:28px;font-size:13px;">提出代码库问题</a>
+<a href="#sec-best-practices-17" style="padding-left:28px;font-size:13px;">让 Claude 采访你</a>
+<a href="#sec-best-practices-18" style="padding-left:14px;font-size:13.5px;">管理你的会话</a>
+<a href="#sec-best-practices-19" style="padding-left:28px;font-size:13px;">尽早且经常改正方向</a>
+<a href="#sec-best-practices-20" style="padding-left:28px;font-size:13px;">积极管理 context</a>
+<a href="#sec-best-practices-21" style="padding-left:28px;font-size:13px;">使用 subagents 进行调查</a>
+<a href="#sec-best-practices-22" style="padding-left:28px;font-size:13px;">使用检查点进行 Rewind</a>
+<a href="#sec-best-practices-23" style="padding-left:28px;font-size:13px;">恢复对话</a>
+<a href="#sec-best-practices-24" style="padding-left:14px;font-size:13.5px;">自动化和扩展</a>
+<a href="#sec-best-practices-25" style="padding-left:28px;font-size:13px;">运行非交互模式</a>
+<a href="#sec-best-practices-26" style="padding-left:28px;font-size:13px;">运行多个 Claude 会话</a>
+<a href="#sec-best-practices-27" style="padding-left:28px;font-size:13px;">跨文件扇出</a>
+<a href="#sec-best-practices-28" style="padding-left:28px;font-size:13px;">使用 auto mode 自主运行</a>
+<a href="#sec-best-practices-29" style="padding-left:28px;font-size:13px;">添加对抗性审查步骤</a>
+<a href="#sec-best-practices-30" style="padding-left:14px;font-size:13.5px;">避免常见失败模式</a>
+<a href="#sec-best-practices-31" style="padding-left:14px;font-size:13.5px;">培养你的直觉</a>
+<a href="#sec-best-practices-32" style="padding-left:14px;font-size:13.5px;">相关资源</a>
+  </aside>
+
+  <main class="article">
+    <blockquote>## Documentation Index</blockquote>
+<blockquote>Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt</blockquote>
+<blockquote>Use this file to discover all available pages before exploring further.</blockquote>
+
+<h2 id="sec-best-practices-1">Claude Code 最佳实践</h2>
+
+<blockquote>从配置环境到跨并行会话扩展，充分利用 Claude Code 的提示和模式。</blockquote>
+
+<p>Claude Code 是一个代理式编码环境。与等待回答问题的聊天机器人不同，Claude Code 可以读取你的文件、运行命令、进行更改，并在你观看、重定向或完全离开的情况下自主解决问题。</p>
+
+<p>这改变了你的工作方式。与其自己编写代码并要求 Claude 审查，不如描述你想要什么，让 Claude 弄清楚如何构建它。Claude 会探索、规划和实现。</p>
+
+<p>但这种自主性仍然伴随着学习曲线。Claude 在某些约束条件下工作，你需要理解这些约束。</p>
+
+<p>本指南涵盖了在 Anthropic 内部团队和在各种代码库、语言和环境中使用 Claude Code 的工程师中已被证明有效的模式。有关代理循环如何在幕后工作的信息，请参阅 <a class="kw" onclick="showKw('Claude Code 如何工作')" title="点击查看解释">Claude Code 如何工作</a>。</p>
+
+<p>***</p>
+
+<p>大多数<a class="kw" onclick="showKw('最佳实践')" title="点击查看解释">最佳实践</a>都基于一个约束：Claude 的 context window 填充速度很快，随着填充，性能会下降。</p>
+
+<p>Claude 的 context window 保存你的整个对话，包括每条消息、Claude 读取的每个文件和每个命令输出。但这可能会很快填满。单个调试<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>或代码库探索可能会生成并消耗数万个 token。</p>
+
+<p>这很重要，因为当 context 填充时，LLM 性能会下降。当 context window 即将满时，Claude 可能会开始&quot;遗忘&quot;早期的指令或犯更多错误。context window 是最重要的资源。要查看<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在实践中如何填充，请 <a class="kw" onclick="showKw('观看交互式演练')" title="点击查看解释">观看交互式演练</a>，了解启动时加载的内容以及每个文件读取的成本。使用 <a class="kw" onclick="showKw('自定义状态行')" title="点击查看解释">自定义状态行</a> 持续跟踪 context 使用情况，并查看 <a class="kw" onclick="showKw('减少 token 使用')" title="点击查看解释">减少 token 使用</a> 了解减少 token 使用的策略。</p>
+
+<p>***</p>
+
+<h3 id="sec-best-practices-2">给 Claude 一种验证其工作的方式</h3>
+
+<div class="callout callout-tip">
+<p>  给 Claude 一个它可以运行的检查：测试、构建、屏幕截图进行比较。这是你观看的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>和你可以离开的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>之间的区别。</p>
+</div>
+
+<p>当工作看起来完成时，Claude 会停止。没有它可以运行的检查，&quot;看起来完成&quot;是唯一可用的信号，你成为验证循环：每个错误都在等待你注意到它。给 Claude 一些能产生通过或失败的东西，循环就会自动关闭。Claude 完成工作，运行检查，读取结果，并迭代直到检查通过。</p>
+
+<p>检查是任何返回 Claude 可以在对话中读取的信号的东西：测试套件、构建退出代码、linter、针对固定装置比较输出的脚本，或与设计进行比较的<a class="kw" onclick="showKw('浏览器屏幕截图')" title="点击查看解释">浏览器屏幕截图</a>。</p>
+
+<div class='table-wrap'><table>
+<tr><th>策略</th><th>之前</th><th>之后</th></tr>
+<tr><td>**提供验证标准**</td><td>*&quot;实现一个验证电子邮件地址的函数&quot;*</td><td>*&quot;编写一个 validateEmail 函数。示例测试用例：<a class="kw" onclick="showKw('user@example.com')" title="点击查看解释">user@example.com</a> 为真，invalid 为假，<a class="kw" onclick="showKw('user@.com')" title="点击查看解释">user@.com</a> 为假。实现后运行测试&quot;*</td></tr>
+<tr><td>**以视觉方式验证 UI 更改**</td><td>*&quot;让仪表板看起来更好&quot;*</td><td>*&quot;\[粘贴屏幕截图] 实现此设计。对结果进行屏幕截图并与原始设计进行比较。列出差异并修复它们&quot;*</td></tr>
+<tr><td>**解决根本原因，而不是症状**</td><td>*&quot;构建失败&quot;*</td><td>*&quot;构建失败，出现此错误：\[粘贴错误]。修复它并验证构建成功。解决根本原因，不要抑制错误&quot;*</td></tr>
+</table></div>
+
+<p>一旦检查存在，决定它对停止的限制有多严格：</p>
+
+<p>* **在一个提示中**：要求 Claude 运行检查并在同一消息中迭代，如上表所示。</p>
+<p>* **在整个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中**：将检查<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>为 <a class="kw" onclick="showKw('/goal 条件')" title="点击查看解释">/goal 条件</a>。单独的评估器在每次转换后重新检查它，Claude 继续工作直到它成立。</p>
+<p>* **作为确定性门**：<a class="kw" onclick="showKw('Stop hook')" title="点击查看解释">Stop hook</a> 作为脚本运行你的检查，并阻止转换结束直到它通过。Claude Code 覆盖 hook 并在 8 次连续阻止后结束转换。</p>
+<p>* **通过第二意见**：<a class="kw" onclick="showKw('验证子代理')" title="点击查看解释">验证子代理</a>或<a class="kw" onclick="showKw('动态工作流')" title="点击查看解释">动态工作流</a>检查自己的发现，有一个新鲜的模型尝试反驳结果，所以做工作的代理不是给它评分的。</p>
+
+<p>每一步都用<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>换取关注。提示版本适用于今天的任何任务。`/goal` 和 Stop hook 版本是让无人值守运行正确完成而无需你的东西。</p>
+
+<p>让 Claude 显示证据而不是声称成功：测试输出、它运行的命令及其返回的内容，或结果的屏幕截图。审查证据比自己重新运行验证要快，并且它适用于你没有观看的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。</p>
+
+<p>***</p>
+
+<h3 id="sec-best-practices-3">先探索，再规划，最后编码</h3>
+
+<div class="callout callout-tip">
+<p>  将研究和规划与实现分开，以避免解决错误的问题。</p>
+</div>
+
+<p>让 Claude 直接跳到编码可能会产生解决错误问题的代码。使用 <a class="kw" onclick="showKw('Plan Mode')" title="点击查看解释">Plan Mode</a> 将探索与执行分开。</p>
+
+<p>推荐的<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>有四个阶段：</p>
+
+<ol class="steps">
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;探索&lt;/div&gt;</p>
+<p>    进入 Plan Mode。Claude 读取文件并回答问题，不进行任何更改。</p>
+
+<p>    ```txt claude (plan mode) theme={null}</p>
+<p>    read /src/auth and understand how we handle sessions and login.</p>
+<p>    also look at how we manage environment variables for secrets.</p>
+<p>    ```</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;规划&lt;/div&gt;</p>
+<p>    要求 Claude 创建详细的实现计划。</p>
+
+<p>    ```txt claude (plan mode) theme={null}</p>
+<p>    I want to add Google <a class="kw" onclick="showKw('OAuth')" title="点击查看解释">OAuth</a>. What files need to change?</p>
+<p>    What&#x27;s the session flow? Create a plan.</p>
+<p>    ```</p>
+
+<p>    按 `Ctrl+G` 在文本编辑器中打开计划进行直接编辑，然后 Claude 继续。</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;实现&lt;/div&gt;</p>
+<p>    切换出 Plan Mode 并让 Claude 编码，根据其计划进行验证。</p>
+
+<p>    ```txt claude (default mode) theme={null}</p>
+<p>    implement the <a class="kw" onclick="showKw('OAuth')" title="点击查看解释">OAuth</a> flow from your plan. write tests for the</p>
+<p>    callback handler, run the test suite and fix any failures.</p>
+<p>    ```</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;提交&lt;/div&gt;</p>
+<p>    要求 Claude 使用描述性消息进行提交并创建 PR。</p>
+
+<p>    ```txt claude (default mode) theme={null}</p>
+<p>    commit with a descriptive message and open a PR</p>
+<p>    ```</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;/ol&gt;</p>
+
+<div class="callout">
+<p>  Plan Mode 很有用，但也增加了开销。</p>
+
+<p>  对于范围明确且修复很小的任务（如修复拼写错误、添加日志行或重命名变量），要求 Claude 直接执行。</p>
+
+<p>  当你对方法不确定、更改修改多个文件或你不熟悉被修改的代码时，规划最有用。如果你能用一句话描述 diff，跳过计划。</p>
+</div>
+
+<p>***</p>
+
+<h3 id="sec-best-practices-4">在提示中提供具体的上下文</h3>
+
+<div class="callout callout-tip">
+<p>  你的指令越精确，你需要的更正就越少。</p>
+</div>
+
+<p>Claude 可以推断意图，但它不能读心术。引用特定文件、提及约束，并指出示例模式。</p>
+
+<div class='table-wrap'><table>
+<tr><th>策略</th><th>之前</th><th>之后</th></tr>
+<tr><td>**限定任务范围。** 指定哪个文件、什么场景和测试偏好。</td><td>*&quot;为 foo.py 添加测试&quot;*</td><td>*&quot;为 foo.py 编写测试，涵盖用户已注销的边界情况。避免 mock。&quot;*</td></tr>
+<tr><td>**指向来源。** 指导 Claude 到可以回答问题的来源。</td><td>*&quot;为什么 ExecutionFactory 有这样奇怪的 api？&quot;*</td><td>*&quot;查看 ExecutionFactory 的 git 历史并总结其 api 是如何形成的&quot;*</td></tr>
+<tr><td>**参考现有模式。** 指向代码库中的模式。</td><td>*&quot;添加日历小部件&quot;*</td><td>*&quot;查看主页上现有小部件的实现方式以了解模式。HotDogWidget.php 是一个很好的例子。按照模式实现一个新的日历小部件，让用户选择月份并向前/向后分页以选择年份。从头开始构建，除了代码库中已使用的库外，不使用其他库。&quot;*</td></tr>
+<tr><td>**描述症状。** 提供症状、可能的位置以及&quot;修复&quot;的样子。</td><td>*&quot;修复登录错误&quot;*</td><td>*&quot;用户报告<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>超时后登录失败。检查 src/auth/ 中的身份验证流程，特别是 token 刷新。编写一个失败的测试来重现问题，然后修复它&quot;*</td></tr>
+</table></div>
+
+<p>当你在探索并能够改正方向时，模糊的提示可能很有用。像 `&quot;你会改进这个文件的什么？&quot;` 这样的提示可以表面你不会想到要问的东西。</p>
+
+<h4 id="sec-best-practices-5">提供丰富的内容</h4>
+
+<div class="callout callout-tip">
+<p>  使用 `@` 引用文件、粘贴屏幕截图/图像或直接管道数据。</p>
+</div>
+
+<p>你可以通过多种方式向 Claude 提供丰富的数据：</p>
+
+<p>* **使用 `@` 引用文件**，而不是描述代码的位置。Claude 在响应前读取文件。</p>
+<p>* **直接粘贴图像**。复制/粘贴或拖放图像到提示中。</p>
+<p>* **提供 URL** 用于文档和 API 参考。使用 `<a class="kw" onclick="showKw('/permissions')" title="点击查看解释">/permissions</a>` 来允许列表经常使用的域。</p>
+<p>* **管道数据** 通过运行 `cat error.log | claude` 直接发送文件内容。</p>
+<p>* **让 Claude 获取它需要的东西**。告诉 Claude 使用 Bash 命令、<a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 工具或通过读取文件来自己拉取上下文。</p>
+
+<p>***</p>
+
+<h3 id="sec-best-practices-6">配置你的环境</h3>
+
+<p>一些<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>步骤使 Claude Code 在所有<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中显著更有效。有关扩展功能的完整<a class="kw" onclick="showKw('概述')" title="点击查看解释">概述</a>和何时使用每个功能，请参阅 <a class="kw" onclick="showKw('扩展 Claude Code')" title="点击查看解释">扩展 Claude Code</a>。</p>
+
+<h4 id="sec-best-practices-7">编写有效的 CLAUDE.md</h4>
+
+<div class="callout callout-tip">
+<p>  运行 `/init` 根据你的当前项目结构生成启动 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 文件，然后随时间精化。</p>
+</div>
+
+<p><a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 是一个特殊文件，Claude 在每次对话开始时读取。包括 Bash 命令、代码风格和<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>规则。这给 Claude 提供了它无法从代码中推断的持久上下文。</p>
+
+<p>`/init` 命令分析你的代码库以检测构建系统、测试框架和代码模式，为你提供坚实的基础来精化。</p>
+
+<p><a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 文件没有必需的格式，但保持简短和易读。例如：</p>
+
+<pre><code>
+# Code style
+- Use ES modules (import/export) syntax, not CommonJS (require)
+- Destructure imports when possible (eg. import { foo } from &#x27;bar&#x27;)
+
+# Workflow
+- Be sure to typecheck when you&#x27;re done making a series of code changes
+- Prefer running single tests, and not the whole test suite, for performance
+</code></pre>
+
+<p><a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 在每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中加载，所以只包括广泛适用的东西。对于仅有时相关的域知识或<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>，改用 <a class="kw" onclick="showKw('skills')" title="点击查看解释">skills</a>。Claude 按需加载它们，不会使每次对话都膨胀。</p>
+
+<p>保持简洁。对于每一行，问自己：*&quot;删除这个会导致 Claude 犯错吗？&quot;* 如果不会，删除它。膨胀的 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 文件会导致 Claude 忽略你的实际指令！</p>
+
+<div class='table-wrap'><table>
+<tr><th><span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span> 包括</th><th><span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M18 6l-12 12" /> <path d="M6 6l12 12" /> </svg></span> 排除</th></tr>
+<tr><td>Claude 无法猜测的 Bash 命令</td><td>Claude 可以通过读取代码弄清楚的任何东西</td></tr>
+<tr><td>与默认值不同的代码风格规则</td><td>Claude 已经知道的标准语言约定</td></tr>
+<tr><td>测试指令和首选测试运行器</td><td>详细的 API 文档（改为链接到文档）</td></tr>
+<tr><td>存储库礼仪（分支命名、PR 约定）</td><td>经常变化的信息</td></tr>
+<tr><td>特定于你的项目的架构决策</td><td>长解释或教程</td></tr>
+<tr><td>开发者环境怪癖（必需的<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>）</td><td>自明的实践，如&quot;编写干净的代码&quot;</td></tr>
+<tr><td>常见陷阱或非显而易见的行为</td><td>文件逐个描述代码库</td></tr>
+</table></div>
+
+<p>如果 Claude 继续做你不想要的事情，尽管有反对的规则，该文件可能太长，规则被遗漏了。如果 Claude 问你在 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 中回答的问题，措辞可能不明确。像对待代码一样对待 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>：当事情出错时审查它，定期修剪它，并通过观察 Claude 的行为是否实际改变来测试更改。</p>
+
+<p>你可以通过添加强调（例如&quot;IMPORTANT&quot;或&quot;YOU MUST&quot;）来调整指令以改进遵守。将文件检入 git，以便你的团队可以贡献。该文件随时间增加价值。</p>
+
+<p><a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 文件可以使用 `@path/to/import` 语法导入其他文件：</p>
+
+<pre><code>
+See @README.md for project overview and @package.json for available npm commands.
+
+# Additional Instructions
+- Git workflow: @docs/git-instructions.md
+- Personal overrides: @~/.claude/my-project-instructions.md
+</code></pre>
+
+<p>你可以在多个位置放置 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 文件：</p>
+
+<p>* **主文件夹（`~/.claude/<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>`）**：适用于所有 Claude <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a></p>
+<p>* **项目根目录（`./<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>`）**：检入 git 以与你的团队共享</p>
+<p>* **项目根目录（`./CLAUDE.local.md`）**：个人项目特定的笔记；将此文件添加到你的 `.gitignore`，以便它不会与你的团队共享</p>
+<p>* **父目录**：对于 monorepos 有用，其中 `root/<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>` 和 `root/foo/<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>` 都会自动拉入</p>
+<p>* **子目录**：当处理这些目录中的文件时，Claude 按需拉入子 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 文件</p>
+
+<h4 id="sec-best-practices-8">配置权限</h4>
+
+<div class="callout callout-tip">
+<p>  使用 <a class="kw" onclick="showKw('auto mode')" title="点击查看解释">auto mode</a> 让分类器处理批准，使用 `<a class="kw" onclick="showKw('/permissions')" title="点击查看解释">/permissions</a>` 来允许列表特定命令，或使用 `/sandbox` 进行操作系统级隔离。每种方式都减少中断，同时让你保持控制。</p>
+</div>
+
+<p>默认情况下，Claude Code 请求可能修改你的系统的操作的<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>：文件写入、Bash 命令、<a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 工具等。这是安全的但繁琐。在第十次批准后，你不是真的在审查，你只是点击通过。有三种方式来减少这些中断：</p>
+
+<p>* **Auto mode**：一个单独的分类器模型审查命令并仅阻止看起来有风险的东西：范围升级、未知基础设施或由敌对内容驱动的操作。最适合当你信任任务的总体方向但不想点击通过每一步时</p>
+<p>* **<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>允许列表**：允许你知道是安全的特定工具，如 `npm run lint` 或 `git commit`</p>
+<p>* **沙箱**：启用操作系统级隔离，限制文件系统和网络访问，允许 Claude 在定义的边界内更自由地工作</p>
+
+<p>阅读更多关于 <a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a>、<a class="kw" onclick="showKw('权限规则')" title="点击查看解释">权限规则</a> 和 <a class="kw" onclick="showKw('沙箱')" title="点击查看解释">沙箱</a>。</p>
+
+<h4 id="sec-best-practices-9">使用 CLI 工具</h4>
+
+<div class="callout callout-tip">
+<p>  告诉 Claude Code 在与外部服务交互时使用 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 工具，如 `gh`、`aws`、`gcloud` 和 `sentry-cli`。</p>
+</div>
+
+<p><a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 工具是与外部服务交互的最 context 高效的方式。如果你使用 GitHub，安装 `gh` <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a>。Claude 知道如何使用它来创建问题、打开拉取请求和读取评论。没有 `gh`，Claude 仍然可以使用 GitHub API，但未认证的请求经常会触发速率限制。</p>
+
+<p>Claude 也有效地学习它不知道的 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 工具。尝试像 `Use &#x27;foo-cli-tool --help&#x27; to learn about foo tool, then use it to solve A, B, C.` 这样的提示。</p>
+
+<h4 id="sec-best-practices-10">连接 MCP 服务器</h4>
+
+<div class="callout callout-tip">
+<p>  运行 `claude mcp add` 来连接外部工具，如 Notion、Figma 或你的数据库。</p>
+</div>
+
+<p>使用 <a class="kw" onclick="showKw('MCP servers')" title="点击查看解释">MCP servers</a>，你可以要求 Claude 从问题跟踪器实现功能、查询数据库、分析监控数据、集成来自 Figma 的设计并自动化<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>。</p>
+
+<h4 id="sec-best-practices-11">设置 hooks</h4>
+
+<div class="callout callout-tip">
+<p>  使用 hooks 来处理必须每次发生且没有例外的操作。</p>
+</div>
+
+<p><a class="kw" onclick="showKw('Hooks')" title="点击查看解释">Hooks</a> 在 Claude <a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>中的特定点自动运行脚本。与 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 指令不同，hooks 是确定性的，保证操作发生。</p>
+
+<p>Claude 可以为你编写 hooks。尝试像 *&quot;编写一个在每次文件编辑后运行 eslint 的 hook&quot;* 或 *&quot;编写一个阻止写入迁移文件夹的 hook&quot;* 这样的提示。编辑 `.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 直接配置 hooks，并运行 `<a class="kw" onclick="showKw('/hooks')" title="点击查看解释">/hooks</a>` 来浏览配置的内容。</p>
+
+<h4 id="sec-best-practices-12">创建 skills</h4>
+
+<div class="callout callout-tip">
+<p>  在 `.claude/skills/` 中创建 `SKILL.md` 文件，为 Claude 提供域知识和可重用<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>。</p>
+</div>
+
+<p><a class="kw" onclick="showKw('Skills')" title="点击查看解释">Skills</a> 使用特定于你的项目、团队或域的信息扩展 Claude 的知识。Claude 在相关时自动应用它们，或者你可以使用 `/skill-name` 直接调用它们。</p>
+
+<p>通过向 `.claude/skills/` 添加带有 `SKILL.md` 的目录来创建 skill：</p>
+
+<pre><code>
+---
+name: api-conventions
+description: REST API design conventions for our services
+---
+# API Conventions
+- Use kebab-case for URL paths
+- Use camelCase for JSON properties
+- Always include pagination for list endpoints
+- Version APIs in the URL path (/v1/, /v2/)
+</code></pre>
+
+<p><a class="kw" onclick="showKw('Skill')" title="点击查看解释">Skill</a>s 也可以定义你直接调用的可重复<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>：</p>
+
+<pre><code>
+---
+name: fix-issue
+description: Fix a GitHub issue
+disable-model-invocation: true
+---
+Analyze and fix the GitHub issue: $ARGUMENTS.
+
+1. Use `gh issue view` to get the issue details
+2. Understand the problem described in the issue
+3. Search the codebase for relevant files
+4. Implement the necessary changes to fix the issue
+5. Write and run tests to verify the fix
+6. Ensure code passes linting and type checking
+7. Create a descriptive commit message
+8. Push and create a PR
+</code></pre>
+
+<p>运行 `/fix-issue 1234` 来调用它。对于具有你想手动触发的副作用的<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>，使用 `disable-model-invocation: true`。</p>
+
+<h4 id="sec-best-practices-13">创建自定义 subagents</h4>
+
+<div class="callout callout-tip">
+<p>  在 `.claude<a class="kw" onclick="showKw('/agents')" title="点击查看解释">/agents</a>/` 中定义专门的助手，Claude 可以委托给它们来处理隔离的任务。</p>
+</div>
+
+<p><a class="kw" onclick="showKw('Subagents')" title="点击查看解释">Subagents</a> 在自己的 context 中运行，拥有自己的一组允许的工具。它们对于读取许多文件或需要专门关注而不会使你的主对话混乱的任务很有用。</p>
+
+<pre><code>
+---
+name: security-reviewer
+description: Reviews code for security vulnerabilities
+tools: Read, Grep, Glob, Bash
+model: opus
+---
+You are a senior security engineer. Review code for:
+- Injection vulnerabilities (SQL, XSS, command injection)
+- Authentication and authorization flaws
+- Secrets or credentials in code
+- Insecure data handling
+
+Provide specific line references and suggested fixes.
+</code></pre>
+
+<p>明确告诉 Claude 使用 subagents：*&quot;使用 subagent 来审查此代码的安全问题。&quot;*</p>
+
+<h4 id="sec-best-practices-14">安装 plugins</h4>
+
+<div class="callout callout-tip">
+<p>  运行 `<a class="kw" onclick="showKw('/plugin')" title="点击查看解释">/plugin</a>` 来浏览<a class="kw" onclick="showKw('市场')" title="点击查看解释">市场</a>。<a class="kw" onclick="showKw('Plugin')" title="点击查看解释">Plugin</a>s 添加 skills、工具和集成，无需配置。</p>
+</div>
+
+<p><a class="kw" onclick="showKw('Plugins')" title="点击查看解释">Plugins</a> 将 skills、hooks、subagents 和 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 服务器捆绑到来自社区和 Anthropic 的单个可安装单元中。如果你使用类型化语言，安装 <a class="kw" onclick="showKw('代码智能 plugin')" title="点击查看解释">代码智能 plugin</a> 来为 Claude 提供精确的符号导航和编辑后的自动错误检测。</p>
+
+<p>有关在 skills、subagents、hooks 和 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 之间选择的指导，请参阅 <a class="kw" onclick="showKw('扩展 Claude Code')" title="点击查看解释">扩展 Claude Code</a>。</p>
+
+<p>***</p>
+
+<h3 id="sec-best-practices-15">有效沟通</h3>
+
+<p>你与 Claude Code 沟通的方式显著影响结果的质量。</p>
+
+<h4 id="sec-best-practices-16">提出代码库问题</h4>
+
+<div class="callout callout-tip">
+<p>  问 Claude 你会问资深工程师的问题。</p>
+</div>
+
+<p>当加入新代码库时，使用 Claude Code 进行学习和探索。你可以问 Claude 你会问另一个工程师的相同类型的问题：</p>
+
+<p>* 日志如何工作？</p>
+<p>* 我如何创建新的 API 端点？</p>
+<p>* `foo.rs` 第 134 行的 `async move { ... }` 做什么？</p>
+<p>* `CustomerOnboardingFlowImpl` 处理哪些边界情况？</p>
+<p>* 为什么这段代码在第 333 行调用 `foo()` 而不是 `bar()`？</p>
+
+<p>以这种方式使用 Claude Code 是一个有效的入职<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>，改进了加入时间并减少了对其他工程师的负担。无需特殊提示：直接提问。</p>
+
+<h4 id="sec-best-practices-17">让 Claude 采访你</h4>
+
+<div class="callout callout-tip">
+<p>  对于更大的功能，让 Claude 先采访你。从最小的提示开始，要求 Claude 使用 `AskUserQuestion` 工具采访你。</p>
+</div>
+
+<p>Claude 会问你可能还没有考虑过的东西，包括技术实现、UI/UX、边界情况和权衡。</p>
+
+<pre><code>
+I want to build [brief description]. Interview me in detail using the AskUserQuestion tool.
+
+Ask about technical implementation, UI/UX, edge cases, concerns, and tradeoffs. Don&#x27;t ask obvious questions, dig into the hard parts I might not have considered.
+
+Keep interviewing until we&#x27;ve covered everything, then write a complete spec to SPEC.md.
+</code></pre>
+
+<p>一旦规范完成，启动新<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>来执行它。新<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>有干净的 context，完全专注于实现，你有一个书面规范可以参考。</p>
+
+<p>最有用的规范是自包含的：它们命名涉及的文件和接口，说明什么在范围之外，并以端到端验证步骤结束，证明该功能有效。花在使规范精确上的时间比花在观看实现上的时间收益更大。</p>
+
+<p>***</p>
+
+<h3 id="sec-best-practices-18">管理你的会话</h3>
+
+<p>对话是持久的和可逆的。利用这一点！</p>
+
+<h4 id="sec-best-practices-19">尽早且经常改正方向</h4>
+
+<div class="callout callout-tip">
+<p>  一旦你注意到 Claude 偏离轨道，立即改正它。</p>
+</div>
+
+<p>最好的结果来自紧密的反馈循环。虽然 Claude 有时会在第一次尝试时完美地解决问题，但快速改正它通常会更快地产生更好的解决方案。</p>
+
+<p>* **`Esc`**：使用 `Esc` 键在中途停止 Claude。Context 被保留，所以你可以重定向。</p>
+<p>* **`Esc + Esc` 或 `/rewind`**：按 `Esc` 两次或运行 `/rewind` 来打开 rewind 菜单并恢复之前的对话和代码状态，或从选定的消息进行总结。</p>
+<p>* **`&quot;撤销那个&quot;`**：让 Claude 恢复其更改。</p>
+<p>* **`<a class="kw" onclick="showKw('/clear')" title="点击查看解释">/clear</a>`**：在不相关的任务之间重置 context。长<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>与无关的 context 可能会降低性能。</p>
+
+<p>如果你在一个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中对同一问题改正了 Claude 两次以上，context 就充满了失败的方法。运行 `<a class="kw" onclick="showKw('/clear')" title="点击查看解释">/clear</a>` 并使用更具体的提示重新开始，该提示包含你学到的东西。干净的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>与更好的提示几乎总是优于长<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>与累积的改正。</p>
+
+<h4 id="sec-best-practices-20">积极管理 context</h4>
+
+<div class="callout callout-tip">
+<p>  在不相关的任务之间频繁运行 `<a class="kw" onclick="showKw('/clear')" title="点击查看解释">/clear</a>` 来重置 context。</p>
+</div>
+
+<p>Claude Code 在你接近 context 限制时自动压缩对话历史，这保留了重要的代码和决策，同时释放空间。</p>
+
+<p>在长<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中，Claude 的 context window 可能会充满无关的对话、文件内容和命令。这可能会降低性能，有时会分散 Claude 的注意力。</p>
+
+<p>* 在任务之间频繁使用 `<a class="kw" onclick="showKw('/clear')" title="点击查看解释">/clear</a>` 来完全重置 context window</p>
+<p>* 当自动压缩触发时，Claude 总结最重要的东西，包括代码模式、文件状态和关键决策</p>
+<p>* 为了更多控制，运行 `<a class="kw" onclick="showKw('/compact')" title="点击查看解释">/compact</a> &lt;instructions&gt;`，如 `<a class="kw" onclick="showKw('/compact')" title="点击查看解释">/compact</a> Focus on the API changes`</p>
+<p>* 要仅压缩对话的一部分，使用 `Esc + Esc` 或 `/rewind`，选择消息<a class="kw" onclick="showKw('检查点')" title="点击查看解释">检查点</a>，并选择 **从这里总结** 或 **总结到这里**。第一个会压缩从该点开始的消息，同时保持早期 context 完整；第二个会压缩早期消息，同时保持最近的消息完整。请参阅 <a class="kw" onclick="showKw('恢复与总结')" title="点击查看解释">恢复与总结</a>。</p>
+<p>* 在 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 中使用像 `&quot;When compacting, always preserve the full list of modified files and any test commands&quot;` 这样的指令来自定义压缩行为，以确保关键 context 在总结中存活</p>
+<p>* 对于不需要留在 context 中的快速问题，使用 <a class="kw" onclick="showKw('/btw')" title="点击查看解释">/btw</a>。答案出现在可关闭的覆盖层中，永远不会进入对话历史，所以你可以检查细节而不增加 context。</p>
+
+<h4 id="sec-best-practices-21">使用 subagents 进行调查</h4>
+
+<div class="callout callout-tip">
+<p>  使用 `&quot;use subagents to investigate X&quot;` 委托研究。它们在单独的 context 中探索，为实现保持你的主对话干净。</p>
+</div>
+
+<p>由于 context 是你的基本约束，subagents 是可用的最强大的工具之一。当 Claude 研究代码库时，它读取许多文件，所有这些都消耗你的 context。<a class="kw" onclick="showKw('Subagent')" title="点击查看解释">Subagent</a>s 在单独的 context windows 中运行并报告摘要：</p>
+
+<pre><code>
+Use subagents to investigate how our authentication system handles token
+refresh, and whether we have any existing OAuth utilities I should reuse.
+</code></pre>
+
+<p>subagent 探索代码库、读取相关文件并报告发现，所有这些都不会使你的主对话混乱。</p>
+
+<p>你也可以在 Claude 实现某些东西后使用 subagents 进行验证：</p>
+
+<pre><code>
+use a subagent to review this code for edge cases
+</code></pre>
+
+<h4 id="sec-best-practices-22">使用检查点进行 Rewind</h4>
+
+<div class="callout callout-tip">
+<p>  Claude 进行的每个提示都会创建一个<a class="kw" onclick="showKw('检查点')" title="点击查看解释">检查点</a>。你可以将对话、代码或两者恢复到任何之前的<a class="kw" onclick="showKw('检查点')" title="点击查看解释">检查点</a>。</p>
+</div>
+
+<p>Claude 在每次更改前自动对文件进行快照，以便<a class="kw" onclick="showKw('检查点')" title="点击查看解释">检查点</a>可以恢复它们。双击 `Escape` 或运行 `/rewind` 来打开 rewind 菜单。你可以仅恢复对话、仅恢复代码、恢复两者或从选定的消息进行总结。有关详细信息，请参阅 <a class="kw" onclick="showKw('Checkpointing')" title="点击查看解释">Checkpointing</a>。</p>
+
+<p>与其仔细规划每一步，你可以告诉 Claude 尝试一些冒险的事情。如果不起作用，rewind 并尝试不同的方法。<a class="kw" onclick="showKw('检查点')" title="点击查看解释">检查点</a>在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中持续，所以你可以关闭你的终端并稍后仍然 rewind。</p>
+
+<div class="callout callout-warning">
+<p>  <a class="kw" onclick="showKw('检查点')" title="点击查看解释">检查点</a>仅跟踪 Claude 进行的更改，不跟踪外部进程。这不是 git 的替代品。</p>
+</div>
+
+<h4 id="sec-best-practices-23">恢复对话</h4>
+
+<div class="callout callout-tip">
+<p>  使用 `/rename` 给<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>命名，并像对待分支一样对待它们：每个<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>都有自己的持久 context。</p>
+</div>
+
+<p>Claude Code 在本地保存对话，所以当任务跨越多个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>时，你不必重新解释 context。运行 `claude --continue` 来继续最近的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，或 `claude --resume` 来从列表中选择。给<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>起描述性名称，如 `oauth-migration`，以便你稍后可以找到它们。有关完整的恢复、分支和命名控制集，请参阅 <a class="kw" onclick="showKw('管理会话')" title="点击查看解释">管理会话</a>。</p>
+
+<p>***</p>
+
+<h3 id="sec-best-practices-24">自动化和扩展</h3>
+
+<p>一旦你对一个 Claude 有效，通过并行<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>、非<a class="kw" onclick="showKw('交互模式')" title="点击查看解释">交互模式</a>和扇出模式来增加你的输出。</p>
+
+<p>到目前为止，一切都假设一个人、一个 Claude 和一个对话。但 Claude Code 水平扩展。本部分中的技术展示了你如何能做更多。</p>
+
+<h4 id="sec-best-practices-25">运行非交互模式</h4>
+
+<div class="callout callout-tip">
+<p>  在 CI、pre-commit hooks 或脚本中使用 `claude -p &quot;prompt&quot;`。添加 `--output-format stream-json --verbose` 用于流式 JSON 输出。</p>
+</div>
+
+<p>使用 `claude -p &quot;your prompt&quot;`，你可以非交互地运行 Claude，不需要交互式提示。该运行仍然会创建一个可恢复的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，除非你传递 `--no-session-persistence`。<a class="kw" onclick="showKw('非交互模式')" title="点击查看解释">非交互模式</a>是你将 Claude 集成到 CI 管道、pre-commit hooks 或任何自动化<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>中的方式。输出格式让你以编程方式解析结果：纯文本、JSON 或流式 JSON。</p>
+
+<pre><code>
+# One-off queries
+claude -p &quot;Explain what this project does&quot;
+
+# Structured output for scripts
+claude -p &quot;List all API endpoints&quot; --output-format json
+
+# Streaming for real-time processing
+claude -p &quot;Analyze this log file&quot; --output-format stream-json --verbose
+</code></pre>
+
+<h4 id="sec-best-practices-26">运行多个 Claude 会话</h4>
+
+<div class="callout callout-tip">
+<p>  并行运行多个 Claude <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>以加快开发、运行隔离的实验或启动复杂的<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>。</p>
+</div>
+
+<p>选择适合你想要自己进行多少协调的并行方法：</p>
+
+<p>* <a class="kw" onclick="showKw('Worktrees')" title="点击查看解释">Worktrees</a>：在隔离的 git 检出中运行单独的 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，以便编辑不会冲突</p>
+<p>* <a class="kw" onclick="showKw('桌面应用')" title="点击查看解释">桌面应用</a>：以视觉方式管理多个本地<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>都在自己的 worktree 中</p>
+<p>* <a class="kw" onclick="showKw('Claude Code 在网络上')" title="点击查看解释">Claude Code 在网络上</a>：在 Anthropic 管理的云基础设施中的隔离虚拟机上运行<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a></p>
+<p>* <a class="kw" onclick="showKw('Agent teams')" title="点击查看解释">Agent teams</a>：具有共享任务、消息和团队主管的多个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的自动协调</p>
+
+<p>除了并行化工作，多个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>启用了质量关注的<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>。新鲜的 context 改进了<a class="kw" onclick="showKw('代码审查')" title="点击查看解释">代码审查</a>，因为 Claude 不会偏向于它刚刚编写的代码。</p>
+
+<p>例如，使用 Writer/Reviewer 模式：</p>
+
+<div class='table-wrap'><table>
+<tr><th><a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a> A（Writer）</th><th><a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a> B（Reviewer）</th></tr>
+<tr><td>`为我们的 API 端点实现速率限制器`</td><td></td></tr>
+<tr><td></td><td>`审查 @src/middleware/rateLimiter.ts 中的速率限制器实现。查找边界情况、竞态条件和与我们现有中间件模式的一致性。`</td></tr>
+<tr><td>`这是审查反馈：[<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a> B 输出]。解决这些问题。`</td><td></td></tr>
+</table></div>
+
+<p>你可以用测试做类似的事情：让一个 Claude 编写测试，然后另一个编写代码来通过它们。</p>
+
+<h4 id="sec-best-practices-27">跨文件扇出</h4>
+
+<div class="callout callout-tip">
+<p>  循环遍历任务，为每个调用 `claude -p`。使用 `--allowedTools` 来限定批量操作的<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>。</p>
+</div>
+
+<p>对于大型迁移或分析，你可以跨许多并行 Claude 调用分配工作：</p>
+
+<ol class="steps">
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;生成任务列表&lt;/div&gt;</p>
+<p>    让 Claude 列出所有需要迁移的文件（例如，`list all 2,000 Python files that need migrating`）</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;编写脚本来循环遍历列表&lt;/div&gt;</p>
+<p>    ```bash theme={null}</p>
+<p>    for file in $(cat files.txt); do</p>
+<p>      claude -p &quot;Migrate $file from React to Vue. Return OK or FAIL.&quot; \</p>
+<p>        --allowedTools &quot;Edit,Bash(git commit *)&quot;</p>
+<p>    done</p>
+<p>    ```</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;在几个文件上测试，然后大规模运行&lt;/div&gt;</p>
+<p>    根据前 2-3 个文件出错的情况精化你的提示，然后在完整集合上运行。`--allowedTools` 标志限制 Claude 能做什么，这在你无人值守运行时很重要。</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;/ol&gt;</p>
+
+<p>你也可以将 Claude 集成到现有的数据/处理管道中：</p>
+
+<pre><code>
+claude -p &quot;&lt;your prompt&gt;&quot; --output-format json | your_command
+</code></pre>
+
+<p>在开发期间使用 `--verbose` 进行调试，在生产中关闭它。</p>
+
+<h4 id="sec-best-practices-28">使用 auto mode 自主运行</h4>
+
+<p>为了不间断的执行和后台安全检查，使用 <a class="kw" onclick="showKw('auto mode')" title="点击查看解释">auto mode</a>。分类器模型在命令运行前审查它们，阻止范围升级、未知基础设施和由敌对内容驱动的操作，同时让常规工作无提示进行。</p>
+
+<pre><code>
+claude --permission-mode auto -p &quot;fix all lint errors&quot;
+</code></pre>
+
+<p>对于使用 `-p` 标志的非交互运行，如果分类器重复阻止操作，<a class="kw" onclick="showKw('auto mode')" title="点击查看解释">auto mode</a> 会中止，因为没有用户可以回退到。请参阅 <a class="kw" onclick="showKw('auto mode 何时回退')" title="点击查看解释">auto mode 何时回退</a> 了解阈值。</p>
+
+<h4 id="sec-best-practices-29">添加对抗性审查步骤</h4>
+
+<div class="callout callout-tip">
+<p>  在将任务视为完成之前，让一个<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>在新鲜的 context 中审查差异并报告缺陷。</p>
+</div>
+
+<p>Claude 无人值守工作的时间越长，在你将工作视为完成之前进行独立检查就越重要。在新鲜的 <a class="kw" onclick="showKw('subagent')" title="点击查看解释">subagent</a> context 中运行的审查者只看到差异和你给它的标准，而不是产生更改的推理，所以它按自己的条件评估结果。</p>
+
+<p>对于正确性检查，运行捆绑的 <a class="kw" onclick="showKw('/code-review skill')" title="点击查看解释">/code-review skill</a>，它在新鲜的<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>中审查当前差异以查找错误，并将发现返回到<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。要检查差异是否符合你的计划，请自己编写审查提示。命名要检查的工作、要检查的计划以及什么算作发现：</p>
+
+<pre><code>
+使用子代理根据 PLAN.md 审查速率限制器差异。检查每个要求是否已实现、列出的边界情况是否有测试，以及任务范围之外是否有任何更改。报告缺陷，而不是风格偏好。
+</code></pre>
+
+<p>因为审查者作为<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>运行，实现<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>直接接收缺陷，可以修复它们并重新审查，而无需你在窗口之间复制发现。对于更长的自主运行，<a class="kw" onclick="showKw('agent team')" title="点击查看解释">agent team</a> 可以在许多任务中保持这个循环进行，而你可以对记录的发现进行抽查。</p>
+
+<div class="callout">
+<p>  被提示查找缺陷的审查者通常会报告一些，即使工作是健全的，因为那是它被要求做的。追逐每个发现会导致过度工程：额外的抽象层、防御性代码和针对无法发生的情况的测试。告诉审查者只标记影响正确性或陈述要求的缺陷，将其余的视为可选。</p>
+</div>
+
+<p>***</p>
+
+<h3 id="sec-best-practices-30">避免常见失败模式</h3>
+
+<p>这些是常见的错误。尽早识别它们可以节省时间：</p>
+
+<p>* **厨房水槽<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。** 你从一个任务开始，然后问 Claude 一些不相关的东西，然后回到第一个任务。Context 充满了无关的信息。</p>
+<p>  &gt; **修复**：在不相关的任务之间 `<a class="kw" onclick="showKw('/clear')" title="点击查看解释">/clear</a>`。</p>
+<p>* **一次又一次地改正。** Claude 做错了什么，你改正它，它仍然是错的，你再改正。Context 被失败的方法污染。</p>
+<p>  &gt; **修复**：在两次失败的改正后，`<a class="kw" onclick="showKw('/clear')" title="点击查看解释">/clear</a>` 并编写一个更好的初始提示，包含你学到的东西。</p>
+<p>* **过度指定的 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>。** 如果你的 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 太长，Claude 会忽略一半，因为重要的规则在噪音中丢失。</p>
+<p>  &gt; **修复**：无情地修剪。如果 Claude 已经在没有指令的情况下正确地做某事，删除它或将其转换为 hook。</p>
+<p>* **信任然后验证的差距。** Claude 产生一个看起来合理的实现，但不处理边界情况。</p>
+<p>  &gt; **修复**：始终提供验证（测试、脚本、屏幕截图）。如果你不能验证它，不要发布它。</p>
+<p>* **无限探索。** 你要求 Claude &quot;调查&quot;某些东西而不限定范围。Claude 读取数百个文件，填充 context。</p>
+<p>  &gt; **修复**：狭隘地限定调查或使用 subagents，以便探索不会消耗你的主 context。</p>
+
+<p>***</p>
+
+<h3 id="sec-best-practices-31">培养你的直觉</h3>
+
+<p>本指南中的模式不是一成不变的。它们是通常效果很好的起点，但可能不是每种情况的最优选择。</p>
+
+<p>有时你\_应该\_让 context 累积，因为你深入一个复杂的问题，历史很有价值。有时你应该跳过规划，让 Claude 弄清楚，因为任务是探索性的。有时模糊的提示正是你想要的，因为你想看看 Claude 如何解释问题，然后再限制它。</p>
+
+<p>注意什么有效。当 Claude 产生很好的输出时，注意你做了什么：提示结构、你提供的 context、你所在的模式。当 Claude 遇到困难时，问为什么。Context 太嘈杂了吗？提示太模糊了吗？任务对于一次通过来说太大了吗？</p>
+
+<p>随着时间的推移，你会培养没有指南能捕捉的直觉。你会知道何时具体，何时开放，何时规划，何时探索，何时清除 context，何时让它累积。</p>
+
+<h3 id="sec-best-practices-32">相关资源</h3>
+
+<p>* <a class="kw" onclick="showKw('Claude Code 如何工作')" title="点击查看解释">Claude Code 如何工作</a>：代理循环、工具和 context 管理</p>
+<p>* <a class="kw" onclick="showKw('扩展 Claude Code')" title="点击查看解释">扩展 Claude Code</a>：skills、hooks、<a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a>、subagents 和 plugins</p>
+<p>* <a class="kw" onclick="showKw('常见工作流')" title="点击查看解释">常见工作流</a>：调试、测试、PR 等的分步配方</p>
+<p>* <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>：存储项目约定和持久 context</p>
+
+  </main>
+</div>
+
+<nav class="pager">
+  <a href="agents.html"><span class="dir">← 上一篇</span><span class="ptitle">并行运行代理</span></a>
+  <a class="next" href="channels.html"><span class="dir">下一篇 →</span><span class="ptitle">使用 channels 将事件推送到运行中的会话</span></a>
+</nav>
+
+<button class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="返回顶部"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 5l0 14" /> <path d="M18 11l-6 -6" /> <path d="M6 11l6 -6" /> </svg></span></button>
+
+<!-- 关键词解释弹窗 -->
+<div class="kw-panel" id="kwPanel">
+  <div class="kwp-head">
+    <span class="kwp-badge" id="kwpBadge"></span>
+    <span class="kwp-title" id="kwpTitle"></span>
+    <button class="kwp-close" onclick="hideKw()">×</button>
+  </div>
+  <div class="kwp-body">
+    <div class="kwp-desc" id="kwpDesc"></div>
+    <a class="kwp-link" id="kwpLink" target="_blank">阅读完整文档<span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l14 0" /> <path d="M13 18l6 -6" /> <path d="M13 6l6 6" /> </svg></span></a>
+  </div>
+  <div class="kwp-bar-wrap"><div class="kwp-bar" id="kwBar"></div></div>
+</div>
+
+<script>
+function toggleDrawer() {
+  document.getElementById('drawer').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+window.addEventListener('scroll', function() {
+  var st = document.getElementById('scrollTop');
+  st.classList.toggle('show', window.scrollY > 400);
+  var h = document.documentElement.scrollHeight - window.innerHeight;
+  var pct = h > 0 ? (window.scrollY / h * 100) : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+});
+
+// ===== 关键词弹窗逻辑 =====
+const KW_DATA = {"Marketplace": {"doc": "plugin-marketplaces", "title": "创建和分发 plugin marketplace", "desc": "**plugin marketplace** 是一个目录，让你能够将 plugins 分发给他人。Marketplace 提供集中式发现、版本跟踪、自动更新以及对多种源类型（包括 git 存储库和本地路径）的支持。本指南展示了如何创建自己的 marketplace，与你的团队或社区共享 plugins。"}, "市场": {"doc": "plugin-marketplaces", "title": "创建和分发 plugin marketplace", "desc": "**plugin marketplace** 是一个目录，让你能够将 plugins 分发给他人。Marketplace 提供集中式发现、版本跟踪、自动更新以及对多种源类型（包括 git 存储库和本地路径）的支持。本指南展示了如何创建自己的 marketplace，与你的团队或社区共享 plugins。"}, "Plugin": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "插件": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "Skill": {"doc": "skills", "title": "使用 skills 扩展 Claude", "desc": "Skills 扩展了 Claude 能做的事情。创建一个 `SKILL.md` 文件，其中包含说明，Claude 会将其添加到其工具包中。Claude 在相关时使用 skills，或者你可以使用 `/skill-name` 直接调用一个。"}, "技能": {"doc": "skills", "title": "使用 skills 扩展 Claude", "desc": "Skills 扩展了 Claude 能做的事情。创建一个 `SKILL.md` 文件，其中包含说明，Claude 会将其添加到其工具包中。Claude 在相关时使用 skills，或者你可以使用 `/skill-name` 直接调用一个。"}, "Agent": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "Subagent": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "子代理": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "Hook": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "钩子": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "MCP": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "CLI": {"doc": "cli-reference", "title": "CLI 参考", "desc": "CLI 命令"}, "斜杠命令": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "快捷键": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "keybindings": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "权限模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Permission Mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "上下文窗口": {"doc": "context-window", "title": "探索上下文窗口", "desc": "了解 Claude Code 的上下文窗口如何工作：上下文包含哪些内容、如何高效利用、以及自动压缩等机制。"}, "Context Window": {"doc": "context-window", "title": "探索上下文窗口", "desc": "了解 Claude Code 的上下文窗口如何工作：上下文包含哪些内容、如何高效利用、以及自动压缩等机制。"}, "设置": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "环境变量": {"doc": "env-vars", "title": "环境变量", "desc": "环境变量可以控制 Claude Code 的行为，例如模型选择、身份验证、请求路由和功能切换。许多相同的行为也可以通过设置文件字段、CLI 标志或会话内命令（如 `/model`）进行配置。"}, "Environment Variables": {"doc": "env-vars", "title": "环境变量", "desc": "环境变量可以控制 Claude Code 的行为，例如模型选择、身份验证、请求路由和功能切换。许多相同的行为也可以通过设置文件字段、CLI 标志或会话内命令（如 `/model`）进行配置。"}, "记忆": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "Memory": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "会话": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "Session": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "状态栏": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "Statusline": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "CLAUDE.md": {"doc": "claude-directory", "title": "探索 .claude 目录", "desc": "Claude Code 在项目根目录读取的指令文件，每次会话都会加载，用来定义项目约定、常用命令和架构上下文。"}, ".claude 目录": {"doc": "claude-directory", "title": "探索 .claude 目录", "desc": "Claude Code 读取 CLAUDE.md、settings.json、hooks、skills、commands、subagents 等配置的目录结构。"}, "keybindings.json": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "settings.json": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "Prompt caching": {"doc": "prompt-caching", "title": "Claude Code 如何使用 prompt caching", "desc": "Prompt caching 使 Claude Code 更快、更经济高效。没有缓存，API 会在每个回合重新处理您的完整历史记录。有了缓存，它会重用已经处理过的内容，只对更改的部分进行新工作。"}, "提示词缓存": {"doc": "prompt-caching", "title": "Claude Code 如何使用 prompt caching", "desc": "Prompt caching 使 Claude Code 更快、更经济高效。没有缓存，API 会在每个回合重新处理您的完整历史记录。有了缓存，它会重用已经处理过的内容，只对更改的部分进行新工作。"}, "提示词库": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类（理解、计划、原型、构建等），帮助快速上手常见任务。"}, "Prompt library": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类（理解、计划、原型、构建等），帮助快速上手常见任务。"}, "提示词": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类，帮助快速上手 Claude Code 常见任务。"}, "auto memory": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "自动记忆": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "后台会话": {"doc": "agent-view", "title": "使用 agent view 管理多个代理", "desc": "Agent view 通过 `claude agents` 打开，是所有后台会话的一个屏幕：什么正在运行、什么需要你的输入、什么已完成。调度新会话，一目了然地查看它们的状态而不是滚动浏览记录，只在需要时才介入。每个后台会话都是一个完整的 Claude Code 对话，在没有终端连接的情况下继续运行，所以你可以随时打开它、回复并离开。"}, "代理视图": {"doc": "agent-view", "title": "使用 agent view 管理多个代理", "desc": "Agent view 通过 `claude agents` 打开，是所有后台会话的一个屏幕：什么正在运行、什么需要你的输入、什么已完成。调度新会话，一目了然地查看它们的状态而不是滚动浏览记录，只在需要时才介入。每个后台会话都是一个完整的 Claude Code 对话，在没有终端连接的情况下继续运行，所以你可以随时打开它、回复并离开。"}, "远程控制": {"doc": "remote-control", "title": "使用 Remote Control 从任何设备继续本地会话", "desc": "Remote Control 处于研究预览阶段，在所有计划中都可用。在 Team 和 Enterprise 上，在所有者在 Claude Code 管理员设置中启用 Remote Control 切换之前，它默认处于关闭状态。"}, "Remote Control": {"doc": "remote-control", "title": "使用 Remote Control 从任何设备继续本地会话", "desc": "Remote Control 处于研究预览阶段，在所有计划中都可用。在 Team 和 Enterprise 上，在所有者在 Claude Code 管理员设置中启用 Remote Control 切换之前，它默认处于关闭状态。"}, "计划任务": {"doc": "scheduled-tasks", "title": "按计划运行提示词", "desc": "计划任务让 Claude 按间隔自动重新运行提示词。使用它们来轮询部署、监督 PR、检查长时间运行的构建，或在会话中稍后提醒自己做某事。要对事件进行实时反应而不是轮询，请参阅 Channels：您的 CI 可以直接将失败推送到会话中。要保持会话工作转向转向直到满足条件而不是按间隔，请参阅 `/goal`。"}, "定期任务": {"doc": "desktop-scheduled-tasks", "title": "在 Claude Code Desktop 中安排定期任务", "desc": "定期任务在您选择的时间和频率自动启动新会话。使用它们进行定期工作，如日常代码审查、依赖项更新检查或从您的日历和收件箱中提取信息的早晨简报。"}, "例程": {"doc": "routines", "title": "使用例程自动化工作", "desc": "Routines 处于研究预览阶段。行为、限制和 API 表面可能会改变。"}, "Routines": {"doc": "routines", "title": "使用例程自动化工作", "desc": "Routines 处于研究预览阶段。行为、限制和 API 表面可能会改变。"}, "代码审查": {"doc": "code-review", "title": "Code Review", "desc": "Code Review 处于研究预览阶段，仅适用于 Team 和 Enterprise 订阅。对于启用了 Zero Data Retention 的组织，此功能不可用。"}, "Code Review": {"doc": "code-review", "title": "Code Review", "desc": "Code Review 处于研究预览阶段，仅适用于 Team 和 Enterprise 订阅。对于启用了 Zero Data Retention 的组织，此功能不可用。"}, "检查点": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "Checkpointing": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "工作流": {"doc": "workflows", "title": "使用动态工作流大规模编排子代理", "desc": "动态工作流需要 Claude Code v2.1.154 或更高版本，在所有付费计划上可用，具有 Anthropic API 访问权限，以及在 Amazon Bedrock、Google Cloud 的 Agent Platform 和 Microsoft Foundry 上可用。在 Pro 上，从 `/config` 中的\"Dynamic workflows\"行启用它们。"}, "Workflows": {"doc": "workflows", "title": "使用动态工作流大规模编排子代理", "desc": "动态工作流需要 Claude Code v2.1.154 或更高版本，在所有付费计划上可用，具有 Anthropic API 访问权限，以及在 Amazon Bedrock、Google Cloud 的 Agent Platform 和 Microsoft Foundry 上可用。在 Pro 上，从 `/config` 中的\"Dynamic workflows\"行启用它们。"}, "最佳实践": {"doc": "best-practices", "title": "Claude Code 最佳实践", "desc": "Claude Code 是一个代理式编码环境。与等待回答问题的聊天机器人不同，Claude Code 可以读取你的文件、运行命令、进行更改，并在你观看、重定向或完全离开的情况下自主解决问题。"}, "Best Practices": {"doc": "best-practices", "title": "Claude Code 最佳实践", "desc": "Claude Code 是一个代理式编码环境。与等待回答问题的聊天机器人不同，Claude Code 可以读取你的文件、运行命令、进行更改，并在你观看、重定向或完全离开的情况下自主解决问题。"}, "交互模式": {"doc": "interactive-mode", "title": "交互模式", "desc": "键盘快捷键"}, "交互式模式": {"doc": "interactive-mode", "title": "交互模式", "desc": "键盘快捷键"}, "常见工作流": {"doc": "common-workflows", "title": "常见工作流程", "desc": "本页收集了日常开发的简短工作流程。有关提示和上下文管理的更高级指导，请参阅最佳实践。"}, "JetBrains": {"doc": "jetbrains", "title": "JetBrains IDEs", "desc": "Claude Code 通过专用插件与 JetBrains IDE 集成，提供交互式差异查看、选择上下文共享等功能。"}, "VS Code": {"doc": "vs-code", "title": "在 VS Code 中使用 Claude Code", "desc": "VS Code 扩展为 Claude Code 提供了原生图形界面，直接集成到您的 IDE 中。这是在 VS Code 中使用 Claude Code 的推荐方式。"}, "GitHub Actions": {"doc": "github-actions", "title": "Claude Code GitHub Actions", "desc": "Claude Code GitHub Actions 为您的 GitHub 工作流带来了 AI 驱动的自动化。只需在任何 PR 或 issue 中简单地提及 `@claude`，Claude 就可以分析您的代码、创建拉取请求、实现功能和修复错误 - 所有这些都遵循您项目的标准。如需在每个 PR 上自动发布评论而无需触发器，请参阅 GitHub Code Review。"}, "GitLab CI": {"doc": "gitlab-ci-cd", "title": "Claude Code GitLab CI/CD", "desc": "Claude Code for GitLab CI/CD 目前处于测试阶段。随着我们完善体验，功能和特性可能会发生变化。"}, "桌面应用": {"doc": "desktop", "title": "Desktop application", "desc": "Claude Desktop 应用有三个选项卡：Chat 用于对话，Cowork 用于 Dispatch 和更长的代理工作，Code 用于软件开发。本页是 Code 选项卡的参考。"}, "计划模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Plan mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "自动模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "auto mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Accept Edits": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "bypassPermissions": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "权限": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "/plugin": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "/mcp": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "/hooks": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "/agents": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "/clear": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/compact": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/config": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "/resume": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/continue": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/fork": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/checkpoint": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "/cost": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/permissions": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "/statusline": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "/keybindings": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "术语表": {"doc": "glossary", "title": "术语表", "desc": "本术语表定义了 Claude Code 术语。每个条目都链接到深入讨论该概念的页面。对于模型级概念（如 tokens、temperature 和 RAG），请参阅平台术语表。"}, "OAuth": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "MCP server": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "MCP Server": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "组织设置": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "托管设置": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "服务器托管": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "快速开始": {"doc": "quickstart", "title": "快速开始", "desc": "本快速开始指南将在几分钟内让您使用 AI 驱动的编码辅助。完成本指南后，您将了解如何使用 Claude Code 完成常见的开发任务。"}, "故障排除": {"doc": "troubleshooting", "title": "故障排除", "desc": "本页涵盖 Claude Code 运行后的性能、稳定性和搜索问题。对于其他问题，请从与您遇到的问题相匹配的页面开始："}, "Troubleshooting": {"doc": "troubleshooting", "title": "故障排除", "desc": "本页涵盖 Claude Code 运行后的性能、稳定性和搜索问题。对于其他问题，请从与您遇到的问题相匹配的页面开始："}, "完整文档": {"doc": "overview", "title": "概述", "desc": "Claude Code 是一个由 AI 驱动的编码助手，可帮助你构建功能、修复错误和自动化开发任务。它理解你的整个代码库，可以跨多个文件和工具工作以完成任务。"}, "概述": {"doc": "overview", "title": "概述", "desc": "Claude Code 是一个由 AI 驱动的编码助手，可帮助你构建功能、修复错误和自动化开发任务。它理解你的整个代码库，可以跨多个文件和工具工作以完成任务。"}};
+  const KW_EXTRA = {"skills": {"doc": "skills", "title": "Skills 技能", "desc": "Claude Code 技能扩展。SKILL.md 提供操作说明，Claude 按需调用完成任务。"}, "Skills": {"doc": "skills", "title": "Skills 技能", "desc": "Claude Code 技能扩展。SKILL.md 提供操作说明，Claude 按需调用完成任务。"}, "skill": {"doc": "skills", "title": "Skill 技能", "desc": "单个技能定义，包含 SKILL.md 说明文件，供 Claude 按需调用。"}, "Hooks": {"doc": "hooks", "title": "Hooks 钩子", "desc": "生命周期钩子。在 Claude Code 操作前后自动运行脚本，如格式化、lint。"}, "hooks": {"doc": "hooks", "title": "Hooks 钩子", "desc": "生命周期钩子。在 Claude Code 操作前后自动运行脚本，如格式化、lint。"}, "hook": {"doc": "hooks", "title": "Hook 钩子", "desc": "单个钩子，监听事件并在操作前后执行命令。"}, "hook 事件": {"doc": "hooks", "title": "Hook 事件", "desc": "钩子可监听的事件，如 PreToolUse、SessionStart 等。"}, "Subagents": {"doc": "sub-agents", "title": "Subagents 子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行，只返回摘要。"}, "subagents": {"doc": "sub-agents", "title": "子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行。"}, "subagent": {"doc": "sub-agents", "title": "子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行。"}, "agent team": {"doc": "agents", "title": "Agent team 代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "agent teams": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "Agent teams": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "代理团队": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "Plugins": {"doc": "plugins", "title": "Plugins 插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包，可共享给团队。"}, "plugins": {"doc": "plugins", "title": "插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包。"}, "plugin": {"doc": "plugins", "title": "插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包。"}, "MCP servers": {"doc": "mcp", "title": "MCP 服务器", "desc": "通过 Model Context Protocol 连接外部工具与数据源的服务器。"}, "MCP 服务器": {"doc": "mcp", "title": "MCP 服务器", "desc": "通过 Model Context Protocol 连接外部工具与数据源的服务器。"}, "Amazon Bedrock": {"doc": "third-party-integrations", "title": "Amazon Bedrock", "desc": "AWS 托管 AI 平台，可运行 Claude 模型并接入 Claude Code。"}, "Microsoft Foundry": {"doc": "third-party-integrations", "title": "Microsoft Foundry", "desc": "微软云 AI 平台，提供模型托管服务，支持 Claude Code 接入。"}, "Claude apps gateway": {"doc": "desktop", "title": "Claude apps gateway", "desc": "Anthropic 官方网关，管理桌面端与网络服务的连接。"}, "Agent SDK": {"doc": "agent-sdk_overview", "title": "Claude Agent SDK", "desc": "官方工具包，用于以编程方式构建和集成 Claude Code 代理。"}, "动态工作流": {"doc": "workflows", "title": "动态工作流", "desc": "通过 JSON/JS 定义步骤，让 Claude 编排子代理执行复杂任务。"}, "LLM 网关": {"doc": "third-party-integrations", "title": "LLM 网关", "desc": "大模型网关，统一路由、代理和管控 LLM API 请求的中间层。"}, "自动内存": {"doc": "memory", "title": "自动内存", "desc": "自动将重要信息写入记忆文档，跨会话保持上下文连续。"}, "Slack": {"doc": "slack", "title": "Slack", "desc": "协作平台。可通过 Claude Code 集成在 Slack 中运行 AI 代理。"}, "Dispatch": {"doc": "desktop", "title": "Dispatch", "desc": "桌面应用功能，将任务分派给代理在后台执行。"}, "Desktop": {"doc": "desktop", "title": "桌面应用", "desc": "Claude Code 桌面应用，提供 Chat、Cowork、Code 图形界面。"}, "Channels": {"doc": "channels", "title": "Channels 频道", "desc": "将 Claude Code 会话接入 Telegram、Discord 等平台的插件系统。"}, "Sandboxing": {"doc": "settings", "title": "沙箱", "desc": "限制 Bash 工具访问范围的安全隔离机制。"}, "沙箱": {"doc": "settings", "title": "沙箱", "desc": "限制工具文件系统访问的安全隔离环境。"}, "非交互模式": {"doc": "cli-reference", "title": "非交互模式", "desc": "通过 -p 参数在脚本中无交互运行 Claude Code，适合自动化。"}, "快速模式": {"doc": "settings", "title": "快速模式", "desc": "提高速率限制的付费模式，响应速度更快。"}, "Plan Mode": {"doc": "permission-modes", "title": "计划模式", "desc": "只分析不执行，先产出修改方案供确认再动手。"}, "Auto mode": {"doc": "permission-modes", "title": "自动模式", "desc": "自动批准低风险操作，减少交互打断，提升效率。"}, "状态行": {"doc": "statusline", "title": "状态行", "desc": "可自定义的底部状态栏，显示上下文、成本等信息。"}, "工具搜索": {"doc": "mcp", "title": "MCP 工具搜索", "desc": "让 Claude 按需搜索并发现更多 MCP 工具，扩展能力。"}, "扩展思考": {"doc": "common-workflows", "title": "扩展思考", "desc": "让 Claude 回答前进行更深入的多步推理，提升复杂问题准确率。"}, "计算机使用": {"doc": "computer-use", "title": "计算机使用", "desc": "让 Claude 控制屏幕、操作应用的实验性功能。"}, "云会话": {"doc": "claude-code-on-the-web", "title": "云会话", "desc": "在 Anthropic 云端运行的 Claude Code 会话。"}, "第三方提供商": {"doc": "third-party-integrations", "title": "第三方提供商", "desc": "通过兼容 API 使用非 Anthropic 模型的服务商。"}, "身份验证": {"doc": "settings", "title": "身份验证", "desc": "Claude Code 登录与凭证验证机制。"}, "网络配置": {"doc": "settings", "title": "网络配置", "desc": "Claude Code 访问网络端点与代理的设置。"}, "语音听写": {"doc": "desktop", "title": "语音听写", "desc": "通过语音转文字向 Claude 下达指令。"}, "权限规则": {"doc": "permission-modes", "title": "权限规则", "desc": "定义允许、询问、拒绝操作的规则。"}, "输出样式": {"doc": "settings", "title": "输出样式", "desc": "自定义 Claude 回复格式的样式文件。"}, "工作量级别": {"doc": "settings", "title": "工作量级别", "desc": "控制模型推理深度的设置。"}, "努力级别": {"doc": "settings", "title": "努力级别", "desc": "控制模型推理深度的设置。"}, "Worktrees": {"doc": "common-workflows", "title": "Git worktree", "desc": "Git 并行工作树，支持多会话同时开发互不干扰。"}, "git worktree": {"doc": "common-workflows", "title": "Git worktree", "desc": "Git 并行工作树，支持多会话同时开发互不干扰。"}, "后台代理": {"doc": "agent-view", "title": "后台代理", "desc": "在后台运行、无需终端连接的 Claude Code 会话。"}, "自动修复": {"doc": "github-actions", "title": "自动修复", "desc": "Claude 自动修复 PR 或代码问题并提交。"}, "顾问工具": {"doc": "code-review", "title": "顾问工具", "desc": "提供代码审查建议的辅助工具。"}, "SSH": {"doc": "remote-control", "title": "SSH", "desc": "安全外壳协议，用于远程连接与加密通信。"}, "连接器": {"doc": "channels", "title": "连接器", "desc": "Claude 连接外部工具和数据源的官方集成。"}, "Artifact": {"doc": "desktop", "title": "Artifact 工件", "desc": "Claude 生成的可共享成果物。"}, "管理会话": {"doc": "sessions", "title": "会话管理", "desc": "保存、恢复、分叉 Claude Code 对话。"}, "命令参考": {"doc": "commands", "title": "命令参考", "desc": "Claude Code 斜杠命令的说明文档。"}, "插件参考": {"doc": "plugins-reference", "title": "插件参考", "desc": "插件组件与配置的参考文档。"}, "自适应推理": {"doc": "settings", "title": "自适应推理", "desc": "根据任务难度动态调整模型推理强度。"}, "环境缓存": {"doc": "settings", "title": "环境缓存", "desc": "缓存已验证的脚本环境，加快工具执行。"}, "扩展上下文": {"doc": "context-window", "title": "扩展上下文", "desc": "增大上下文窗口容量，处理更长内容。"}, "内置命令": {"doc": "commands", "title": "内置命令", "desc": "Claude Code 自带的斜杠命令。"}, "权限设置": {"doc": "permission-modes", "title": "权限设置", "desc": "控制 Claude 操作权限的配置。"}, "环境": {"doc": "env-vars", "title": "环境", "desc": "影响 Claude Code 运行的系统环境配置。"}, "Chrome": {"doc": "chrome", "title": "Chrome 扩展", "desc": "Claude in Chrome 浏览器扩展，在网页中调用 Claude。"}, "iOS": {"doc": "desktop", "title": "iOS 应用", "desc": "Claude 移动端应用，支持远程控制与推送。"}, "Android": {"doc": "desktop", "title": "Android 应用", "desc": "Claude 移动端应用，支持远程控制与推送。"}, "网页": {"doc": "claude-code-on-the-web", "title": "Claude Code 网页版", "desc": "在浏览器中使用的 Claude Code，无需安装 CLI，登录即用。"}, "GitLab": {"doc": "gitlab-ci-cd", "title": "GitLab", "desc": "代码托管平台。可通过 GitLab CI/CD 集成 Claude Code 实现自动化。"}, "CI/CD": {"doc": "github-actions", "title": "CI/CD", "desc": "持续集成/持续交付，自动化完成构建、测试和部署的流水线。"}, "终端 CLI": {"doc": "cli-reference", "title": "终端 CLI", "desc": "命令行界面工具，在终端中直接运行 Claude Code 管理项目。"}, "终端指南": {"doc": "overview", "title": "终端指南", "desc": "终端基础使用入门，介绍如何用命令行操作 Claude Code。"}, "Claude Console": {"doc": "overview", "title": "Anthropic 控制台", "desc": "Anthropic 官方控制台，管理 API 密钥、查看用量和账单。"}, "Claude 订阅": {"doc": "overview", "title": "Claude 订阅", "desc": "Claude 付费套餐（Pro/Max/Team/Enterprise），解锁全部功能。"}, "支持的云提供商": {"doc": "third-party-integrations", "title": "支持的云提供商", "desc": "Amazon Bedrock、Google Cloud 等可托管并运行 Claude 模型的云平台。"}, "凭证管理": {"doc": "settings", "title": "凭证管理", "desc": "管理 API 密钥、登录凭证和身份验证的机制。"}, "Git for Windows": {"doc": "settings", "title": "Git for Windows", "desc": "Windows 版 Git，安装后 Claude Code 可使用 Bash 工具。"}, "Discord": {"doc": "channels", "title": "Discord", "desc": "社区平台。可通过 Channels 插件在 Discord 中使用 Claude Code。"}, "所有界面": {"doc": "overview", "title": "所有界面", "desc": "Claude Code 的多种使用方式：终端、IDE、桌面应用、网页等。"}, "Amazon Bedrock、Google Cloud 的 Agent Platform 或 Microsoft Foundry": {"doc": "third-party-integrations", "title": "三大云平台", "desc": "AWS、谷歌云、微软云三大平台，均可托管 Claude 模型接入 Claude Code。"}, "Claude Pro、Max、Team 或 Enterprise": {"doc": "overview", "title": "Claude 订阅套餐", "desc": "Claude 的付费订阅层级，提供不同额度的模型访问与功能。"}, "Troubleshoot installation": {"doc": "troubleshoot-install", "title": "安装故障排除", "desc": "安装 Claude Code 出错时的排查指南与替代安装方法。"}, "终端": {"doc": "cli-reference", "title": "终端", "desc": "命令行环境，Claude Code 的主要使用场景。"}, "GitHub Actions": {"doc": "github-actions", "title": "GitHub Actions", "desc": "GitHub 的 CI/CD 自动化平台，可集成 Claude Code 自动审查和修复。"}, "JetBrains IDE": {"doc": "jetbrains", "title": "JetBrains IDE", "desc": "JetBrains 系列 IDE（IDEA、PyCharm 等）的 Claude Code 插件。"}, "apt, dnf, or apk": {"doc": "setup", "title": "Linux 包管理器", "desc": "Linux 包管理器：apt 用于 Debian/Ubuntu，dnf 用于 Fedora。"}, "CLI 参考": {"doc": "cli-reference", "title": "CLI 参考", "desc": "Claude Code 命令行参考，列出全部命令、参数与用法。"}};
+let kwTimer = null;
+function showKw(kw) {
+  const d = KW_DATA[kw] || KW_EXTRA[kw];
+  if (!d) {
+    document.getElementById('kwpBadge').textContent = kw;
+    document.getElementById('kwpTitle').textContent = kw;
+    document.getElementById('kwpDesc').textContent = '暂无该词条详细解释，可前往官方文档查阅。';
+    document.getElementById('kwpLink').style.display = 'none';
+    const panel = document.getElementById('kwPanel');
+    panel.style.width = '320px';
+    panel.classList.add('open');
+    const bar = document.getElementById('kwBar');
+    bar.style.transition = 'none';
+    bar.style.width = '100%';
+    void bar.offsetWidth;
+    bar.style.transition = 'width 4s linear';
+    bar.style.width = '0%';
+    clearTimeout(kwTimer);
+    kwTimer = setTimeout(hideKw, 4000);
+    return;
+  }
+  document.getElementById('kwpBadge').textContent = kw;
+  document.getElementById('kwpTitle').textContent = d.title;
+  document.getElementById('kwpDesc').textContent = d.desc;
+  var _kwpPfx = location.pathname.indexOf('/doc/') !== -1 || location.pathname.endsWith('/doc/') ? '' : 'doc/';
+  document.getElementById('kwpLink').style.display = '';
+  document.getElementById('kwpLink').href = _kwpPfx + d.doc + '.html';
+  // 弹窗宽度随内容自适应（280-480px）
+  const panel = document.getElementById('kwPanel');
+  const estW = Math.min(480, Math.max(300, 280 + d.desc.length * 0.5));
+  panel.style.width = estW + 'px';
+  // 进度条时长按文本长度：每55字1秒，限4-14秒
+  const dur = Math.min(14, Math.max(4, Math.round(d.desc.length / 55)));
+  panel.classList.add('open');
+  // 重置进度条动画
+  const bar = document.getElementById('kwBar');
+  bar.style.transition = 'none';
+  bar.style.width = '100%';
+  void bar.offsetWidth;
+  bar.style.transition = 'width ' + dur + 's linear';
+  bar.style.width = '0%';
+  clearTimeout(kwTimer);
+  kwTimer = setTimeout(hideKw, dur * 1000);
+}
+function hideKw() {
+  document.getElementById('kwPanel').classList.remove('open');
+  clearTimeout(kwTimer);
+}
+
+// ===== 错误汇报 =====
+function openRpt() {
+  var page = location.pathname.split('/').pop() || 'index.html';
+  document.getElementById('rptPage').textContent = page;
+  document.getElementById('rptDesc').value = '';
+  document.getElementById('rptContact').value = '';
+  document.getElementById('rptForm').style.display = '';
+  document.getElementById('rptOk').style.display = 'none';
+  document.getElementById('rptOverlay').classList.add('show');
+}
+function closeRpt() {
+  document.getElementById('rptOverlay').classList.remove('show');
+}
+function submitRpt() {
+  var desc = document.getElementById('rptDesc').value.trim();
+  if (!desc) { document.getElementById('rptDesc').focus(); return; }
+  var btn = document.getElementById('rptBtn');
+  btn.disabled = true; btn.textContent = '提交中...';
+  var payload = {
+    page: document.getElementById('rptPage').textContent,
+    desc: desc,
+    contact: document.getElementById('rptContact').value.trim(),
+    time: new Date().toLocaleString('zh-CN', {hour12:false}),
+    user_agent: navigator.userAgent
+  };
+  fetch('/api/report', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  }).then(function(r){ return r.json(); }).then(function(d) {
+    btn.disabled = false; btn.textContent = '提交汇报';
+    document.getElementById('rptForm').style.display = 'none';
+    document.getElementById('rptOk').style.display = 'block';
+    setTimeout(closeRpt, 1800);
+  }).catch(function(e) {
+    btn.disabled = false; btn.textContent = '提交汇报';
+    alert('汇报失败，请重试：' + e);
+  });
+}
+</script>
+<!-- 错误汇报弹窗 -->
+<div class="rpt-overlay" id="rptOverlay" onclick="if(event.target===this)closeRpt()">
+  <div class="rpt-modal">
+    <div class="rpt-head">
+      <span class="rpt-title"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9 9v-1a3 3 0 0 1 6 0v1" /> <path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /> <path d="M3 13l4 0" /> <path d="M17 13l4 0" /> <path d="M12 20l0 -6" /> <path d="M4 19l3.35 -2" /> <path d="M20 19l-3.35 -2" /> <path d="M4 7l3.75 2.4" /> <path d="M20 7l-3.75 2.4" /> </svg></span> 文档有误？向服务器汇报！</span>
+      <button class="rpt-close" onclick="closeRpt()">×</button>
+    </div>
+    <div class="rpt-body" id="rptForm">
+      <div class="rpt-field">
+        <label>问题页面</label>
+        <div class="rpt-page" id="rptPage"></div>
+      </div>
+      <div class="rpt-field">
+        <label>问题描述</label>
+        <textarea id="rptDesc" placeholder="请描述你发现的问题：哪个词错了？哪里跳转不对？内容过时了？"></textarea>
+      </div>
+      <div class="rpt-field">
+        <label>联系方式（选填）</label>
+        <input id="rptContact" type="text" placeholder="QQ号 / 邮箱等，方便反馈处理结果">
+      </div>
+      <div class="rpt-tip">提交后内容会发送到服务器 reports/ 目录，管理员会尽快处理喵~</div>
+      <button class="rpt-submit" id="rptBtn" onclick="submitRpt()">提交汇报</button>
+    </div>
+    <div class="rpt-ok" id="rptOk" style="display:none;">
+      <div class="rpt-ok-icon"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span></div>
+      <div class="rpt-ok-title">汇报成功！</div>
+      <div class="rpt-ok-desc">感谢主人的反馈，问题已记录到服务器</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

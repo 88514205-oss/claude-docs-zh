@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f1117">
+<title>使用 hooks 自动化操作 - Claude Code 知识库</title>
+<style>
+:root {
+  --bg: #0f1117; --bg2: #16181f; --card: #1b1e26; --card2: #20242e;
+  --border: #2a2e3a; --text: #e2e4ea; --text2: #9aa0ad; --muted: #6b7280;
+  --accent: #8b7cff; --accent2: #a99dff; --code-bg: #0c0e13;
+  --kw-bg: rgba(139,124,255,0.15); --kw-hover: rgba(139,124,255,0.28);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { scroll-behavior:smooth; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); }
+.icon { display:inline-flex; vertical-align:-0.2em; width:1.1em; height:1.1em; margin-right:6px; }
+.icon svg { width:100%; height:100%; }
+.progress-bar { position:fixed; top:0; left:0; height:3px; background:var(--accent); width:0%; z-index:300; transition:width 0.1s linear; }
+.topbar { position:fixed; top:0; left:0; right:0; z-index:200; background:rgba(22,24,31,0.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 12px; height:52px; }
+.topbar .tb-home { display:flex; align-items:center; color:var(--text2); text-decoration:none; font-size:14px; padding:6px 10px; border-radius:8px; }
+.topbar .tb-home:hover { color:var(--text); background:var(--card2); }
+.topbar .tb-title { flex:1; text-align:center; font-size:15px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 10px; }
+.topbar .tb-toc { background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:13px; display:flex; align-items:center; }
+.topbar .tb-toc:hover { color:var(--text); border-color:var(--accent); }
+.reader { display:flex; padding-top:52px; min-height:100vh; }
+.toc-side { width:240px; flex-shrink:0; position:sticky; top:52px; height:calc(100vh - 52px); overflow-y:auto; padding:20px 12px; border-right:1px solid var(--border); background:var(--bg); display:none; }
+.toc-side h3 { font-size:13px; color:var(--muted); margin-bottom:10px; padding-left:8px; letter-spacing:1px; }
+.toc-side a { display:block; color:var(--text2); text-decoration:none; padding:6px 8px; border-radius:6px; font-size:13px; line-height:1.5; border-left:2px solid transparent; }
+.toc-side a:hover { color:var(--text); background:var(--card2); border-left-color:var(--accent); }
+.toc-drawer { position:fixed; top:0; right:-300px; width:280px; max-width:85vw; height:100vh; background:var(--bg2); z-index:250; transition:right 0.25s ease; overflow-y:auto; padding:70px 16px 30px; border-left:1px solid var(--border); }
+.toc-drawer.open { right:0; }
+.toc-drawer h3 { font-size:14px; color:var(--muted); margin-bottom:12px; }
+.toc-drawer a { display:block; color:var(--text2); text-decoration:none; padding:8px 6px; border-radius:6px; font-size:14px; line-height:1.5; }
+.toc-drawer a:hover { color:var(--text); background:var(--card2); }
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:240; display:none; }
+.overlay.show { display:block; }
+.article { flex:1; max-width:760px; margin:0 auto; padding:40px 24px 80px; min-width:0; }
+.article h1 { font-size:26px; margin-bottom:6px; line-height:1.4; }
+.article .doc-meta { color:var(--muted); font-size:13px; margin-bottom:28px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+.article h2 { font-size:21px; margin:36px 0 14px; color:var(--text); line-height:1.4; }
+.article h3 { font-size:18px; margin:28px 0 12px; color:var(--text); }
+.article h4 { font-size:16px; margin:22px 0 10px; color:var(--accent2); }
+.article p { font-size:16.5px; line-height:1.95; margin:14px 0; color:var(--text); }
+.article li { margin-left:24px; line-height:1.9; font-size:16px; color:var(--text); }
+.article a { color:#a78bfa; text-decoration:underline; text-underline-offset:3px; transition:color 0.15s; }
+.article a:hover { color:#c4b5fd; }
+.article a:visited { color:#a78bfa; }
+.article a.kw { color:#c4b5fd; text-decoration:none; }
+.article blockquote { border-left:4px solid var(--accent); padding:10px 16px; background:rgba(139,124,255,0.08); margin:16px 0; color:var(--text2); font-size:15px; border-radius:0 8px 8px 0; }
+.article pre { background:var(--code-bg); color:#d5d8e0; padding:16px 18px; border-radius:10px; overflow-x:auto; -webkit-overflow-scrolling:touch; font-size:13.5px; line-height:1.7; margin:16px 0; white-space:pre; border:1px solid var(--border); }
+.article code { font-family:"JetBrains Mono",Consolas,monospace; }
+.article .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; margin:16px 0; border-radius:8px; border:1px solid var(--border); }
+.article table { width:100%; border-collapse:collapse; font-size:14px; min-width:420px; }
+.article th, .article td { border-bottom:1px solid var(--border); padding:9px 12px; text-align:left; color:var(--text); line-height:1.7; }
+.article th { background:var(--card2); color:var(--accent2); }
+.kw { color:#c4b5fd; background:var(--kw-bg); border-bottom:1px dashed var(--accent); padding:1px 4px; border-radius:4px; text-decoration:none; cursor:pointer; font-weight:500; transition:all 0.15s; }
+.kw:hover { background:var(--kw-hover); color:#fff; }
+.pager { max-width:760px; margin:0 auto; padding:0 24px 60px; display:flex; gap:12px; }
+.pager a { flex:1; display:block; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 18px; text-decoration:none; transition:0.2s; }
+.pager a:hover { border-color:var(--accent); transform:translateY(-2px); }
+.pager .dir { font-size:12px; color:var(--muted); display:block; margin-bottom:6px; }
+.pager .ptitle { font-size:15px; color:var(--text); font-weight:600; display:block; }
+.pager a.next { text-align:right; }
+.pager a:empty { display:none; }
+.scroll-top { position:fixed; right:16px; bottom:20px; width:44px; height:44px; border-radius:50%; background:var(--card2); color:var(--text); border:1px solid var(--border); box-shadow:0 3px 12px rgba(0,0,0,0.4); display:none; z-index:90; align-items:center; justify-content:center; cursor:pointer; }
+.scroll-top.show { display:flex; }
+.scroll-top .icon { margin:0; width:1.4em; height:1.4em; }
+
+.hamburger { background:none; border:none; color:var(--text); cursor:pointer; padding:8px; line-height:1; display:inline-flex; align-items:center; }
+.topbar .logo { display:flex; align-items:center; font-weight:700; font-size:15px; color:var(--text); flex-shrink:0; }
+.topbar .logo .icon { color:var(--accent); }
+.drawer { position:fixed; top:0; left:0; bottom:0; width:250px; background:var(--bg2); color:var(--text); z-index:250; transform:translateX(-100%); transition:transform 0.25s ease; overflow-y:auto; padding-top:60px; border-right:1px solid var(--border); }
+.drawer.open { transform:translateX(0); }
+.drawer nav a { display:flex; align-items:center; padding:12px 20px; color:var(--text2); text-decoration:none; font-size:15px; }
+.drawer nav a:hover, .drawer nav a:active { color:var(--text); background:var(--card2); }
+.drawer a { display:block; color:var(--text2); text-decoration:none; padding:7px 20px; font-size:13.5px; line-height:1.5; }
+.drawer a:hover { color:var(--text); background:var(--card2); }
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:240; display:none; }
+.overlay.show { display:block; }
+
+
+/* ===== MDX组件样式 ===== */
+.card-group { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin:16px 0; }
+.mg-card { display:flex; align-items:flex-start; gap:10px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; text-decoration:none; transition:0.2s; }
+.mg-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+.mg-icon { font-size:20px; flex-shrink:0; color:var(--accent); }
+.mg-card-title { font-size:14px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.mg-card-desc { font-size:12.5px; color:var(--text2); line-height:1.5; }
+.callout { border-left:4px solid var(--accent); padding:10px 16px; margin:14px 0; border-radius:0 8px 8px 0; font-size:14.5px; line-height:1.7; color:var(--text2); }
+.callout-tip { border-left-color:#4caf50; background:rgba(76,175,80,0.08); }
+.callout-note { border-left-color:#42a5f5; background:rgba(66,165,245,0.08); }
+.callout-warning { border-left-color:#ff9800; background:rgba(255,152,0,0.08); }
+.callout-info { border-left-color:#8b7cff; background:rgba(139,124,255,0.08); }
+.steps { list-style:none; counter-reset:step; margin:16px 0; padding:0; }
+.steps > li { position:relative; padding:0 0 16px 44px; margin:0; }
+.steps > li::before { counter-increment:step; content:counter(step); position:absolute; left:0; top:2px; width:28px; height:28px; border-radius:50%; background:var(--accent); color:#fff; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.step-title { font-weight:600; color:var(--text); margin-bottom:6px; font-size:15px; }
+.tabs { margin:16px 0; }
+.tab-item { background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:10px; overflow:hidden; }
+.tab-label { padding:9px 14px; font-size:13px; font-weight:600; color:var(--accent2); background:var(--card2); border-bottom:1px solid var(--border); }
+.tab-body { padding:12px 14px; }
+.acc-group { margin:16px 0; }
+.acc { background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; overflow:hidden; }
+.acc summary { padding:12px 16px; cursor:pointer; font-size:14px; font-weight:600; color:var(--text); }
+.acc summary:hover { background:var(--card2); }
+.acc[open] summary { border-bottom:1px solid var(--border); }
+.article kbd { background:var(--card2); border:1px solid var(--border); border-bottom-width:2px; border-radius:5px; padding:1px 7px; font-size:12px; font-family:inherit; color:var(--text); }
+
+
+.dot { display:inline-block; width:0.85em; height:0.85em; border-radius:50%; vertical-align:-0.1em; margin:0 2px; }
+.dot-red { background:#f03e3e; }
+.dot-yellow { background:#f59f00; }
+.dot-purple { background:#9c36b5; }
+
+@media (min-width: 1024px) { .toc-side { display:block; } .tb-toc { display:none; } }
+@media (max-width: 1023px) { .article { padding:32px 18px 60px; } .article p { font-size:16px; } }
+
+
+/* ===== 关键词弹窗 ===== */
+.kw-panel { position:fixed; left:0; top:50%; transform:translate(-110%,-50%); z-index:400; background:var(--card); border:1px solid var(--accent); border-left:none; border-radius:0 16px 16px 0; box-shadow:0 8px 40px rgba(0,0,0,0.6); transition:transform 0.35s cubic-bezier(0.22,1,0.36,1); max-height:70vh; display:flex; flex-direction:column; }
+.kw-panel.open { transform:translate(0,-50%); }
+.kw-panel .kwp-head { display:flex; align-items:center; gap:8px; padding:14px 18px 10px; border-bottom:1px solid var(--border); }
+.kw-panel .kwp-badge { background:var(--kw-bg); color:var(--accent2); font-size:12px; font-weight:700; padding:3px 10px; border-radius:10px; flex-shrink:0; }
+.kw-panel .kwp-title { font-size:15px; font-weight:600; color:var(--text); flex:1; line-height:1.4; }
+.kw-panel .kwp-close { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:0 4px; line-height:1; flex-shrink:0; }
+.kw-panel .kwp-close:hover { color:var(--text); }
+.kw-panel .kwp-body { padding:14px 18px; overflow-y:auto; flex:1; }
+.kw-panel .kwp-desc { font-size:14px; line-height:1.8; color:var(--text2); }
+.kw-panel .kwp-link { display:inline-flex; align-items:center; margin-top:12px; color:var(--accent2); text-decoration:none; font-size:13px; font-weight:600; }
+.kw-panel .kwp-link:hover { color:var(--accent); }
+.kw-panel .kwp-bar-wrap { height:4px; background:var(--card2); border-radius:0 0 16px 0; overflow:hidden; flex-shrink:0; }
+.kw-panel .kwp-bar { height:100%; width:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:0 0 16px 0; }
+/* ===== 错误汇报 ===== */
+.btn-report { display:inline-flex; align-items:center; gap:4px; background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12.5px; transition:0.15s; }
+.btn-report:hover { color:var(--text); border-color:var(--accent); background:var(--card2); }
+.rpt-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:500; display:none; align-items:center; justify-content:center; padding:20px; }
+.rpt-overlay.show { display:flex; }
+.rpt-modal { background:var(--card); border:1px solid var(--accent); border-radius:16px; width:100%; max-width:460px; box-shadow:0 20px 60px rgba(0,0,0,0.7); overflow:hidden; }
+.rpt-head { display:flex; align-items:center; gap:8px; padding:16px 20px; border-bottom:1px solid var(--border); }
+.rpt-head .rpt-title { font-size:16px; font-weight:700; color:var(--text); flex:1; }
+.rpt-close { background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1; }
+.rpt-close:hover { color:var(--text); }
+.rpt-body { padding:18px 20px; }
+.rpt-field { margin-bottom:14px; }
+.rpt-field label { display:block; font-size:13px; color:var(--text2); margin-bottom:6px; }
+.rpt-field .rpt-page { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:13px; color:var(--accent2); word-break:break-all; }
+.rpt-field input, .rpt-field textarea { width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:14px; color:var(--text); font-family:inherit; resize:vertical; }
+.rpt-field input:focus, .rpt-field textarea:focus { outline:none; border-color:var(--accent); }
+.rpt-field textarea { min-height:90px; }
+.rpt-tip { font-size:12px; color:var(--muted); margin-top:4px; }
+.rpt-submit { width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px; font-size:15px; font-weight:600; cursor:pointer; transition:0.15s; }
+.rpt-submit:hover { background:var(--accent2); }
+.rpt-submit:disabled { opacity:0.5; cursor:not-allowed; }
+.rpt-ok { text-align:center; padding:30px 20px; }
+.rpt-ok .rpt-ok-icon { font-size:42px; margin-bottom:12px; }
+.rpt-ok .rpt-ok-title { font-size:17px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.rpt-ok .rpt-ok-desc { font-size:13px; color:var(--text2); }
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar"></div>
+<header class="topbar">
+  <span class="logo"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6l0 13" /> <path d="M12 6l0 13" /> <path d="M21 6l0 13" /> </svg></span>Claude Code 知识库</span>
+  <div class="tb-title">使用 hooks 自动化操作</div>
+  <button class="hamburger" onclick="toggleDrawer()" aria-label="菜单"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M4 6l16 0" /> <path d="M4 12l16 0" /> <path d="M4 18l16 0" /> </svg></span></button>
+</header>
+<aside class="drawer" id="drawer">
+  <nav>
+    <a href="../index.html" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l-2 0l9 -9l9 9l-2 0" /> <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /> <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /> </svg></span>返回首页</a>
+    <a href="../index.html#index" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>文档索引</a>
+    <a href="../index.html#manual" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M19 4v16h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12" /> <path d="M19 16h-12a2 2 0 0 0 -2 2" /> <path d="M9 8h6" /> </svg></span>入门手册</a>
+    <a href="../index.html#docs" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>全部文档</a>
+    <a href="#" onclick="closeDrawer();openRpt()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9 9v-1a3 3 0 0 1 6 0v1" /> <path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /> <path d="M3 13l4 0" /> <path d="M17 13l4 0" /> <path d="M12 20l0 -6" /> <path d="M4 19l3.35 -2" /> <path d="M20 19l-3.35 -2" /> <path d="M4 7l3.75 2.4" /> <path d="M20 7l-3.75 2.4" /> </svg></span>文档有误？汇报</a>
+  </nav>
+  <div style="margin:14px 20px 6px;font-size:12px;color:var(--muted);letter-spacing:1px;">本文目录</div>
+  <a href="#sec-hooks-guide-1" style="padding-left:0px;font-size:13px;">使用 hooks 自动化操作</a>
+<a href="#sec-hooks-guide-2" style="padding-left:14px;font-size:13.5px;">设置你的第一个 hook</a>
+<a href="#sec-hooks-guide-3" style="padding-left:14px;font-size:13.5px;">你可以自动化什么</a>
+<a href="#sec-hooks-guide-4" style="padding-left:28px;font-size:13px;">在 Claude 需要输入时获得通知</a>
+<a href="#sec-hooks-guide-5" style="padding-left:28px;font-size:13px;">编辑后自动格式化代码</a>
+<a href="#sec-hooks-guide-6" style="padding-left:28px;font-size:13px;">阻止对受保护文件的编辑</a>
+<a href="#sec-hooks-guide-7" style="padding-left:28px;font-size:13px;">压缩后重新注入上下文</a>
+<a href="#sec-hooks-guide-8" style="padding-left:28px;font-size:13px;">审计配置更改</a>
+<a href="#sec-hooks-guide-9" style="padding-left:28px;font-size:13px;">当目录或文件更改时重新加载环境</a>
+<a href="#sec-hooks-guide-10" style="padding-left:28px;font-size:13px;">自动批准特定权限提示</a>
+<a href="#sec-hooks-guide-11" style="padding-left:14px;font-size:13.5px;">Hooks 如何工作</a>
+<a href="#sec-hooks-guide-12" style="padding-left:28px;font-size:13px;">合并来自多个 hooks 的结果</a>
+<a href="#sec-hooks-guide-13" style="padding-left:28px;font-size:13px;">读取输入并返回输出</a>
+<a href="#sec-hooks-guide-14" style="padding-left:42px;font-size:13px;">Hook 输入</a>
+<a href="#sec-hooks-guide-15" style="padding-left:42px;font-size:13px;">Hook 输出</a>
+<a href="#sec-hooks-guide-16" style="padding-left:42px;font-size:13px;">结构化 JSON 输出</a>
+<a href="#sec-hooks-guide-17" style="padding-left:28px;font-size:13px;">使用匹配器过滤 hooks</a>
+<a href="#sec-hooks-guide-18" style="padding-left:42px;font-size:13px;">使用 `if` 字段按工具名称和参数过滤</a>
+<a href="#sec-hooks-guide-19" style="padding-left:28px;font-size:13px;">配置 hook 位置</a>
+<a href="#sec-hooks-guide-20" style="padding-left:14px;font-size:13.5px;">基于提示的 hooks</a>
+<a href="#sec-hooks-guide-21" style="padding-left:14px;font-size:13.5px;">基于代理的 hooks</a>
+<a href="#sec-hooks-guide-22" style="padding-left:14px;font-size:13.5px;">HTTP hooks</a>
+<a href="#sec-hooks-guide-23" style="padding-left:14px;font-size:13.5px;">限制和故障排除</a>
+<a href="#sec-hooks-guide-24" style="padding-left:28px;font-size:13px;">限制</a>
+<a href="#sec-hooks-guide-25" style="padding-left:28px;font-size:13px;">Hooks 和权限模式</a>
+<a href="#sec-hooks-guide-26" style="padding-left:28px;font-size:13px;">Hook 未触发</a>
+<a href="#sec-hooks-guide-27" style="padding-left:28px;font-size:13px;">Hook 输出中的错误</a>
+<a href="#sec-hooks-guide-28" style="padding-left:28px;font-size:13px;">`/hooks` 显示未配置 hooks</a>
+<a href="#sec-hooks-guide-29" style="padding-left:28px;font-size:13px;">Stop hook 达到阻止上限</a>
+<a href="#sec-hooks-guide-30" style="padding-left:28px;font-size:13px;">JSON 验证失败</a>
+<a href="#sec-hooks-guide-31" style="padding-left:28px;font-size:13px;">调试技术</a>
+<a href="#sec-hooks-guide-32" style="padding-left:14px;font-size:13.5px;">了解更多</a>
+</aside>
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+
+<div class="reader">
+  <aside class="toc-side">
+    <h3>本文目录</h3>
+    <a href="#sec-hooks-guide-1" style="padding-left:0px;font-size:13px;">使用 hooks 自动化操作</a>
+<a href="#sec-hooks-guide-2" style="padding-left:14px;font-size:13.5px;">设置你的第一个 hook</a>
+<a href="#sec-hooks-guide-3" style="padding-left:14px;font-size:13.5px;">你可以自动化什么</a>
+<a href="#sec-hooks-guide-4" style="padding-left:28px;font-size:13px;">在 Claude 需要输入时获得通知</a>
+<a href="#sec-hooks-guide-5" style="padding-left:28px;font-size:13px;">编辑后自动格式化代码</a>
+<a href="#sec-hooks-guide-6" style="padding-left:28px;font-size:13px;">阻止对受保护文件的编辑</a>
+<a href="#sec-hooks-guide-7" style="padding-left:28px;font-size:13px;">压缩后重新注入上下文</a>
+<a href="#sec-hooks-guide-8" style="padding-left:28px;font-size:13px;">审计配置更改</a>
+<a href="#sec-hooks-guide-9" style="padding-left:28px;font-size:13px;">当目录或文件更改时重新加载环境</a>
+<a href="#sec-hooks-guide-10" style="padding-left:28px;font-size:13px;">自动批准特定权限提示</a>
+<a href="#sec-hooks-guide-11" style="padding-left:14px;font-size:13.5px;">Hooks 如何工作</a>
+<a href="#sec-hooks-guide-12" style="padding-left:28px;font-size:13px;">合并来自多个 hooks 的结果</a>
+<a href="#sec-hooks-guide-13" style="padding-left:28px;font-size:13px;">读取输入并返回输出</a>
+<a href="#sec-hooks-guide-14" style="padding-left:42px;font-size:13px;">Hook 输入</a>
+<a href="#sec-hooks-guide-15" style="padding-left:42px;font-size:13px;">Hook 输出</a>
+<a href="#sec-hooks-guide-16" style="padding-left:42px;font-size:13px;">结构化 JSON 输出</a>
+<a href="#sec-hooks-guide-17" style="padding-left:28px;font-size:13px;">使用匹配器过滤 hooks</a>
+<a href="#sec-hooks-guide-18" style="padding-left:42px;font-size:13px;">使用 `if` 字段按工具名称和参数过滤</a>
+<a href="#sec-hooks-guide-19" style="padding-left:28px;font-size:13px;">配置 hook 位置</a>
+<a href="#sec-hooks-guide-20" style="padding-left:14px;font-size:13.5px;">基于提示的 hooks</a>
+<a href="#sec-hooks-guide-21" style="padding-left:14px;font-size:13.5px;">基于代理的 hooks</a>
+<a href="#sec-hooks-guide-22" style="padding-left:14px;font-size:13.5px;">HTTP hooks</a>
+<a href="#sec-hooks-guide-23" style="padding-left:14px;font-size:13.5px;">限制和故障排除</a>
+<a href="#sec-hooks-guide-24" style="padding-left:28px;font-size:13px;">限制</a>
+<a href="#sec-hooks-guide-25" style="padding-left:28px;font-size:13px;">Hooks 和权限模式</a>
+<a href="#sec-hooks-guide-26" style="padding-left:28px;font-size:13px;">Hook 未触发</a>
+<a href="#sec-hooks-guide-27" style="padding-left:28px;font-size:13px;">Hook 输出中的错误</a>
+<a href="#sec-hooks-guide-28" style="padding-left:28px;font-size:13px;">`/hooks` 显示未配置 hooks</a>
+<a href="#sec-hooks-guide-29" style="padding-left:28px;font-size:13px;">Stop hook 达到阻止上限</a>
+<a href="#sec-hooks-guide-30" style="padding-left:28px;font-size:13px;">JSON 验证失败</a>
+<a href="#sec-hooks-guide-31" style="padding-left:28px;font-size:13px;">调试技术</a>
+<a href="#sec-hooks-guide-32" style="padding-left:14px;font-size:13.5px;">了解更多</a>
+  </aside>
+
+  <main class="article">
+    <blockquote>## Documentation Index</blockquote>
+<blockquote>Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt</blockquote>
+<blockquote>Use this file to discover all available pages before exploring further.</blockquote>
+
+<h2 id="sec-hooks-guide-1">使用 hooks 自动化操作</h2>
+
+<blockquote>当 Claude Code 编辑文件、完成任务或需要输入时自动运行 shell 命令。格式化代码、发送通知、验证命令并强制执行项目规则。</blockquote>
+
+<p><a class="kw" onclick="showKw('Hook')" title="点击查看解释">Hook</a>s 是用户定义的 shell 命令，在 Claude Code 生命周期中的特定点执行。它们对 Claude Code 的行为提供确定性控制，确保某些操作始终发生，而不是依赖 LLM 选择运行它们。使用 hooks 来强制执行项目规则、自动化重复任务，并将 Claude Code 与现有工具集成。</p>
+
+<p>对于需要判断而不是确定性规则的决策，你也可以使用 <a class="kw" onclick="showKw('基于提示的 hooks')" title="点击查看解释">基于提示的 hooks</a> 或 <a class="kw" onclick="showKw('基于代理的 hooks')" title="点击查看解释">基于代理的 hooks</a>，它们使用 Claude 模型来评估条件。</p>
+
+<p>有关扩展 Claude Code 的其他方式，请参阅 <a class="kw" onclick="showKw('skills')" title="点击查看解释">skills</a> 用于为 Claude 提供额外的指令和可执行命令，<a class="kw" onclick="showKw('subagents')" title="点击查看解释">subagents</a> 用于在隔离的上下文中运行任务，以及 <a class="kw" onclick="showKw('plugins')" title="点击查看解释">plugins</a> 用于打包要在项目间共享的扩展。</p>
+
+<div class="callout callout-tip">
+<p>  本指南涵盖常见用例和入门方法。有关完整的事件架构、JSON 输入/输出格式和异步 hooks 和 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 工具 hooks 等高级功能，请参阅 <a class="kw" onclick="showKw('Hooks 参考')" title="点击查看解释">Hooks 参考</a>。</p>
+</div>
+
+<h3 id="sec-hooks-guide-2">设置你的第一个 hook</h3>
+
+<p>要创建 hook，请将 `hooks` 块添加到 <a class="kw" onclick="showKw('设置文件')" title="点击查看解释">设置文件</a>。本演练创建一个桌面通知 hook，这样每当 Claude 等待你的输入而不是监视终端时，你都会收到警报。</p>
+
+<ol class="steps">
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;将 hook 添加到你的<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>&lt;/div&gt;</p>
+<p>    打开 `~/.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 并添加一个 `Notification` hook。下面的示例使用 `osascript` 用于 macOS；有关 Linux 和 Windows 命令，请参阅 <a class="kw" onclick="showKw('在 Claude 需要输入时获得通知')" title="点击查看解释">在 Claude 需要输入时获得通知</a>。</p>
+
+<p>    ```json theme={null}</p>
+<p>    {</p>
+<p>      &quot;hooks&quot;: {</p>
+<p>        &quot;Notification&quot;: [</p>
+<p>          {</p>
+<p>            &quot;matcher&quot;: &quot;&quot;,</p>
+<p>            &quot;hooks&quot;: [</p>
+<p>              {</p>
+<p>                &quot;type&quot;: &quot;command&quot;,</p>
+<p>                &quot;command&quot;: &quot;osascript -e &#x27;display notification \&quot;Claude Code needs your attention\&quot; with title \&quot;Claude Code\&quot;&#x27;&quot;</p>
+<p>              }</p>
+<p>            ]</p>
+<p>          }</p>
+<p>        ]</p>
+<p>      }</p>
+<p>    }</p>
+<p>    ```</p>
+
+<p>    如果你的<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>文件已经有一个 `hooks` 键，请将 `Notification` 作为现有事件键的同级添加，而不是替换整个对象。每个事件名称是单个 `hooks` 对象内的一个键：</p>
+
+<p>    ```json theme={null}</p>
+<p>    {</p>
+<p>      &quot;hooks&quot;: {</p>
+<p>        &quot;PostToolUse&quot;: [</p>
+<p>          {</p>
+<p>            &quot;matcher&quot;: &quot;Edit|Write&quot;,</p>
+<p>            &quot;hooks&quot;: [{ &quot;type&quot;: &quot;command&quot;, &quot;command&quot;: &quot;jq -r &#x27;.tool_input.file_path&#x27; | xargs npx prettier --write&quot; }]</p>
+<p>          }</p>
+<p>        ],</p>
+<p>        &quot;Notification&quot;: [</p>
+<p>          {</p>
+<p>            &quot;matcher&quot;: &quot;&quot;,</p>
+<p>            &quot;hooks&quot;: [{ &quot;type&quot;: &quot;command&quot;, &quot;command&quot;: &quot;osascript -e &#x27;display notification \&quot;Claude Code needs your attention\&quot; with title \&quot;Claude Code\&quot;&#x27;&quot; }]</p>
+<p>          }</p>
+<p>        ]</p>
+<p>      }</p>
+<p>    }</p>
+<p>    ```</p>
+
+<p>    你也可以通过在 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 中描述你想要的内容来要求 Claude 为你编写 hook。</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;验证配置&lt;/div&gt;</p>
+<p>    输入 `<a class="kw" onclick="showKw('/hooks')" title="点击查看解释">/hooks</a>` 打开 hooks 浏览器。你将看到所有可用 hook 事件的列表，每个配置了 hooks 的事件旁边都有一个计数。选择 `Notification` 以确认你的新 hook 出现在列表中。选择 hook 会显示其详细信息：事件、匹配器、类型、源文件和命令。</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;测试 hook&lt;/div&gt;</p>
+<p>    按 `Esc` 返回 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a>。要求 Claude 做需要<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>的事情，然后切换离开终端。你应该会收到桌面通知。</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;/ol&gt;</p>
+
+<div class="callout callout-tip">
+<p>  `<a class="kw" onclick="showKw('/hooks')" title="点击查看解释">/hooks</a>` 菜单是只读的。要添加、修改或删除 hooks，请直接编辑你的<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> JSON 或要求 Claude 进行更改。</p>
+</div>
+
+<h3 id="sec-hooks-guide-3">你可以自动化什么</h3>
+
+<p><a class="kw" onclick="showKw('Hook')" title="点击查看解释">Hook</a>s 让你在 Claude Code 生命周期中的关键点运行代码：编辑后格式化文件、在执行前阻止命令、在 Claude 需要输入时发送通知、在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>开始时注入上下文等。有关完整的 hook 事件列表，请参阅 <a class="kw" onclick="showKw('Hooks 参考')" title="点击查看解释">Hooks 参考</a>。</p>
+
+<p>每个示例都包含一个现成的配置块，你可以将其添加到 <a class="kw" onclick="showKw('设置文件')" title="点击查看解释">设置文件</a>。</p>
+
+<p>有关运行单独模型审查并将发现反馈回<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的 hooks 的生产示例，请参阅 <a class="kw" onclick="showKw('security-guidance 插件如何与 Claude Code 集成')" title="点击查看解释">security-guidance 插件如何与 Claude Code 集成</a>。</p>
+
+<h4 id="sec-hooks-guide-4">在 Claude 需要输入时获得通知</h4>
+
+<p>每当 Claude 完成工作并需要你的输入时获得桌面通知，这样你可以切换到其他任务而无需检查终端。</p>
+
+<p>此 hook 使用 `Notification` 事件，当 Claude 等待输入或<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>时触发。下面的每个选项卡使用平台的原生通知命令。将其添加到 `~/.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>`：</p>
+
+<div class="tabs">
+<div class="tab-item"><div class="tab-label">macOS</div><div class="tab-body">
+<p>    ```json theme={null}</p>
+<p>    {</p>
+<p>      &quot;hooks&quot;: {</p>
+<p>        &quot;Notification&quot;: [</p>
+<p>          {</p>
+<p>            &quot;matcher&quot;: &quot;&quot;,</p>
+<p>            &quot;hooks&quot;: [</p>
+<p>              {</p>
+<p>                &quot;type&quot;: &quot;command&quot;,</p>
+<p>                &quot;command&quot;: &quot;osascript -e &#x27;display notification \&quot;Claude Code needs your attention\&quot; with title \&quot;Claude Code\&quot;&#x27;&quot;</p>
+<p>              }</p>
+<p>            ]</p>
+<p>          }</p>
+<p>        ]</p>
+<p>      }</p>
+<p>    }</p>
+<p>    ```</p>
+
+<p>    &lt;Accordion title=&quot;如果没有通知出现&quot;&gt;</p>
+<p>      `osascript` 通过内置的 Script Editor 应用程序路由通知。如果 Script Editor 没有通知<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>，命令会静默失败，macOS 不会提示你授予它。在 Terminal 中运行一次以使 Script Editor 出现在你的通知<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>中：</p>
+
+<p>      ```bash theme={null}</p>
+<p>      osascript -e &#x27;display notification &quot;test&quot;&#x27;</p>
+<p>      ```</p>
+
+<p>      现在还不会出现任何内容。打开 **System Settings &gt; Notifications**，在列表中找到 **Script Editor**，并打开 **Allow Notifications**。再次运行该命令以确认测试通知出现。</p>
+<p>    &lt;/Accordion&gt;</p>
+  </div></div>
+<div class="tab-item"><div class="tab-label">Linux</div><div class="tab-body">
+<p>    ```json theme={null}</p>
+<p>    {</p>
+<p>      &quot;hooks&quot;: {</p>
+<p>        &quot;Notification&quot;: [</p>
+<p>          {</p>
+<p>            &quot;matcher&quot;: &quot;&quot;,</p>
+<p>            &quot;hooks&quot;: [</p>
+<p>              {</p>
+<p>                &quot;type&quot;: &quot;command&quot;,</p>
+<p>                &quot;command&quot;: &quot;notify-send &#x27;Claude Code&#x27; &#x27;Claude Code needs your attention&#x27;&quot;</p>
+<p>              }</p>
+<p>            ]</p>
+<p>          }</p>
+<p>        ]</p>
+<p>      }</p>
+<p>    }</p>
+<p>    ```</p>
+  </div></div>
+<div class="tab-item"><div class="tab-label">Windows (PowerShell)</div><div class="tab-body">
+<p>    ```json theme={null}</p>
+<p>    {</p>
+<p>      &quot;hooks&quot;: {</p>
+<p>        &quot;Notification&quot;: [</p>
+<p>          {</p>
+<p>            &quot;matcher&quot;: &quot;&quot;,</p>
+<p>            &quot;hooks&quot;: [</p>
+<p>              {</p>
+<p>                &quot;type&quot;: &quot;command&quot;,</p>
+<p>                &quot;command&quot;: &quot;powershell.exe -Command \&quot;[System.Reflection.Assembly]::LoadWithPartialName(&#x27;System.Windows.Forms&#x27;); [System.Windows.Forms.MessageBox]::Show(&#x27;Claude Code needs your attention&#x27;, &#x27;Claude Code&#x27;)\&quot;&quot;</p>
+<p>              }</p>
+<p>            ]</p>
+<p>          }</p>
+<p>        ]</p>
+<p>      }</p>
+<p>    }</p>
+<p>    ```</p>
+  </div></div>
+</div>
+
+<p>空的 `matcher` 对所有通知类型触发。要仅在特定事件上触发，请将其<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>为以下值之一：</p>
+
+<div class='table-wrap'><table>
+<tr><th>Matcher</th><th>触发时机</th></tr>
+<tr><td>`permission_prompt`</td><td>Claude 需要你批准工具使用</td></tr>
+<tr><td>`idle_prompt`</td><td>Claude 完成并等待你的下一个提示</td></tr>
+<tr><td>`auth_success`</td><td>身份验证完成</td></tr>
+<tr><td>`elicitation_dialog`</td><td><a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 服务器打开引导表单</td></tr>
+<tr><td>`elicitation_complete`</td><td><a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 引导表单被提交或关闭</td></tr>
+<tr><td>`elicitation_response`</td><td><a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 引导响应被发送回服务器</td></tr>
+<tr><td>`agent_needs_input`</td><td><a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>开始等待你的输入。仅在 <a class="kw" onclick="showKw('agent view')" title="点击查看解释">agent view</a> 打开时触发</td></tr>
+<tr><td>`agent_completed`</td><td><a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>完成或失败。仅在 <a class="kw" onclick="showKw('agent view')" title="点击查看解释">agent view</a> 打开时触发</td></tr>
+</table></div>
+
+<p>`agent_needs_input` 和 `agent_completed` 匹配器需要 Claude Code v2.1.198 或更高版本。</p>
+
+<p>输入 `<a class="kw" onclick="showKw('/hooks')" title="点击查看解释">/hooks</a>` 并选择 `Notification` 以确认 hook 已注册。有关完整的事件架构，请参阅 <a class="kw" onclick="showKw('Notification 参考')" title="点击查看解释">Notification 参考</a>。</p>
+
+<h4 id="sec-hooks-guide-5">编辑后自动格式化代码</h4>
+
+<p>在 Claude 编辑的每个文件上自动运行 <a class="kw" onclick="showKw('Prettier')" title="点击查看解释">Prettier</a>，以便格式保持一致而无需手动干预。</p>
+
+<p>此 hook 使用带有 `Edit|Write` 匹配器的 `PostToolUse` 事件，因此它仅在文件编辑工具之后运行。该命令使用 <a class="kw" onclick="showKw('jq')" title="点击查看解释">jq</a> 提取编辑的文件路径并将其传递给 Prettier。将其添加到项目根目录中的 `.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>`：</p>
+
+<pre><code>
+{
+  &quot;hooks&quot;: {
+    &quot;PostToolUse&quot;: [
+      {
+        &quot;matcher&quot;: &quot;Edit|Write&quot;,
+        &quot;hooks&quot;: [
+          {
+            &quot;type&quot;: &quot;command&quot;,
+            &quot;command&quot;: &quot;jq -r &#x27;.tool_input.file_path&#x27; | xargs npx prettier --write&quot;
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre>
+
+<p>在 Claude Code v2.1.191 或更高版本上，你也可以将匹配器写为 `Edit,Write`，因为在这些版本上 `|` 和 `,` 是工具名称匹配器的可互换列表分隔符。</p>
+
+<div class="callout callout-note">
+<p>  本页上的 Bash 示例使用 `jq` 进行 JSON 解析。使用 `brew install jq`（macOS）、`apt-get install jq`（Debian 和 Ubuntu）安装它，或参阅 <a class="kw" onclick="showKw('jq 下载')" title="点击查看解释">jq 下载</a>。</p>
+</div>
+
+<h4 id="sec-hooks-guide-6">阻止对受保护文件的编辑</h4>
+
+<p>防止 Claude 修改敏感文件，如 `.env`、`package-lock.json` 或 `.git/` 中的任何内容。Claude 会收到解释编辑被阻止原因的反馈，因此它可以调整其方法。</p>
+
+<p>此示例使用 hook 调用的单独脚本文件。该脚本根据受保护模式列表检查目标文件路径，并以代码 2 退出以阻止编辑。</p>
+
+<ol class="steps">
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;创建 hook 脚本&lt;/div&gt;</p>
+<p>    将其保存到 `.claude<a class="kw" onclick="showKw('/hooks')" title="点击查看解释">/hooks</a>/protect-files.sh`：</p>
+
+<p>    ```bash theme={null}</p>
+<p>    #!/bin/bash</p>
+<p>    # protect-files.sh</p>
+
+<p>    INPUT=$(cat)</p>
+<p>    FILE_PATH=$(echo &quot;$INPUT&quot; | jq -r &#x27;.tool_input.file_path // empty&#x27;)</p>
+
+<p>    PROTECTED_PATTERNS=(&quot;.env&quot; &quot;package-lock.json&quot; &quot;.git/&quot;)</p>
+
+<p>    for pattern in &quot;${PROTECTED_PATTERNS[@]}&quot;; do</p>
+<p>      if [[ &quot;$FILE_PATH&quot; == *&quot;$pattern&quot;* ]]; then</p>
+<p>        echo &quot;Blocked: $FILE_PATH matches protected pattern &#x27;$pattern&#x27;&quot; &gt;&amp;2</p>
+<p>        exit 2</p>
+<p>      fi</p>
+<p>    done</p>
+
+<p>    exit 0</p>
+<p>    ```</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;使脚本可执行（macOS 和 Linux）&lt;/div&gt;</p>
+<p>    <a class="kw" onclick="showKw('Hook')" title="点击查看解释">Hook</a> 脚本必须可执行才能让 Claude Code 运行它们：</p>
+
+<p>    ```bash theme={null}</p>
+<p>    chmod +x .claude<a class="kw" onclick="showKw('/hooks')" title="点击查看解释">/hooks</a>/protect-files.sh</p>
+<p>    ```</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;注册 hook&lt;/div&gt;</p>
+<p>    将 `PreToolUse` hook 添加到 `.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>`，在任何 `Edit` 或 `Write` 工具调用之前运行脚本：</p>
+
+<p>    ```json theme={null}</p>
+<p>    {</p>
+<p>      &quot;hooks&quot;: {</p>
+<p>        &quot;PreToolUse&quot;: [</p>
+<p>          {</p>
+<p>            &quot;matcher&quot;: &quot;Edit|Write&quot;,</p>
+<p>            &quot;hooks&quot;: [</p>
+<p>              {</p>
+<p>                &quot;type&quot;: &quot;command&quot;,</p>
+<p>                &quot;command&quot;: &quot;\&quot;$CLAUDE_PROJECT_DIR\&quot;/.claude<a class="kw" onclick="showKw('/hooks')" title="点击查看解释">/hooks</a>/protect-files.sh&quot;</p>
+<p>              }</p>
+<p>            ]</p>
+<p>          }</p>
+<p>        ]</p>
+<p>      }</p>
+<p>    }</p>
+<p>    ```</p>
+<p>  &lt;/li&gt;</p>
+<p>&lt;/ol&gt;</p>
+
+<h4 id="sec-hooks-guide-7">压缩后重新注入上下文</h4>
+
+<p>当 Claude 的<a class="kw" onclick="showKw('上下文窗口')" title="点击查看解释">上下文窗口</a>填满时，压缩会总结对话以释放空间。这可能会丢失重要细节。使用带有 `compact` 匹配器的 `<a class="kw" onclick="showKw('Session')" title="点击查看解释">Session</a>Start` hook 在每次压缩后重新注入关键上下文。</p>
+
+<p>你的命令写入 stdout 的任何文本都会添加到 Claude 的上下文中。此示例提醒 Claude 项目约定和最近的工作。将其添加到项目根目录中的 `.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>`：</p>
+
+<pre><code>
+{
+  &quot;hooks&quot;: {
+    &quot;SessionStart&quot;: [
+      {
+        &quot;matcher&quot;: &quot;compact&quot;,
+        &quot;hooks&quot;: [
+          {
+            &quot;type&quot;: &quot;command&quot;,
+            &quot;command&quot;: &quot;echo &#x27;Reminder: use Bun, not npm. Run bun test before committing. Current sprint: auth refactor.&#x27;&quot;
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre>
+
+<p>你可以用任何产生动态输出的命令替换 `echo`，如 `git log --oneline -5` 来显示最近的提交。有关在每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>开始时注入上下文，请考虑改用 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>。有关<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>，请参阅参考中的 <a class="kw" onclick="showKw('CLAUDE_ENV_FILE')" title="点击查看解释">CLAUDE_ENV_FILE</a>。</p>
+
+<h4 id="sec-hooks-guide-8">审计配置更改</h4>
+
+<p>跟踪<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>期间<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>或 skills 文件何时更改。`ConfigChange` 事件在外部进程或编辑器修改配置文件时触发，因此你可以记录更改以进行合规性检查或阻止未授权的修改。</p>
+
+<p>此示例将每个更改附加到审计日志。将其添加到 `~/.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>`：</p>
+
+<pre><code>
+{
+  &quot;hooks&quot;: {
+    &quot;ConfigChange&quot;: [
+      {
+        &quot;matcher&quot;: &quot;&quot;,
+        &quot;hooks&quot;: [
+          {
+            &quot;type&quot;: &quot;command&quot;,
+            &quot;command&quot;: &quot;jq -c &#x27;{timestamp: now | todate, source: .source, file: .file_path}&#x27; &gt;&gt; ~/claude-config-audit.log&quot;
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre>
+
+<p>匹配器按配置类型过滤：`user_settings`、`project_settings`、`local_settings`、`policy_settings` 或 `skills`。要阻止更改生效，以代码 2 退出或返回 `{&quot;decision&quot;: &quot;block&quot;}`。有关完整的输入架构，请参阅 <a class="kw" onclick="showKw('ConfigChange 参考')" title="点击查看解释">ConfigChange 参考</a>。</p>
+
+<h4 id="sec-hooks-guide-9">当目录或文件更改时重新加载环境</h4>
+
+<p>某些项目根据你所在的目录<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>不同的<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>。<a class="kw" onclick="showKw('direnv')" title="点击查看解释">direnv</a> 之类的工具在你的 shell 中自动执行此操作，但 Claude 的 Bash 工具不会自动拾取这些更改。</p>
+
+<p>配对 `<a class="kw" onclick="showKw('Session')" title="点击查看解释">Session</a>Start` hook 和 `CwdChanged` hook 可以解决这个问题。`<a class="kw" onclick="showKw('Session')" title="点击查看解释">Session</a>Start` 加载你启动时所在目录的变量，`CwdChanged` 在 Claude 每次更改目录时重新加载它们。两者都写入 `CLAUDE_ENV_FILE`，Claude Code 在每个 Bash 命令之前作为脚本前导运行。将其添加到 `~/.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>`：</p>
+
+<pre><code>
+{
+  &quot;hooks&quot;: {
+    &quot;SessionStart&quot;: [
+      {
+        &quot;hooks&quot;: [
+          {
+            &quot;type&quot;: &quot;command&quot;,
+            &quot;command&quot;: &quot;direnv export bash &gt; \&quot;$CLAUDE_ENV_FILE\&quot;&quot;
+          }
+        ]
+      }
+    ],
+    &quot;CwdChanged&quot;: [
+      {
+        &quot;hooks&quot;: [
+          {
+            &quot;type&quot;: &quot;command&quot;,
+            &quot;command&quot;: &quot;direnv export bash &gt; \&quot;$CLAUDE_ENV_FILE\&quot;&quot;
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre>
+
+<p>在每个包含 `.envrc` 的目录中运行一次 `direnv allow`，以便 direnv 被允许加载它。如果你使用 devbox 或 nix 而不是 direnv，相同的模式适用于 `devbox shellenv` 或 `devbox global shellenv` 代替 `direnv export bash`。</p>
+
+<p>要对特定文件而不是每个目录更改做出反应，请使用 `FileChanged` 和 `matcher` 列出要监视的文件名，用 `|` 分隔。要构建监视列表，Claude Code 将此值分割为文字文件名而不是作为正则表达式进行评估。有关当文件更改时相同值如何也过滤哪些 hook 组运行，请参阅 <a class="kw" onclick="showKw('FileChanged')" title="点击查看解释">FileChanged</a>。此示例监视工作目录中 `.envrc` 和 `.env` 的更改：</p>
+
+<pre><code>
+{
+  &quot;hooks&quot;: {
+    &quot;FileChanged&quot;: [
+      {
+        &quot;matcher&quot;: &quot;.envrc|.env&quot;,
+        &quot;hooks&quot;: [
+          {
+            &quot;type&quot;: &quot;command&quot;,
+            &quot;command&quot;: &quot;direnv export bash &gt; \&quot;$CLAUDE_ENV_FILE\&quot;&quot;
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre>
+
+<p>有关输入架构、`watchPaths` 输出和 `CLAUDE_ENV_FILE` 详情，请参阅 <a class="kw" onclick="showKw('CwdChanged')" title="点击查看解释">CwdChanged</a> 和 <a class="kw" onclick="showKw('FileChanged')" title="点击查看解释">FileChanged</a> 参考条目。</p>
+
+<h4 id="sec-hooks-guide-10">自动批准特定权限提示</h4>
+
+<p>跳过你总是允许的工具调用的批准对话。此示例自动批准 `ExitPlanMode`，这是 Claude 在完成呈现计划并要求继续时调用的工具，因此你不会在每次计划准备好时被提示。</p>
+
+<p>与上面的退出代码示例不同，自动批准需要你的 hook 将 JSON 决策写入 stdout。`PermissionRequest` hook 在 Claude Code 即将显示<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>对话时触发，返回 `&quot;behavior&quot;: &quot;allow&quot;` 代表你回答它。</p>
+
+<p>匹配器将 hook 的范围限制为仅 `ExitPlanMode`，因此没有其他提示受到影响。将其添加到 `~/.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>`：</p>
+
+<pre><code>
+{
+  &quot;hooks&quot;: {
+    &quot;PermissionRequest&quot;: [
+      {
+        &quot;matcher&quot;: &quot;ExitPlanMode&quot;,
+        &quot;hooks&quot;: [
+          {
+            &quot;type&quot;: &quot;command&quot;,
+            &quot;command&quot;: &quot;echo &#x27;{\&quot;hookSpecificOutput\&quot;: {\&quot;hookEventName\&quot;: \&quot;PermissionRequest\&quot;, \&quot;decision\&quot;: {\&quot;behavior\&quot;: \&quot;allow\&quot;}}}&#x27;&quot;
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre>
+
+<p>当 hook 批准时，Claude Code 退出<a class="kw" onclick="showKw('计划模式')" title="点击查看解释">计划模式</a>并恢复进入<a class="kw" onclick="showKw('计划模式')" title="点击查看解释">计划模式</a>之前处于活动状态的任何<a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a>。成绩单显示&quot;Allowed by PermissionRequest hook&quot;，其中对话会出现。hook 路径始终保持当前对话：它无法清除上下文并以对话可以的方式启动新的实现<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。</p>
+
+<p>要改为<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>特定的<a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a>，你的 hook 的输出可以包含一个 `updatedPermissions` 数组，其中包含 `setMode` 条目。`mode` 值是任何<a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a>，如 `default`、`acceptEdits` 或 `<a class="kw" onclick="showKw('bypassPermissions')" title="点击查看解释">bypassPermissions</a>`，`destination: &quot;session&quot;` 仅将其应用于当前<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。</p>
+
+<div class="callout callout-note">
+<p>  `<a class="kw" onclick="showKw('bypassPermissions')" title="点击查看解释">bypassPermissions</a>` 仅在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>已启动时应用，具有绕过模式可用：`--dangerously-skip-permissions`、`--permission-mode <a class="kw" onclick="showKw('bypassPermissions')" title="点击查看解释">bypassPermissions</a>`、`--allow-dangerously-skip-permissions` 或 `permissions.defaultMode: &quot;<a class="kw" onclick="showKw('bypassPermissions')" title="点击查看解释">bypassPermissions</a>&quot;` 在<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>中，且未被 <a class="kw" onclick="showKw('permissions.disableBypassPermissionsMode')" title="点击查看解释">permissions.disableBypassPermissionsMode</a> 禁用。它永远不会作为 `defaultMode` 持久化。</p>
+</div>
+
+<p>要将<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>切换到 `acceptEdits`，你的 hook 将此 JSON 写入 stdout：</p>
+
+<pre><code>
+{
+  &quot;hookSpecificOutput&quot;: {
+    &quot;hookEventName&quot;: &quot;PermissionRequest&quot;,
+    &quot;decision&quot;: {
+      &quot;behavior&quot;: &quot;allow&quot;,
+      &quot;updatedPermissions&quot;: [
+        { &quot;type&quot;: &quot;setMode&quot;, &quot;mode&quot;: &quot;acceptEdits&quot;, &quot;destination&quot;: &quot;session&quot; }
+      ]
+    }
+  }
+}
+</code></pre>
+
+<p>保持匹配器尽可能狭窄。匹配 `.*` 或留下匹配器为空会自动批准每个<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>提示，包括文件写入和 shell 命令。有关完整的决策字段集，请参阅 <a class="kw" onclick="showKw('PermissionRequest 参考')" title="点击查看解释">PermissionRequest 参考</a>。</p>
+
+<h3 id="sec-hooks-guide-11">Hooks 如何工作</h3>
+
+<p><a class="kw" onclick="showKw('Hook')" title="点击查看解释">Hook</a> 事件在 Claude Code 中的特定生命周期点触发。当事件触发时，所有匹配的 hooks 并行运行，相同的 hook 命令会自动去重。下表显示每个事件及其触发时间：</p>
+
+<div class='table-wrap'><table>
+<tr><th>Event</th><th>When it fires</th></tr>
+<tr><td>`<a class="kw" onclick="showKw('Session')" title="点击查看解释">Session</a>Start`</td><td>When a session begins or resumes</td></tr>
+<tr><td>`Setup`</td><td>When you start Claude Code with `--init-only`, or with `--init` or `--maintenance` in `-p` mode. For one-time preparation in CI or scripts</td></tr>
+<tr><td>`UserPromptSubmit`</td><td>When you submit a prompt, before Claude processes it</td></tr>
+<tr><td>`UserPromptExpansion`</td><td>When a user-typed command expands into a prompt, before it reaches Claude. Can block the expansion</td></tr>
+<tr><td>`PreToolUse`</td><td>Before a tool call executes. Can block it</td></tr>
+<tr><td>`PermissionRequest`</td><td>When a tool call needs a permission decision</td></tr>
+<tr><td>`PermissionDenied`</td><td>When a tool call is denied by the <a class="kw" onclick="showKw('auto mode')" title="点击查看解释">auto mode</a> classifier. Return `{retry: true}` to tell the model it may retry the denied tool call</td></tr>
+<tr><td>`PostToolUse`</td><td>After a tool call succeeds</td></tr>
+<tr><td>`PostToolUseFailure`</td><td>After a tool call fails</td></tr>
+<tr><td>`PostToolBatch`</td><td>After a full batch of parallel tool calls resolves, before the next model call</td></tr>
+<tr><td>`Notification`</td><td>When Claude Code sends a notification</td></tr>
+<tr><td>`MessageDisplay`</td><td>While assistant message text is displayed</td></tr>
+<tr><td>`<a class="kw" onclick="showKw('Subagent')" title="点击查看解释">Subagent</a>Start`</td><td>When a subagent is spawned</td></tr>
+<tr><td>`<a class="kw" onclick="showKw('Subagent')" title="点击查看解释">Subagent</a>Stop`</td><td>When a subagent finishes</td></tr>
+<tr><td>`TaskCreated`</td><td>When a task is being created via `TaskCreate`</td></tr>
+<tr><td>`TaskCompleted`</td><td>When a task is being marked as completed</td></tr>
+<tr><td>`Stop`</td><td>When Claude finishes responding</td></tr>
+<tr><td>`StopFailure`</td><td>When the turn ends due to an API error. Output and exit code are ignored</td></tr>
+<tr><td>`TeammateIdle`</td><td>When an <a class="kw" onclick="showKw('agent team')" title="点击查看解释">agent team</a> teammate is about to go idle</td></tr>
+<tr><td>`InstructionsLoaded`</td><td>When a <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> or `.claude/rules/*.md` file is loaded into context. Fires at session start and when files are lazily loaded during a session</td></tr>
+<tr><td>`ConfigChange`</td><td>When a configuration file changes during a session</td></tr>
+<tr><td>`CwdChanged`</td><td>When the working directory changes, for example when Claude executes a `cd` command. Useful for reactive environment management with tools like direnv</td></tr>
+<tr><td>`DirectoryAdded`</td><td>When a working directory is added mid-session via `/add-dir` or the SDK `register_repo_root` control request</td></tr>
+<tr><td>`FileChanged`</td><td>When a watched file changes on disk. The `matcher` field specifies which filenames to watch</td></tr>
+<tr><td>`WorktreeCreate`</td><td>When a worktree is being created via `--worktree`, `isolation: &quot;worktree&quot;`, or for a background session. Replaces default git behavior</td></tr>
+<tr><td>`WorktreeRemove`</td><td>When a worktree is being removed at session exit, when a subagent finishes, or when you delete a background session</td></tr>
+<tr><td>`PreCompact`</td><td>Before context compaction</td></tr>
+<tr><td>`PostCompact`</td><td>After context compaction completes</td></tr>
+<tr><td>`Elicitation`</td><td>When an <a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a> requests user input during a tool call</td></tr>
+<tr><td>`ElicitationResult`</td><td>After a user responds to an <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> elicitation, before the response is sent back to the server</td></tr>
+<tr><td>`<a class="kw" onclick="showKw('Session')" title="点击查看解释">Session</a>End`</td><td>When a session terminates</td></tr>
+</table></div>
+
+<p>每个 hook 都有一个 `type` 来确定它如何运行。大多数 hooks 使用 `&quot;type&quot;: &quot;command&quot;`，它运行 shell 命令。还有四种其他类型可用：</p>
+
+<p>* `&quot;type&quot;: &quot;http&quot;`：将事件数据 POST 到 URL。请参阅 <a class="kw" onclick="showKw('HTTP hooks')" title="点击查看解释">HTTP hooks</a>。</p>
+<p>* `&quot;type&quot;: &quot;mcp_tool&quot;`：在已连接的 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 服务器上调用工具。请参阅 <a class="kw" onclick="showKw('MCP tool hooks')" title="点击查看解释">MCP tool hooks</a>。</p>
+<p>* `&quot;type&quot;: &quot;prompt&quot;`：单轮 LLM 评估。请参阅 <a class="kw" onclick="showKw('Prompt-based hooks')" title="点击查看解释">Prompt-based hooks</a>。</p>
+<p>* `&quot;type&quot;: &quot;agent&quot;`：具有工具访问<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>的多轮验证。<a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> hooks 是实验性的，可能会改变。请参阅 <a class="kw" onclick="showKw('Agent-based hooks')" title="点击查看解释">Agent-based hooks</a>。</p>
+
+<h4 id="sec-hooks-guide-12">合并来自多个 hooks 的结果</h4>
+
+<p>当多个 hooks 匹配同一事件时，每个 hook 的命令都会运行到完成，然后 Claude Code 合并结果。一个 hook 返回 `deny` 不会阻止兄弟 hooks 执行。不要依赖一个 hook 的 `deny` 来抑制另一个 hook 中的副作用。</p>
+
+<p>所有匹配的 hooks 完成后，Claude Code 合并它们的输出。对于 `PreToolUse` <a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>决策，最严格的答案获胜，顺序为 `deny`、`defer`、`ask`、`allow`。来自 `additionalContext` 的文本从每个 hook 保留并一起传递给 Claude。</p>
+
+<p>下面的示例在 `Bash` 上注册两个 `PreToolUse` hooks。第一个将每个命令附加到日志文件并以 0 退出。第二个运行一个脚本，当命令包含 `rm -rf` 时以 2 退出以拒绝：</p>
+
+<pre><code>
+{
+  &quot;hooks&quot;: {
+    &quot;PreToolUse&quot;: [
+      {
+        &quot;matcher&quot;: &quot;Bash&quot;,
+        &quot;hooks&quot;: [
+          {
+            &quot;type&quot;: &quot;command&quot;,
+            &quot;command&quot;: &quot;jq -r .tool_input.command &gt;&gt; ~/.claude/bash.log&quot;
+          },
+          {
+            &quot;type&quot;: &quot;command&quot;,
+            &quot;command&quot;: &quot;\&quot;$CLAUDE_PROJECT_DIR\&quot;/.claude/hooks/block-rm-rf.sh&quot;
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre>
+
+<p>当 Claude 尝试运行 `rm -rf /tmp/build` 时，两个 hooks 并行执行。日志 hook 将命令写入 `~/.claude/bash.log` 并以 0 退出，这表示没有决策。防护栏 hook 以 2 退出，这拒绝了工具调用。拒绝获胜，所以 Claude Code 阻止命令并向 Claude 显示防护栏的 stderr。日志条目仍然被写入，因为日志 hook 已经运行。</p>
+
+<h4 id="sec-hooks-guide-13">读取输入并返回输出</h4>
+
+<p><a class="kw" onclick="showKw('Hook')" title="点击查看解释">Hook</a>s 通过 stdin、stdout、stderr 和退出代码与 Claude Code 通信。当事件触发时，Claude Code 将事件特定的数据作为 JSON 传递到脚本的 stdin。你的脚本读取该数据，完成其工作，并通过退出代码告诉 Claude Code 接下来要做什么。</p>
+
+<h5 id="sec-hooks-guide-14">Hook 输入</h5>
+
+<p>每个事件都包含常见字段，如 `session_id` 和 `cwd`，但每个事件类型添加不同的数据。例如，当 Claude 运行 Bash 命令时，`PreToolUse` hook 在 stdin 上接收类似以下内容：</p>
+
+<pre><code>
+{
+  &quot;session_id&quot;: &quot;abc123&quot;,          // 此会话的唯一 ID
+  &quot;cwd&quot;: &quot;/Users/sarah/myproject&quot;, // 事件触发时的工作目录
+  &quot;hook_event_name&quot;: &quot;PreToolUse&quot;, // 哪个事件触发了此 hook
+  &quot;tool_name&quot;: &quot;Bash&quot;,             // Claude 即将使用的工具
+  &quot;tool_input&quot;: {                  // Claude 传递给工具的参数
+    &quot;command&quot;: &quot;npm test&quot;          // 对于 Bash，这是 shell 命令
+  }
+}
+</code></pre>
+
+<p>你的脚本可以解析该 JSON 并对任何这些字段进行操作。`UserPromptSubmit` hooks 获取 `prompt` 文本，`<a class="kw" onclick="showKw('Session')" title="点击查看解释">Session</a>Start` hooks 获取 `source`（启动、恢复、清除、压缩），等等。有关共享字段，请参阅参考中的 <a class="kw" onclick="showKw('常见输入字段')" title="点击查看解释">常见输入字段</a>，以及每个事件的部分了解事件特定的架构。</p>
+
+<h5 id="sec-hooks-guide-15">Hook 输出</h5>
+
+<p>你的脚本通过写入 stdout 或 stderr 并以特定代码退出来告诉 Claude Code 接下来要做什么。以下 `PreToolUse` hook 阻止一个命令：</p>
+
+<pre><code>
+#!/bin/bash
+INPUT=$(cat)
+COMMAND=$(echo &quot;$INPUT&quot; | jq -r &#x27;.tool_input.command&#x27;)
+
+if echo &quot;$COMMAND&quot; | grep -q &quot;drop table&quot;; then
+  echo &quot;Blocked: dropping tables is not allowed&quot; &gt;&amp;2  # stderr 变成 Claude 的反馈
+  exit 2 # exit 2 = 阻止操作
+fi
+
+exit 0  # exit 0 = 没有决策；正常权限流程适用
+</code></pre>
+
+<p>退出代码确定接下来会发生什么：</p>
+
+<p>* **退出 0**：hook 报告没有异议，操作正常进行。对于 `PreToolUse` hook，这不会批准工具调用：正常的 <a class="kw" onclick="showKw('权限流程')" title="点击查看解释">权限流程</a> 仍然适用。对于 `UserPromptSubmit`、`UserPromptExpansion` 和 `<a class="kw" onclick="showKw('Session')" title="点击查看解释">Session</a>Start` hooks，你写入 stdout 的任何内容都会添加到 Claude 的上下文中。</p>
+<p>* **退出 2**：操作被阻止。写入原因到 stderr，Claude 会收到它作为反馈，以便它可以调整。某些事件无法被阻止：对于 `<a class="kw" onclick="showKw('Session')" title="点击查看解释">Session</a>Start`、`Setup`、`Notification` 和其他事件，退出 2 向用户显示 stderr，执行继续。有关每个事件的退出代码 2 行为的完整列表，请参阅 <a class="kw" onclick="showKw('每个事件的退出代码 2 行为')" title="点击查看解释">每个事件的退出代码 2 行为</a>。</p>
+<p>* **任何其他退出代码**：操作继续。成绩单显示 `&lt;hook name&gt; hook error` 通知，后跟 stderr 的第一行；完整的 stderr 进入 <a class="kw" onclick="showKw('调试日志')" title="点击查看解释">调试日志</a>。</p>
+
+<h5 id="sec-hooks-guide-16">结构化 JSON 输出</h5>
+
+<p>退出代码只让你阻止或保持沉默。为了获得更多控制，退出 0 并改为将 JSON 对象打印到 stdout。</p>
+
+<div class="callout callout-note">
+<p>  使用退出 2 以 stderr 消息阻止，或使用 JSON 退出 0 以获得结构化控制。不要混合它们：Claude Code 在你退出 2 时忽略 JSON。</p>
+</div>
+
+<p>例如，`PreToolUse` hook 可以拒绝工具调用并告诉 Claude 为什么，或将其升级给用户以获得批准：</p>
+
+<pre><code>
+{
+  &quot;hookSpecificOutput&quot;: {
+    &quot;hookEventName&quot;: &quot;PreToolUse&quot;,
+    &quot;permissionDecision&quot;: &quot;deny&quot;,
+    &quot;permissionDecisionReason&quot;: &quot;Use rg instead of grep for better performance&quot;
+  }
+}
+</code></pre>
+
+<p>使用 `&quot;deny&quot;`，Claude Code 取消工具调用并将 `permissionDecisionReason` 反馈给 Claude。这些 `permissionDecision` 值特定于 `PreToolUse`：</p>
+
+<p>* `&quot;allow&quot;`：跳过交互式<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>提示。拒绝和询问规则，包括企业托管拒绝列表，仍然适用，以及你的<a class="kw" onclick="showKw('组织设置')" title="点击查看解释">组织设置</a>为 `ask` 的 <a class="kw" onclick="showKw('连接器工具')" title="点击查看解释">连接器工具</a> 和标记为 <a class="kw" onclick="showKw('requiresUserInteraction')" title="点击查看解释">requiresUserInteraction</a> 的 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 工具</p>
+<p>* `&quot;deny&quot;`：取消工具调用并将原因发送给 Claude</p>
+<p>* `&quot;ask&quot;`：照常向用户显示<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>提示</p>
+
+<p>第四个值 `&quot;defer&quot;` 在 <a class="kw" onclick="showKw('非交互模式')" title="点击查看解释">非交互模式</a> 中使用 `-p` 标志时可用。它以保留的工具调用退出进程，以便 <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> SDK 包装器可以收集输入并恢复。请参阅参考中的 <a class="kw" onclick="showKw('延迟工具调用以供稍后使用')" title="点击查看解释">延迟工具调用以供稍后使用</a>。</p>
+
+<p>返回 `&quot;allow&quot;` 跳过交互式提示但不覆盖 <a class="kw" onclick="showKw('权限规则')" title="点击查看解释">权限规则</a>。如果拒绝规则与工具调用匹配，即使你的 hook 返回 `&quot;allow&quot;`，调用也会被阻止。如果询问规则匹配，用户仍然会被提示，以及你的<a class="kw" onclick="showKw('组织设置')" title="点击查看解释">组织设置</a>为 `ask` 的 <a class="kw" onclick="showKw('连接器工具')" title="点击查看解释">连接器工具</a> 和标记为 <a class="kw" onclick="showKw('requiresUserInteraction')" title="点击查看解释">requiresUserInteraction</a> 的 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 工具。这意味着来自任何<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>范围的拒绝规则，包括 <a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>，总是优先于 hook 批准。</p>
+
+<p>其他事件使用不同的决策模式。例如，`PostToolUse` 和 `Stop` hooks 使用顶级 `decision: &quot;block&quot;` 字段，而 `PermissionRequest` 使用 `hookSpecificOutput.decision.behavior`。有关按事件的完整分解，请参阅参考中的 <a class="kw" onclick="showKw('摘要表')" title="点击查看解释">摘要表</a>。</p>
+
+<p>对于 `UserPromptSubmit` hooks，改用 `hookSpecificOutput.additionalContext` 将文本注入到 Claude 的上下文中。将 `additionalContext` 嵌套在 `hookSpecificOutput` 内；如果你将其放在 JSON 的顶级，Claude Code 会默默忽略它。例如，此输出将当前分支状态添加到每个提示：</p>
+
+<pre><code>
+{
+  &quot;hookSpecificOutput&quot;: {
+    &quot;hookEventName&quot;: &quot;UserPromptSubmit&quot;,
+    &quot;additionalContext&quot;: &quot;Current branch: release-42. Deploy freeze until Friday.&quot;
+  }
+}
+</code></pre>
+
+<p>有关完整的输出形状，包括阻止提示和<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a><a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>标题，请参阅 <a class="kw" onclick="showKw('UserPromptSubmit 决策控制')" title="点击查看解释">UserPromptSubmit 决策控制</a>。</p>
+
+<p>基于 prompt 的 hooks（`type: &quot;prompt&quot;`）处理输出的方式不同：请参阅 <a class="kw" onclick="showKw('Prompt-based hooks')" title="点击查看解释">Prompt-based hooks</a>。</p>
+
+<h4 id="sec-hooks-guide-17">使用匹配器过滤 hooks</h4>
+
+<p>没有匹配器，hook 会在其事件的每次出现时触发。匹配器让你缩小范围。例如，如果你只想在文件编辑后运行格式化程序（而不是在每个工具调用后），将匹配器添加到你的 `PostToolUse` hook：</p>
+
+<pre><code>
+{
+  &quot;hooks&quot;: {
+    &quot;PostToolUse&quot;: [
+      {
+        &quot;matcher&quot;: &quot;Edit|Write&quot;,
+        &quot;hooks&quot;: [
+          { &quot;type&quot;: &quot;command&quot;, &quot;command&quot;: &quot;prettier --write ...&quot; }
+        ]
+      }
+    ]
+  }
+}
+</code></pre>
+
+<p>`&quot;Edit|Write&quot;` 匹配器仅在 Claude 使用 `Edit` 或 `Write` 工具时触发，而不是在它使用 `Bash`、`Read` 或任何其他工具时触发。在 Claude Code v2.1.191 或更高版本上，逗号以相同的方式分隔替代项，所以 `&quot;Edit, Write&quot;` 是等效的。请参阅 <a class="kw" onclick="showKw('匹配器模式')" title="点击查看解释">匹配器模式</a> 了解纯名称和正则表达式如何被评估。</p>
+
+<div class="callout callout-note">
+<p>  Claude 也可以通过 `Bash` 工具运行 shell 命令来创建或修改文件。如果你的 hook 必须看到每个文件更改，例如用于合规性扫描或审计日志，添加一个 <a class="kw" onclick="showKw('Stop')" title="点击查看解释">Stop</a> hook，它每轮扫描一次工作树。为了获得每次调用的覆盖，也匹配 `Bash` 并让你的脚本使用 `git status --porcelain` 列出修改和未跟踪的文件。</p>
+</div>
+
+<p>每个事件类型在特定字段上匹配：</p>
+
+<div class='table-wrap'><table>
+<tr><th>事件</th><th>匹配器过滤的内容</th><th>示例匹配器值</th></tr>
+<tr><td>`PreToolUse`、`PostToolUse`、`PostToolUseFailure`、`PermissionRequest`、`PermissionDenied`</td><td>工具名称</td><td>`Bash`、`Edit\</td><td>Write`、`mcp__.*`</td></tr>
+<tr><td>`<a class="kw" onclick="showKw('Session')" title="点击查看解释">Session</a>Start`</td><td><a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>如何启动</td><td>`startup`、`resume`、`clear`、`compact`</td></tr>
+<tr><td>`Setup`</td><td>哪个 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 标志触发了<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a></td><td>`init`、`maintenance`</td></tr>
+<tr><td>`<a class="kw" onclick="showKw('Session')" title="点击查看解释">Session</a>End`</td><td><a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>为什么结束</td><td>`clear`、`resume`、`logout`、`prompt_input_exit`、`bypass_permissions_disabled`、`other`</td></tr>
+<tr><td>`Notification`</td><td>通知类型</td><td>`permission_prompt`、`idle_prompt`、`auth_success`、`elicitation_dialog`、`elicitation_complete`、`elicitation_response`、`agent_needs_input`、`agent_completed`</td></tr>
+<tr><td>`<a class="kw" onclick="showKw('Subagent')" title="点击查看解释">Subagent</a>Start`</td><td>代理类型</td><td>`general-purpose`、`Explore`、`Plan` 或自定义代理名称</td></tr>
+<tr><td>`PreCompact`、`PostCompact`</td><td>什么触发了压缩</td><td>`manual`、`auto`</td></tr>
+<tr><td>`<a class="kw" onclick="showKw('Subagent')" title="点击查看解释">Subagent</a>Stop`</td><td>代理类型</td><td>与 `<a class="kw" onclick="showKw('Subagent')" title="点击查看解释">Subagent</a>Start` 相同的值</td></tr>
+<tr><td>`ConfigChange`</td><td>配置源</td><td>`user_settings`、`project_settings`、`local_settings`、`policy_settings`、`skills`</td></tr>
+<tr><td>`StopFailure`</td><td>错误类型</td><td>`rate_limit`、`overloaded`、`authentication_failed`、`oauth_org_not_allowed`、`billing_error`、`invalid_request`、`model_not_found`、`server_error`、`max_output_tokens`、`unknown`</td></tr>
+<tr><td>`InstructionsLoaded`</td><td>加载原因</td><td>`session_start`、`nested_traversal`、`path_glob_match`、`include`、`compact`</td></tr>
+<tr><td>`Elicitation`</td><td><a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 服务器名称</td><td>你配置的 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 服务器名称</td></tr>
+<tr><td>`ElicitationResult`</td><td><a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 服务器名称</td><td>与 `Elicitation` 相同的值</td></tr>
+<tr><td>`FileChanged`</td><td>文字文件名来监视（请参阅 <a class="kw" onclick="showKw('FileChanged')" title="点击查看解释">FileChanged</a>）</td><td>`.envrc\</td><td>.env`</td></tr>
+<tr><td>`UserPromptExpansion`</td><td>命令名称</td><td>你的 skill 或命令名称</td></tr>
+<tr><td>`UserPromptSubmit`、`PostToolBatch`、`Stop`、`TeammateIdle`、`TaskCreated`、`TaskCompleted`、`WorktreeCreate`、`WorktreeRemove`、`CwdChanged`、`MessageDisplay`</td><td>不支持匹配器</td><td>始终在每次出现时触发</td></tr>
+</table></div>
+
+<p>下面的选项卡显示不同事件类型上的更多匹配器示例。</p>
+
+<div class="tabs">
+<div class="tab-item"><div class="tab-label">记录每个 Bash 命令</div><div class="tab-body">
+<p>    仅匹配 `Bash` 工具调用并将每个命令记录到文件。`PostToolUse` 事件在命令完成后触发，因此 `tool_input.command` 包含运行的内容。hook 在 stdin 上接收事件数据作为 JSON，`jq -r &#x27;.tool_input.command&#x27;` 仅提取命令字符串，`&gt;&gt;` 将其附加到日志文件：</p>
+
+<p>    ```json theme={null}</p>
+<p>    {</p>
+<p>      &quot;hooks&quot;: {</p>
+<p>        &quot;PostToolUse&quot;: [</p>
+<p>          {</p>
+<p>            &quot;matcher&quot;: &quot;Bash&quot;,</p>
+<p>            &quot;hooks&quot;: [</p>
+<p>              {</p>
+<p>                &quot;type&quot;: &quot;command&quot;,</p>
+<p>                &quot;command&quot;: &quot;jq -r &#x27;.tool_input.command&#x27; &gt;&gt; ~/.claude/command-log.txt&quot;</p>
+<p>              }</p>
+<p>            ]</p>
+<p>          }</p>
+<p>        ]</p>
+<p>      }</p>
+<p>    }</p>
+<p>    ```</p>
+  </div></div>
+<div class="tab-item"><div class="tab-label">匹配 MCP 工具</div><div class="tab-body">
+<p>    <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 工具使用与内置工具不同的命名约定：`mcp__&lt;server&gt;__&lt;tool&gt;`，其中 `&lt;server&gt;` 是 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 服务器名称，`&lt;tool&gt;` 是它提供的工具。例如，`mcp__github__search_repositories` 或 `mcp__filesystem__read_file`。使用正则表达式匹配器来针对来自特定服务器的所有工具，或使用 `mcp__.*__write.*` 之类的模式跨服务器匹配。有关完整的示例列表，请参阅参考中的 <a class="kw" onclick="showKw('匹配 MCP 工具')" title="点击查看解释">匹配 MCP 工具</a>。</p>
+
+<p>    下面的命令使用 `jq` 从 hook 的 JSON 输入中提取工具名称，并将其写入 stderr。将其写入 stderr 保持 stdout 清洁以用于 JSON 输出，并将消息发送到 <a class="kw" onclick="showKw('调试日志')" title="点击查看解释">调试日志</a>：</p>
+
+<p>    ```json theme={null}</p>
+<p>    {</p>
+<p>      &quot;hooks&quot;: {</p>
+<p>        &quot;PreToolUse&quot;: [</p>
+<p>          {</p>
+<p>            &quot;matcher&quot;: &quot;mcp__github__.*&quot;,</p>
+<p>            &quot;hooks&quot;: [</p>
+<p>              {</p>
+<p>                &quot;type&quot;: &quot;command&quot;,</p>
+<p>                &quot;command&quot;: &quot;echo \&quot;GitHub tool called: $(jq -r &#x27;.tool_name&#x27;)\&quot; &gt;&amp;2&quot;</p>
+<p>              }</p>
+<p>            ]</p>
+<p>          }</p>
+<p>        ]</p>
+<p>      }</p>
+<p>    }</p>
+<p>    ```</p>
+  </div></div>
+<div class="tab-item"><div class="tab-label">在会话结束时清理</div><div class="tab-body">
+<p>    `<a class="kw" onclick="showKw('Session')" title="点击查看解释">Session</a>End` 事件支持<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>结束原因的匹配器。此 hook 仅在 `clear` 时触发（当你运行 `<a class="kw" onclick="showKw('/clear')" title="点击查看解释">/clear</a>` 时），而不是在正常退出时：</p>
+
+<p>    ```json theme={null}</p>
+<p>    {</p>
+<p>      &quot;hooks&quot;: {</p>
+<p>        &quot;<a class="kw" onclick="showKw('Session')" title="点击查看解释">Session</a>End&quot;: [</p>
+<p>          {</p>
+<p>            &quot;matcher&quot;: &quot;clear&quot;,</p>
+<p>            &quot;hooks&quot;: [</p>
+<p>              {</p>
+<p>                &quot;type&quot;: &quot;command&quot;,</p>
+<p>                &quot;command&quot;: &quot;rm -f /tmp/claude-scratch-*.txt&quot;</p>
+<p>              }</p>
+<p>            ]</p>
+<p>          }</p>
+<p>        ]</p>
+<p>      }</p>
+<p>    }</p>
+<p>    ```</p>
+  </div></div>
+</div>
+
+<p>有关完整的匹配器语法，请参阅 <a class="kw" onclick="showKw('Hooks 参考')" title="点击查看解释">Hooks 参考</a>。</p>
+
+<h5 id="sec-hooks-guide-18">使用 `if` 字段按工具名称和参数过滤</h5>
+
+<p>`if` 字段使用 <a class="kw" onclick="showKw('权限规则语法')" title="点击查看解释">权限规则语法</a> 按工具名称和参数一起过滤 hooks，因此 hook 进程仅在工具调用匹配时生成。这超越了 `matcher`，它仅在工具名称级别按组过滤。</p>
+
+<p>例如，这个配置仅在 Claude 使用 `git` 命令而不是所有 Bash 命令时运行 hook：</p>
+
+<pre><code>
+{
+  &quot;hooks&quot;: {
+    &quot;PreToolUse&quot;: [
+      {
+        &quot;matcher&quot;: &quot;Bash&quot;,
+        &quot;hooks&quot;: [
+          {
+            &quot;type&quot;: &quot;command&quot;,
+            &quot;if&quot;: &quot;Bash(git *)&quot;,
+            &quot;command&quot;: &quot;\&quot;$CLAUDE_PROJECT_DIR\&quot;/.claude/hooks/check-git-policy.sh&quot;
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre>
+
+<p>你的 hook 命令是否运行取决于你的 `if` 模式的形状和 Claude 正在调用的 Bash 命令：</p>
+
+<div class='table-wrap'><table>
+<tr><th>`if` 模式</th><th>Bash 命令</th><th><a class="kw" onclick="showKw('Hook')" title="点击查看解释">Hook</a> 运行？</th><th>为什么</th></tr>
+<tr><td>`Bash(git *)`</td><td>`git push`</td><td>是</td><td>命令名称匹配</td></tr>
+<tr><td>`Bash(git *)`</td><td>`npm test &amp;&amp; git push`</td><td>是</td><td>每个子命令都被检查；`git push` 匹配</td></tr>
+<tr><td>`Bash(git *)`</td><td>`echo $(git log)`</td><td>是</td><td>`$()` 和反引号内的命令被检查；`git log` 匹配</td></tr>
+<tr><td>`Bash(git *)`</td><td>`echo $(date)`</td><td>否</td><td>没有子命令匹配 `git *`</td></tr>
+<tr><td>`Bash(git push *)`</td><td>`echo $(date)`</td><td>是</td><td>指定超过命令名称的模式在 `$()`、反引号或 `$VAR` 上运行 hook</td></tr>
+</table></div>
+
+<p>当 Bash 命令无法解析时，过滤器也会失败开放，无论如何都会运行你的 hook。因为过滤器是尽力而为的，使用 <a class="kw" onclick="showKw('权限系统')" title="点击查看解释">权限系统</a> 而不是 hook 来强制执行硬允许或拒绝。</p>
+
+<p>`if` 字段接受与<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>规则相同的模式：`&quot;Bash(git *)&quot;`、`&quot;Edit(*.ts)&quot;` 等。要匹配多个工具名称，使用单独的处理程序，每个都有自己的 `if` 值，或在 `matcher` 级别匹配，其中支持管道交替。</p>
+
+<p>`if` 仅适用于工具事件：`PreToolUse`、`PostToolUse`、`PostToolUseFailure`、`PermissionRequest` 和 `PermissionDenied`。将其添加到任何其他事件会阻止 hook 运行。</p>
+
+<h4 id="sec-hooks-guide-19">配置 hook 位置</h4>
+
+<p>你添加 hook 的位置决定了其范围：</p>
+
+<div class='table-wrap'><table>
+<tr><th>位置</th><th>范围</th><th>可共享</th></tr>
+<tr><td>`~/.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>`</td><td>所有你的项目</td><td>否，本地到你的机器</td></tr>
+<tr><td>`.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>`</td><td>单个项目</td><td>是，可以提交到仓库</td></tr>
+<tr><td>`.claude/settings.local.json`</td><td>单个项目</td><td>否，gitignored 当 Claude Code 创建它时</td></tr>
+<tr><td>托管策略<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a></td><td>组织范围</td><td>是，管理员控制</td></tr>
+<tr><td><a class="kw" onclick="showKw('Plugin')" title="点击查看解释">Plugin</a> `hooks<a class="kw" onclick="showKw('/hooks')" title="点击查看解释">/hooks</a>.json`</td><td>启用<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>时</td><td>是，与<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>捆绑</td></tr>
+<tr><td><a class="kw" onclick="showKw('Skill')" title="点击查看解释">Skill</a> 或 <a class="kw" onclick="showKw('agent')" title="点击查看解释">agent</a> frontmatter</td><td>当 skill 或 agent 处于活动状态时</td><td>是，在组件文件中定义</td></tr>
+</table></div>
+
+<p>在 Claude Code 中运行 <a class="kw" onclick="showKw('/hooks')" title="点击查看解释">/hooks</a> 以浏览所有按事件分组的配置 hooks。</p>
+
+<p>要禁用 hooks，在<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>文件中<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> `&quot;disableAll<a class="kw" onclick="showKw('Hook')" title="点击查看解释">Hook</a>s&quot;: true`。<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>中配置的 <a class="kw" onclick="showKw('Hook')" title="点击查看解释">Hook</a>s 仍然运行，除非 `disableAll<a class="kw" onclick="showKw('Hook')" title="点击查看解释">Hook</a>s` 也在那里<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>。</p>
+
+<p>如果你在 Claude Code 运行时直接编辑<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>文件，文件监视器通常会自动拾取 hook 更改。</p>
+
+<h3 id="sec-hooks-guide-20">基于提示的 hooks</h3>
+
+<p>对于需要判断而不是确定性规则的决策，使用 `type: &quot;prompt&quot;` hooks。Claude Code 不运行 shell 命令，而是将你的提示和 hook 的输入数据发送到 Claude 模型（默认为 Haiku）来做出决策。如果你需要更多功能，可以使用 `model` 字段指定不同的模型。</p>
+
+<p>模型的唯一工作是返回一个是/否决策作为 JSON：</p>
+
+<p>* `&quot;ok&quot;: true`：操作继续</p>
+<p>* `&quot;ok&quot;: false`：发生的情况取决于事件：</p>
+<p>  * `Stop` 和 `<a class="kw" onclick="showKw('Subagent')" title="点击查看解释">Subagent</a>Stop`：`reason` 被反馈给 Claude，以便它继续工作</p>
+<p>  * `PreToolUse`：工具调用被拒绝，`reason` 作为工具错误返回给 Claude，以便它可以调整并继续</p>
+<p>  * `PostToolUse`、`PostToolBatch`、`UserPromptSubmit` 和 `UserPromptExpansion`：回合结束，`reason` 在聊天中显示为警告行</p>
+
+<p>此示例使用 `Stop` hook 询问模型是否所有请求的任务都已完成。如果模型返回 `&quot;ok&quot;: false`，Claude 继续工作并使用 `reason` 作为其下一条指令：</p>
+
+<pre><code>
+{
+  &quot;hooks&quot;: {
+    &quot;Stop&quot;: [
+      {
+        &quot;hooks&quot;: [
+          {
+            &quot;type&quot;: &quot;prompt&quot;,
+            &quot;prompt&quot;: &quot;Check if all tasks are complete. If not, respond with {\&quot;ok\&quot;: false, \&quot;reason\&quot;: \&quot;what remains to be done\&quot;}.&quot;
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre>
+
+<p>有关完整的配置选项，请参阅参考中的 <a class="kw" onclick="showKw('基于提示的 hooks')" title="点击查看解释">基于提示的 hooks</a>。</p>
+
+<h3 id="sec-hooks-guide-21">基于代理的 hooks</h3>
+
+<div class="callout callout-warning">
+<p>  代理 hooks 是实验性的。行为和配置可能在未来版本中改变。对于生产<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>，更倾向于 <a class="kw" onclick="showKw('命令 hooks')" title="点击查看解释">命令 hooks</a>。</p>
+</div>
+
+<p>当验证需要检查文件或运行命令时，使用 `type: &quot;agent&quot;` hooks。与只进行单个 LLM 调用的提示 hooks 不同，代理 hooks 生成一个 subagent，它可以读取文件、搜索代码和使用其他工具来验证条件，然后返回决策。</p>
+
+<p>代理 hooks 使用与提示 hooks 相同的 `&quot;ok&quot;` / `&quot;reason&quot;` 响应格式，但默认超时更长（60 秒）和最多 50 个工具使用轮次。</p>
+
+<p>此示例验证在允许 Claude 停止之前测试通过：</p>
+
+<pre><code>
+{
+  &quot;hooks&quot;: {
+    &quot;Stop&quot;: [
+      {
+        &quot;hooks&quot;: [
+          {
+            &quot;type&quot;: &quot;agent&quot;,
+            &quot;prompt&quot;: &quot;Verify that all unit tests pass. Run the test suite and check the results. $ARGUMENTS&quot;,
+            &quot;timeout&quot;: 120
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre>
+
+<p>当 hook 输入数据本身足以做出决策时使用提示 hooks。当你需要根据代码库的实际状态验证某些内容时使用代理 hooks。</p>
+
+<p>有关完整的配置选项，请参阅参考中的 <a class="kw" onclick="showKw('基于代理的 hooks')" title="点击查看解释">基于代理的 hooks</a>。</p>
+
+<h3 id="sec-hooks-guide-22">HTTP hooks</h3>
+
+<p>使用 `type: &quot;http&quot;` hooks 将事件数据 POST 到 HTTP 端点，而不是运行 shell 命令。端点接收命令 hook 在 stdin 上接收的相同 JSON，并使用相同的 JSON 格式通过 HTTP 响应体返回结果。</p>
+
+<p>HTTP hooks 在你想要 web 服务器、云函数或外部服务处理 hook 逻辑时很有用：例如，一个跨团队记录工具使用事件的共享审计服务。</p>
+
+<p>此示例将每个工具使用 POST 到本地日志服务：</p>
+
+<pre><code>
+{
+  &quot;hooks&quot;: {
+    &quot;PostToolUse&quot;: [
+      {
+        &quot;hooks&quot;: [
+          {
+            &quot;type&quot;: &quot;http&quot;,
+            &quot;url&quot;: &quot;http://localhost:8080/hooks/tool-use&quot;,
+            &quot;headers&quot;: {
+              &quot;Authorization&quot;: &quot;Bearer $MY_TOKEN&quot;
+            },
+            &quot;allowedEnvVars&quot;: [&quot;MY_TOKEN&quot;]
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre>
+
+<p>端点应使用与命令 hooks 相同的 <a class="kw" onclick="showKw('输出格式')" title="点击查看解释">输出格式</a> 返回 JSON 响应体。要阻止工具调用，返回 2xx 响应，包含适当的 `hookSpecificOutput` 字段。HTTP 状态代码本身无法阻止操作。</p>
+
+<p>标头值支持使用 `$VAR_NAME` 或 `${VAR_NAME}` 语法的<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>插值。仅解析 `allowedEnvVars` 数组中列出的变量；所有其他 `$VAR` 引用保持为空。</p>
+
+<p>有关完整的配置选项和响应处理，请参阅参考中的 <a class="kw" onclick="showKw('HTTP hooks')" title="点击查看解释">HTTP hooks</a>。</p>
+
+<h3 id="sec-hooks-guide-23">限制和故障排除</h3>
+
+<h4 id="sec-hooks-guide-24">限制</h4>
+
+<p>设计 hooks 时请记住这些约束：</p>
+
+<p>* 命令 hooks 仅通过 stdout、stderr 和退出代码通信。它们无法触发 `/` 命令或工具调用。通过 `additionalContext` 返回的文本被注入为 Claude 作为纯文本读取的系统提醒。HTTP hooks 改为通过响应体通信。</p>
+<p>* <a class="kw" onclick="showKw('Hook')" title="点击查看解释">Hook</a> 超时因类型而异。通过 `timeout` 字段（以秒为单位）按 hook 覆盖。</p>
+<p>  * `command`、`http`、`mcp_tool`：10 分钟。`UserPromptSubmit` 将这些降低到 30 秒，`MessageDisplay` 将这些降低到 10 秒。</p>
+<p>  * `prompt`：30 秒。</p>
+<p>  * `agent`：60 秒。</p>
+<p>* `PostToolUse` hooks 无法撤销操作，因为工具已经执行。</p>
+<p>* `PermissionRequest` hooks 不在 <a class="kw" onclick="showKw('非交互模式')" title="点击查看解释">非交互模式</a>（带 `-p` 标志）中触发。对于自动化<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>决策，使用 `PreToolUse` hooks。</p>
+<p>* `Stop` hooks 在 Claude 完成响应时触发，而不仅仅在任务完成时。它们不在用户中断时触发。API 错误触发 <a class="kw" onclick="showKw('StopFailure')" title="点击查看解释">StopFailure</a> 代替。</p>
+<p>* 当多个 `PreToolUse` hooks 返回 <a class="kw" onclick="showKw('updatedInput')" title="点击查看解释">updatedInput</a> 来重写工具的参数时，最后完成的获胜。由于 hooks 并行运行，顺序是非确定性的。避免有多个 hook 修改同一工具的输入。</p>
+
+<h4 id="sec-hooks-guide-25">Hooks 和权限模式</h4>
+
+<p>`PreToolUse` hooks 在任何<a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a>检查之前触发。返回 `permissionDecision: &quot;deny&quot;` 的 hook 会阻止工具，即使在 `<a class="kw" onclick="showKw('bypassPermissions')" title="点击查看解释">bypassPermissions</a>` 模式或使用 `--dangerously-skip-permissions` 时也是如此。这让你强制执行用户无法通过更改其<a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a>来绕过的策略。</p>
+
+<p>反面不成立：返回 `&quot;allow&quot;` 的 hook 不会绕过来自<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>的拒绝规则，它也无法抑制你的<a class="kw" onclick="showKw('组织设置')" title="点击查看解释">组织设置</a>为 `ask` 的连接器工具的提示 [](/docs/zh-CN<a class="kw" onclick="showKw('/mcp')" title="点击查看解释">/mcp</a>#organization-controls-on-connector-tools) 或标记为 <a class="kw" onclick="showKw('requiresUserInteraction')" title="点击查看解释">requiresUserInteraction</a> 的 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 工具。<a class="kw" onclick="showKw('Hook')" title="点击查看解释">Hook</a>s 可以收紧限制，但不能放松它们超过<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>规则允许的范围。</p>
+
+<h4 id="sec-hooks-guide-26">Hook 未触发</h4>
+
+<p><a class="kw" onclick="showKw('Hook')" title="点击查看解释">Hook</a> 已配置但从不执行。</p>
+
+<p>* 运行 `<a class="kw" onclick="showKw('/hooks')" title="点击查看解释">/hooks</a>` 并确认 hook 出现在正确的事件下</p>
+<p>* 检查匹配器模式是否与工具名称完全匹配。匹配器区分大小写</p>
+<p>* 验证你是否触发了正确的事件类型：`PreToolUse` 在工具执行前触发，`PostToolUse` 在之后触发</p>
+<p>* 如果在非<a class="kw" onclick="showKw('交互模式')" title="点击查看解释">交互模式</a>（带 `-p` 标志）中使用 `PermissionRequest` hooks，改用 `PreToolUse`</p>
+
+<h4 id="sec-hooks-guide-27">Hook 输出中的错误</h4>
+
+<p>你在成绩单中看到类似&quot;PreToolUse hook error: ...&quot;的消息。</p>
+
+<p>* 你的脚本意外以非零代码退出。通过管道传递示例 JSON 来手动测试它：</p>
+<p>  ```bash theme={null}</p>
+<p>  echo &#x27;{&quot;tool_name&quot;:&quot;Bash&quot;,&quot;tool_input&quot;:{&quot;command&quot;:&quot;ls&quot;}}&#x27; | ./my-hook.sh</p>
+<p>  echo $?  # 检查退出代码</p>
+<p>  ```</p>
+<p>* 如果你看到&quot;command not found&quot;，使用绝对路径或 `${CLAUDE_PROJECT_DIR}` 来引用脚本。为了完全避免 shell 引用，添加 `&quot;args&quot;: []` 来切换到 <a class="kw" onclick="showKw('exec 形式')" title="点击查看解释">exec 形式</a>，它直接生成脚本而不使用 shell</p>
+<p>* 如果你看到&quot;jq: command not found&quot;，安装 `jq` 或使用 Python/Node.js 进行 JSON 解析</p>
+<p>* 如果脚本根本没有运行，使其可执行：`chmod +x ./my-hook.sh`</p>
+
+<h4 id="sec-hooks-guide-28">`/hooks` 显示未配置 hooks</h4>
+
+<p>你编辑了<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>文件但 hooks 不出现在菜单中。</p>
+
+<p>* 文件编辑通常会自动拾取。如果几秒钟后它们还没有出现，文件监视器可能错过了更改：重新启动你的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>以强制重新加载。</p>
+<p>* 验证你的 JSON 有效：不允许尾随逗号和注释</p>
+<p>* 确认<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>文件在正确的位置：`.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 用于项目 hooks，`~/.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 用于全局 hooks</p>
+
+<h4 id="sec-hooks-guide-29">Stop hook 达到阻止上限</h4>
+
+<p>Claude 继续工作而不是停止，然后以警告结束该轮，表示 Stop hook 连续阻止了太多次。</p>
+
+<p>Claude Code 在 Stop hook 连续阻止 8 次而没有进展后会覆盖它。你的 hook 脚本需要检查它是否已经触发了继续。从 JSON 输入中解析 `stop_hook_active` 字段，如果为 `true` 则提前退出：</p>
+
+<pre><code>
+#!/bin/bash
+INPUT=$(cat)
+if [ &quot;$(echo &quot;$INPUT&quot; | jq -r &#x27;.stop_hook_active&#x27;)&quot; = &quot;true&quot; ]; then
+  exit 0  # 允许 Claude 停止
+fi
+# ... 你的 hook 逻辑的其余部分
+</code></pre>
+
+<p>如果你的 hook 合理地需要超过八次迭代才能收敛，使用 <a class="kw" onclick="showKw('CLAUDE_CODE_STOP_HOOK_BLOCK_CAP')" title="点击查看解释">CLAUDE_CODE_STOP_HOOK_BLOCK_CAP</a> 提高上限。</p>
+
+<h4 id="sec-hooks-guide-30">JSON 验证失败</h4>
+
+<p>Claude Code 显示 JSON 解析错误，即使你的 hook 脚本输出有效的 JSON。</p>
+
+<p>当 Claude Code 运行 shell 形式的命令 hook（没有 `args` 的）时，它在 macOS 和 Linux 上生成 `sh -c`，或在 Windows 上生成 Git Bash。这个 shell 是非交互式的，但 Git Bash 和某些配置（例如 `BASH_ENV` 指向 `~/.bashrc`）仍然会源你的配置文件。如果该配置文件包含无条件的 `echo` 语句，输出会被添加到你的 hook 的 JSON 前面：</p>
+
+<pre><code>
+Shell ready on arm64
+{&quot;decision&quot;: &quot;block&quot;, &quot;reason&quot;: &quot;Not allowed&quot;}
+</code></pre>
+
+<p>Claude Code 尝试将其解析为 JSON 并失败。要修复此问题，在你的 shell 配置文件中包装 echo 语句，使其仅在交互式 shell 中运行：</p>
+
+<pre><code>
+# 在 ~/.zshrc 或 ~/.bashrc 中
+if [[ $- == *i* ]]; then
+  echo &quot;Shell ready&quot;
+fi
+</code></pre>
+
+<p>`$-` 变量包含 shell 标志，`i` 表示交互式。<a class="kw" onclick="showKw('Hook')" title="点击查看解释">Hook</a>s 在非交互式 shell 中运行，因此 echo 被跳过。</p>
+
+<h4 id="sec-hooks-guide-31">调试技术</h4>
+
+<p>成绩单视图，使用 `Ctrl+O` 切换，显示每个触发的 hook 的单行摘要：成功是无声的，阻止错误显示 stderr，非阻止错误显示 `&lt;hook name&gt; hook error` 通知，后跟 stderr 的第一行。</p>
+
+<p>有关完整的执行详情，包括哪些 hooks 匹配、它们的退出代码、stdout 和 stderr，请阅读调试日志。使用 `claude --debug-file /tmp/claude.log` 启动 Claude Code 以写入已知路径，然后在另一个终端中 `tail -f /tmp/claude.log`。如果你启动时没有该标志，在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中运行 `/debug` 以启用日志记录并找到日志路径。</p>
+
+<h3 id="sec-hooks-guide-32">了解更多</h3>
+
+<p>* <a class="kw" onclick="showKw('Hooks 参考')" title="点击查看解释">Hooks 参考</a>：完整的事件架构、JSON 输出格式、异步 hooks 和 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 工具 hooks</p>
+<p>* <a class="kw" onclick="showKw('安全考虑')" title="点击查看解释">安全考虑</a>：在共享或生产环境中部署 hooks 之前查看</p>
+<p>* <a class="kw" onclick="showKw('Bash 命令验证器示例')" title="点击查看解释">Bash 命令验证器示例</a>：完整的参考实现</p>
+
+  </main>
+</div>
+
+<nav class="pager">
+  <a href="goal.html"><span class="dir">← 上一篇</span><span class="ptitle">让 Claude 朝着目标工作</span></a>
+  <a class="next" href="hooks.html"><span class="dir">下一篇 →</span><span class="ptitle">Hooks 参考</span></a>
+</nav>
+
+<button class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="返回顶部"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 5l0 14" /> <path d="M18 11l-6 -6" /> <path d="M6 11l6 -6" /> </svg></span></button>
+
+<!-- 关键词解释弹窗 -->
+<div class="kw-panel" id="kwPanel">
+  <div class="kwp-head">
+    <span class="kwp-badge" id="kwpBadge"></span>
+    <span class="kwp-title" id="kwpTitle"></span>
+    <button class="kwp-close" onclick="hideKw()">×</button>
+  </div>
+  <div class="kwp-body">
+    <div class="kwp-desc" id="kwpDesc"></div>
+    <a class="kwp-link" id="kwpLink" target="_blank">阅读完整文档<span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l14 0" /> <path d="M13 18l6 -6" /> <path d="M13 6l6 6" /> </svg></span></a>
+  </div>
+  <div class="kwp-bar-wrap"><div class="kwp-bar" id="kwBar"></div></div>
+</div>
+
+<script>
+function toggleDrawer() {
+  document.getElementById('drawer').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+window.addEventListener('scroll', function() {
+  var st = document.getElementById('scrollTop');
+  st.classList.toggle('show', window.scrollY > 400);
+  var h = document.documentElement.scrollHeight - window.innerHeight;
+  var pct = h > 0 ? (window.scrollY / h * 100) : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+});
+
+// ===== 关键词弹窗逻辑 =====
+const KW_DATA = {"Marketplace": {"doc": "plugin-marketplaces", "title": "创建和分发 plugin marketplace", "desc": "**plugin marketplace** 是一个目录，让你能够将 plugins 分发给他人。Marketplace 提供集中式发现、版本跟踪、自动更新以及对多种源类型（包括 git 存储库和本地路径）的支持。本指南展示了如何创建自己的 marketplace，与你的团队或社区共享 plugins。"}, "市场": {"doc": "plugin-marketplaces", "title": "创建和分发 plugin marketplace", "desc": "**plugin marketplace** 是一个目录，让你能够将 plugins 分发给他人。Marketplace 提供集中式发现、版本跟踪、自动更新以及对多种源类型（包括 git 存储库和本地路径）的支持。本指南展示了如何创建自己的 marketplace，与你的团队或社区共享 plugins。"}, "Plugin": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "插件": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "Skill": {"doc": "skills", "title": "使用 skills 扩展 Claude", "desc": "Skills 扩展了 Claude 能做的事情。创建一个 `SKILL.md` 文件，其中包含说明，Claude 会将其添加到其工具包中。Claude 在相关时使用 skills，或者你可以使用 `/skill-name` 直接调用一个。"}, "技能": {"doc": "skills", "title": "使用 skills 扩展 Claude", "desc": "Skills 扩展了 Claude 能做的事情。创建一个 `SKILL.md` 文件，其中包含说明，Claude 会将其添加到其工具包中。Claude 在相关时使用 skills，或者你可以使用 `/skill-name` 直接调用一个。"}, "Agent": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "Subagent": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "子代理": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "Hook": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "钩子": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "MCP": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "CLI": {"doc": "cli-reference", "title": "CLI 参考", "desc": "CLI 命令"}, "斜杠命令": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "快捷键": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "keybindings": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "权限模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Permission Mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "上下文窗口": {"doc": "context-window", "title": "探索上下文窗口", "desc": "了解 Claude Code 的上下文窗口如何工作：上下文包含哪些内容、如何高效利用、以及自动压缩等机制。"}, "Context Window": {"doc": "context-window", "title": "探索上下文窗口", "desc": "了解 Claude Code 的上下文窗口如何工作：上下文包含哪些内容、如何高效利用、以及自动压缩等机制。"}, "设置": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "环境变量": {"doc": "env-vars", "title": "环境变量", "desc": "环境变量可以控制 Claude Code 的行为，例如模型选择、身份验证、请求路由和功能切换。许多相同的行为也可以通过设置文件字段、CLI 标志或会话内命令（如 `/model`）进行配置。"}, "Environment Variables": {"doc": "env-vars", "title": "环境变量", "desc": "环境变量可以控制 Claude Code 的行为，例如模型选择、身份验证、请求路由和功能切换。许多相同的行为也可以通过设置文件字段、CLI 标志或会话内命令（如 `/model`）进行配置。"}, "记忆": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "Memory": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "会话": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "Session": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "状态栏": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "Statusline": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "CLAUDE.md": {"doc": "claude-directory", "title": "探索 .claude 目录", "desc": "Claude Code 在项目根目录读取的指令文件，每次会话都会加载，用来定义项目约定、常用命令和架构上下文。"}, ".claude 目录": {"doc": "claude-directory", "title": "探索 .claude 目录", "desc": "Claude Code 读取 CLAUDE.md、settings.json、hooks、skills、commands、subagents 等配置的目录结构。"}, "keybindings.json": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "settings.json": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "Prompt caching": {"doc": "prompt-caching", "title": "Claude Code 如何使用 prompt caching", "desc": "Prompt caching 使 Claude Code 更快、更经济高效。没有缓存，API 会在每个回合重新处理您的完整历史记录。有了缓存，它会重用已经处理过的内容，只对更改的部分进行新工作。"}, "提示词缓存": {"doc": "prompt-caching", "title": "Claude Code 如何使用 prompt caching", "desc": "Prompt caching 使 Claude Code 更快、更经济高效。没有缓存，API 会在每个回合重新处理您的完整历史记录。有了缓存，它会重用已经处理过的内容，只对更改的部分进行新工作。"}, "提示词库": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类（理解、计划、原型、构建等），帮助快速上手常见任务。"}, "Prompt library": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类（理解、计划、原型、构建等），帮助快速上手常见任务。"}, "提示词": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类，帮助快速上手 Claude Code 常见任务。"}, "auto memory": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "自动记忆": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "后台会话": {"doc": "agent-view", "title": "使用 agent view 管理多个代理", "desc": "Agent view 通过 `claude agents` 打开，是所有后台会话的一个屏幕：什么正在运行、什么需要你的输入、什么已完成。调度新会话，一目了然地查看它们的状态而不是滚动浏览记录，只在需要时才介入。每个后台会话都是一个完整的 Claude Code 对话，在没有终端连接的情况下继续运行，所以你可以随时打开它、回复并离开。"}, "代理视图": {"doc": "agent-view", "title": "使用 agent view 管理多个代理", "desc": "Agent view 通过 `claude agents` 打开，是所有后台会话的一个屏幕：什么正在运行、什么需要你的输入、什么已完成。调度新会话，一目了然地查看它们的状态而不是滚动浏览记录，只在需要时才介入。每个后台会话都是一个完整的 Claude Code 对话，在没有终端连接的情况下继续运行，所以你可以随时打开它、回复并离开。"}, "远程控制": {"doc": "remote-control", "title": "使用 Remote Control 从任何设备继续本地会话", "desc": "Remote Control 处于研究预览阶段，在所有计划中都可用。在 Team 和 Enterprise 上，在所有者在 Claude Code 管理员设置中启用 Remote Control 切换之前，它默认处于关闭状态。"}, "Remote Control": {"doc": "remote-control", "title": "使用 Remote Control 从任何设备继续本地会话", "desc": "Remote Control 处于研究预览阶段，在所有计划中都可用。在 Team 和 Enterprise 上，在所有者在 Claude Code 管理员设置中启用 Remote Control 切换之前，它默认处于关闭状态。"}, "计划任务": {"doc": "scheduled-tasks", "title": "按计划运行提示词", "desc": "计划任务让 Claude 按间隔自动重新运行提示词。使用它们来轮询部署、监督 PR、检查长时间运行的构建，或在会话中稍后提醒自己做某事。要对事件进行实时反应而不是轮询，请参阅 Channels：您的 CI 可以直接将失败推送到会话中。要保持会话工作转向转向直到满足条件而不是按间隔，请参阅 `/goal`。"}, "定期任务": {"doc": "desktop-scheduled-tasks", "title": "在 Claude Code Desktop 中安排定期任务", "desc": "定期任务在您选择的时间和频率自动启动新会话。使用它们进行定期工作，如日常代码审查、依赖项更新检查或从您的日历和收件箱中提取信息的早晨简报。"}, "例程": {"doc": "routines", "title": "使用例程自动化工作", "desc": "Routines 处于研究预览阶段。行为、限制和 API 表面可能会改变。"}, "Routines": {"doc": "routines", "title": "使用例程自动化工作", "desc": "Routines 处于研究预览阶段。行为、限制和 API 表面可能会改变。"}, "代码审查": {"doc": "code-review", "title": "Code Review", "desc": "Code Review 处于研究预览阶段，仅适用于 Team 和 Enterprise 订阅。对于启用了 Zero Data Retention 的组织，此功能不可用。"}, "Code Review": {"doc": "code-review", "title": "Code Review", "desc": "Code Review 处于研究预览阶段，仅适用于 Team 和 Enterprise 订阅。对于启用了 Zero Data Retention 的组织，此功能不可用。"}, "检查点": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "Checkpointing": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "工作流": {"doc": "workflows", "title": "使用动态工作流大规模编排子代理", "desc": "动态工作流需要 Claude Code v2.1.154 或更高版本，在所有付费计划上可用，具有 Anthropic API 访问权限，以及在 Amazon Bedrock、Google Cloud 的 Agent Platform 和 Microsoft Foundry 上可用。在 Pro 上，从 `/config` 中的\"Dynamic workflows\"行启用它们。"}, "Workflows": {"doc": "workflows", "title": "使用动态工作流大规模编排子代理", "desc": "动态工作流需要 Claude Code v2.1.154 或更高版本，在所有付费计划上可用，具有 Anthropic API 访问权限，以及在 Amazon Bedrock、Google Cloud 的 Agent Platform 和 Microsoft Foundry 上可用。在 Pro 上，从 `/config` 中的\"Dynamic workflows\"行启用它们。"}, "最佳实践": {"doc": "best-practices", "title": "Claude Code 最佳实践", "desc": "Claude Code 是一个代理式编码环境。与等待回答问题的聊天机器人不同，Claude Code 可以读取你的文件、运行命令、进行更改，并在你观看、重定向或完全离开的情况下自主解决问题。"}, "Best Practices": {"doc": "best-practices", "title": "Claude Code 最佳实践", "desc": "Claude Code 是一个代理式编码环境。与等待回答问题的聊天机器人不同，Claude Code 可以读取你的文件、运行命令、进行更改，并在你观看、重定向或完全离开的情况下自主解决问题。"}, "交互模式": {"doc": "interactive-mode", "title": "交互模式", "desc": "键盘快捷键"}, "交互式模式": {"doc": "interactive-mode", "title": "交互模式", "desc": "键盘快捷键"}, "常见工作流": {"doc": "common-workflows", "title": "常见工作流程", "desc": "本页收集了日常开发的简短工作流程。有关提示和上下文管理的更高级指导，请参阅最佳实践。"}, "JetBrains": {"doc": "jetbrains", "title": "JetBrains IDEs", "desc": "Claude Code 通过专用插件与 JetBrains IDE 集成，提供交互式差异查看、选择上下文共享等功能。"}, "VS Code": {"doc": "vs-code", "title": "在 VS Code 中使用 Claude Code", "desc": "VS Code 扩展为 Claude Code 提供了原生图形界面，直接集成到您的 IDE 中。这是在 VS Code 中使用 Claude Code 的推荐方式。"}, "GitHub Actions": {"doc": "github-actions", "title": "Claude Code GitHub Actions", "desc": "Claude Code GitHub Actions 为您的 GitHub 工作流带来了 AI 驱动的自动化。只需在任何 PR 或 issue 中简单地提及 `@claude`，Claude 就可以分析您的代码、创建拉取请求、实现功能和修复错误 - 所有这些都遵循您项目的标准。如需在每个 PR 上自动发布评论而无需触发器，请参阅 GitHub Code Review。"}, "GitLab CI": {"doc": "gitlab-ci-cd", "title": "Claude Code GitLab CI/CD", "desc": "Claude Code for GitLab CI/CD 目前处于测试阶段。随着我们完善体验，功能和特性可能会发生变化。"}, "桌面应用": {"doc": "desktop", "title": "Desktop application", "desc": "Claude Desktop 应用有三个选项卡：Chat 用于对话，Cowork 用于 Dispatch 和更长的代理工作，Code 用于软件开发。本页是 Code 选项卡的参考。"}, "计划模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Plan mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "自动模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "auto mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Accept Edits": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "bypassPermissions": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "权限": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "/plugin": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "/mcp": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "/hooks": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "/agents": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "/clear": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/compact": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/config": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "/resume": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/continue": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/fork": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/checkpoint": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "/cost": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/permissions": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "/statusline": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "/keybindings": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "术语表": {"doc": "glossary", "title": "术语表", "desc": "本术语表定义了 Claude Code 术语。每个条目都链接到深入讨论该概念的页面。对于模型级概念（如 tokens、temperature 和 RAG），请参阅平台术语表。"}, "OAuth": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "MCP server": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "MCP Server": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "组织设置": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "托管设置": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "服务器托管": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "快速开始": {"doc": "quickstart", "title": "快速开始", "desc": "本快速开始指南将在几分钟内让您使用 AI 驱动的编码辅助。完成本指南后，您将了解如何使用 Claude Code 完成常见的开发任务。"}, "故障排除": {"doc": "troubleshooting", "title": "故障排除", "desc": "本页涵盖 Claude Code 运行后的性能、稳定性和搜索问题。对于其他问题，请从与您遇到的问题相匹配的页面开始："}, "Troubleshooting": {"doc": "troubleshooting", "title": "故障排除", "desc": "本页涵盖 Claude Code 运行后的性能、稳定性和搜索问题。对于其他问题，请从与您遇到的问题相匹配的页面开始："}, "完整文档": {"doc": "overview", "title": "概述", "desc": "Claude Code 是一个由 AI 驱动的编码助手，可帮助你构建功能、修复错误和自动化开发任务。它理解你的整个代码库，可以跨多个文件和工具工作以完成任务。"}, "概述": {"doc": "overview", "title": "概述", "desc": "Claude Code 是一个由 AI 驱动的编码助手，可帮助你构建功能、修复错误和自动化开发任务。它理解你的整个代码库，可以跨多个文件和工具工作以完成任务。"}};
+  const KW_EXTRA = {"skills": {"doc": "skills", "title": "Skills 技能", "desc": "Claude Code 技能扩展。SKILL.md 提供操作说明，Claude 按需调用完成任务。"}, "Skills": {"doc": "skills", "title": "Skills 技能", "desc": "Claude Code 技能扩展。SKILL.md 提供操作说明，Claude 按需调用完成任务。"}, "skill": {"doc": "skills", "title": "Skill 技能", "desc": "单个技能定义，包含 SKILL.md 说明文件，供 Claude 按需调用。"}, "Hooks": {"doc": "hooks", "title": "Hooks 钩子", "desc": "生命周期钩子。在 Claude Code 操作前后自动运行脚本，如格式化、lint。"}, "hooks": {"doc": "hooks", "title": "Hooks 钩子", "desc": "生命周期钩子。在 Claude Code 操作前后自动运行脚本，如格式化、lint。"}, "hook": {"doc": "hooks", "title": "Hook 钩子", "desc": "单个钩子，监听事件并在操作前后执行命令。"}, "hook 事件": {"doc": "hooks", "title": "Hook 事件", "desc": "钩子可监听的事件，如 PreToolUse、SessionStart 等。"}, "Subagents": {"doc": "sub-agents", "title": "Subagents 子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行，只返回摘要。"}, "subagents": {"doc": "sub-agents", "title": "子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行。"}, "subagent": {"doc": "sub-agents", "title": "子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行。"}, "agent team": {"doc": "agents", "title": "Agent team 代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "agent teams": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "Agent teams": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "代理团队": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "Plugins": {"doc": "plugins", "title": "Plugins 插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包，可共享给团队。"}, "plugins": {"doc": "plugins", "title": "插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包。"}, "plugin": {"doc": "plugins", "title": "插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包。"}, "MCP servers": {"doc": "mcp", "title": "MCP 服务器", "desc": "通过 Model Context Protocol 连接外部工具与数据源的服务器。"}, "MCP 服务器": {"doc": "mcp", "title": "MCP 服务器", "desc": "通过 Model Context Protocol 连接外部工具与数据源的服务器。"}, "Amazon Bedrock": {"doc": "third-party-integrations", "title": "Amazon Bedrock", "desc": "AWS 托管 AI 平台，可运行 Claude 模型并接入 Claude Code。"}, "Microsoft Foundry": {"doc": "third-party-integrations", "title": "Microsoft Foundry", "desc": "微软云 AI 平台，提供模型托管服务，支持 Claude Code 接入。"}, "Claude apps gateway": {"doc": "desktop", "title": "Claude apps gateway", "desc": "Anthropic 官方网关，管理桌面端与网络服务的连接。"}, "Agent SDK": {"doc": "agent-sdk_overview", "title": "Claude Agent SDK", "desc": "官方工具包，用于以编程方式构建和集成 Claude Code 代理。"}, "动态工作流": {"doc": "workflows", "title": "动态工作流", "desc": "通过 JSON/JS 定义步骤，让 Claude 编排子代理执行复杂任务。"}, "LLM 网关": {"doc": "third-party-integrations", "title": "LLM 网关", "desc": "大模型网关，统一路由、代理和管控 LLM API 请求的中间层。"}, "自动内存": {"doc": "memory", "title": "自动内存", "desc": "自动将重要信息写入记忆文档，跨会话保持上下文连续。"}, "Slack": {"doc": "slack", "title": "Slack", "desc": "协作平台。可通过 Claude Code 集成在 Slack 中运行 AI 代理。"}, "Dispatch": {"doc": "desktop", "title": "Dispatch", "desc": "桌面应用功能，将任务分派给代理在后台执行。"}, "Desktop": {"doc": "desktop", "title": "桌面应用", "desc": "Claude Code 桌面应用，提供 Chat、Cowork、Code 图形界面。"}, "Channels": {"doc": "channels", "title": "Channels 频道", "desc": "将 Claude Code 会话接入 Telegram、Discord 等平台的插件系统。"}, "Sandboxing": {"doc": "settings", "title": "沙箱", "desc": "限制 Bash 工具访问范围的安全隔离机制。"}, "沙箱": {"doc": "settings", "title": "沙箱", "desc": "限制工具文件系统访问的安全隔离环境。"}, "非交互模式": {"doc": "cli-reference", "title": "非交互模式", "desc": "通过 -p 参数在脚本中无交互运行 Claude Code，适合自动化。"}, "快速模式": {"doc": "settings", "title": "快速模式", "desc": "提高速率限制的付费模式，响应速度更快。"}, "Plan Mode": {"doc": "permission-modes", "title": "计划模式", "desc": "只分析不执行，先产出修改方案供确认再动手。"}, "Auto mode": {"doc": "permission-modes", "title": "自动模式", "desc": "自动批准低风险操作，减少交互打断，提升效率。"}, "状态行": {"doc": "statusline", "title": "状态行", "desc": "可自定义的底部状态栏，显示上下文、成本等信息。"}, "工具搜索": {"doc": "mcp", "title": "MCP 工具搜索", "desc": "让 Claude 按需搜索并发现更多 MCP 工具，扩展能力。"}, "扩展思考": {"doc": "common-workflows", "title": "扩展思考", "desc": "让 Claude 回答前进行更深入的多步推理，提升复杂问题准确率。"}, "计算机使用": {"doc": "computer-use", "title": "计算机使用", "desc": "让 Claude 控制屏幕、操作应用的实验性功能。"}, "云会话": {"doc": "claude-code-on-the-web", "title": "云会话", "desc": "在 Anthropic 云端运行的 Claude Code 会话。"}, "第三方提供商": {"doc": "third-party-integrations", "title": "第三方提供商", "desc": "通过兼容 API 使用非 Anthropic 模型的服务商。"}, "身份验证": {"doc": "settings", "title": "身份验证", "desc": "Claude Code 登录与凭证验证机制。"}, "网络配置": {"doc": "settings", "title": "网络配置", "desc": "Claude Code 访问网络端点与代理的设置。"}, "语音听写": {"doc": "desktop", "title": "语音听写", "desc": "通过语音转文字向 Claude 下达指令。"}, "权限规则": {"doc": "permission-modes", "title": "权限规则", "desc": "定义允许、询问、拒绝操作的规则。"}, "输出样式": {"doc": "settings", "title": "输出样式", "desc": "自定义 Claude 回复格式的样式文件。"}, "工作量级别": {"doc": "settings", "title": "工作量级别", "desc": "控制模型推理深度的设置。"}, "努力级别": {"doc": "settings", "title": "努力级别", "desc": "控制模型推理深度的设置。"}, "Worktrees": {"doc": "common-workflows", "title": "Git worktree", "desc": "Git 并行工作树，支持多会话同时开发互不干扰。"}, "git worktree": {"doc": "common-workflows", "title": "Git worktree", "desc": "Git 并行工作树，支持多会话同时开发互不干扰。"}, "后台代理": {"doc": "agent-view", "title": "后台代理", "desc": "在后台运行、无需终端连接的 Claude Code 会话。"}, "自动修复": {"doc": "github-actions", "title": "自动修复", "desc": "Claude 自动修复 PR 或代码问题并提交。"}, "顾问工具": {"doc": "code-review", "title": "顾问工具", "desc": "提供代码审查建议的辅助工具。"}, "SSH": {"doc": "remote-control", "title": "SSH", "desc": "安全外壳协议，用于远程连接与加密通信。"}, "连接器": {"doc": "channels", "title": "连接器", "desc": "Claude 连接外部工具和数据源的官方集成。"}, "Artifact": {"doc": "desktop", "title": "Artifact 工件", "desc": "Claude 生成的可共享成果物。"}, "管理会话": {"doc": "sessions", "title": "会话管理", "desc": "保存、恢复、分叉 Claude Code 对话。"}, "命令参考": {"doc": "commands", "title": "命令参考", "desc": "Claude Code 斜杠命令的说明文档。"}, "插件参考": {"doc": "plugins-reference", "title": "插件参考", "desc": "插件组件与配置的参考文档。"}, "自适应推理": {"doc": "settings", "title": "自适应推理", "desc": "根据任务难度动态调整模型推理强度。"}, "环境缓存": {"doc": "settings", "title": "环境缓存", "desc": "缓存已验证的脚本环境，加快工具执行。"}, "扩展上下文": {"doc": "context-window", "title": "扩展上下文", "desc": "增大上下文窗口容量，处理更长内容。"}, "内置命令": {"doc": "commands", "title": "内置命令", "desc": "Claude Code 自带的斜杠命令。"}, "权限设置": {"doc": "permission-modes", "title": "权限设置", "desc": "控制 Claude 操作权限的配置。"}, "环境": {"doc": "env-vars", "title": "环境", "desc": "影响 Claude Code 运行的系统环境配置。"}, "Chrome": {"doc": "chrome", "title": "Chrome 扩展", "desc": "Claude in Chrome 浏览器扩展，在网页中调用 Claude。"}, "iOS": {"doc": "desktop", "title": "iOS 应用", "desc": "Claude 移动端应用，支持远程控制与推送。"}, "Android": {"doc": "desktop", "title": "Android 应用", "desc": "Claude 移动端应用，支持远程控制与推送。"}, "网页": {"doc": "claude-code-on-the-web", "title": "Claude Code 网页版", "desc": "在浏览器中使用的 Claude Code，无需安装 CLI，登录即用。"}, "GitLab": {"doc": "gitlab-ci-cd", "title": "GitLab", "desc": "代码托管平台。可通过 GitLab CI/CD 集成 Claude Code 实现自动化。"}, "CI/CD": {"doc": "github-actions", "title": "CI/CD", "desc": "持续集成/持续交付，自动化完成构建、测试和部署的流水线。"}, "终端 CLI": {"doc": "cli-reference", "title": "终端 CLI", "desc": "命令行界面工具，在终端中直接运行 Claude Code 管理项目。"}, "终端指南": {"doc": "overview", "title": "终端指南", "desc": "终端基础使用入门，介绍如何用命令行操作 Claude Code。"}, "Claude Console": {"doc": "overview", "title": "Anthropic 控制台", "desc": "Anthropic 官方控制台，管理 API 密钥、查看用量和账单。"}, "Claude 订阅": {"doc": "overview", "title": "Claude 订阅", "desc": "Claude 付费套餐（Pro/Max/Team/Enterprise），解锁全部功能。"}, "支持的云提供商": {"doc": "third-party-integrations", "title": "支持的云提供商", "desc": "Amazon Bedrock、Google Cloud 等可托管并运行 Claude 模型的云平台。"}, "凭证管理": {"doc": "settings", "title": "凭证管理", "desc": "管理 API 密钥、登录凭证和身份验证的机制。"}, "Git for Windows": {"doc": "settings", "title": "Git for Windows", "desc": "Windows 版 Git，安装后 Claude Code 可使用 Bash 工具。"}, "Discord": {"doc": "channels", "title": "Discord", "desc": "社区平台。可通过 Channels 插件在 Discord 中使用 Claude Code。"}, "所有界面": {"doc": "overview", "title": "所有界面", "desc": "Claude Code 的多种使用方式：终端、IDE、桌面应用、网页等。"}, "Amazon Bedrock、Google Cloud 的 Agent Platform 或 Microsoft Foundry": {"doc": "third-party-integrations", "title": "三大云平台", "desc": "AWS、谷歌云、微软云三大平台，均可托管 Claude 模型接入 Claude Code。"}, "Claude Pro、Max、Team 或 Enterprise": {"doc": "overview", "title": "Claude 订阅套餐", "desc": "Claude 的付费订阅层级，提供不同额度的模型访问与功能。"}, "Troubleshoot installation": {"doc": "troubleshoot-install", "title": "安装故障排除", "desc": "安装 Claude Code 出错时的排查指南与替代安装方法。"}, "终端": {"doc": "cli-reference", "title": "终端", "desc": "命令行环境，Claude Code 的主要使用场景。"}, "GitHub Actions": {"doc": "github-actions", "title": "GitHub Actions", "desc": "GitHub 的 CI/CD 自动化平台，可集成 Claude Code 自动审查和修复。"}, "JetBrains IDE": {"doc": "jetbrains", "title": "JetBrains IDE", "desc": "JetBrains 系列 IDE（IDEA、PyCharm 等）的 Claude Code 插件。"}, "apt, dnf, or apk": {"doc": "setup", "title": "Linux 包管理器", "desc": "Linux 包管理器：apt 用于 Debian/Ubuntu，dnf 用于 Fedora。"}, "CLI 参考": {"doc": "cli-reference", "title": "CLI 参考", "desc": "Claude Code 命令行参考，列出全部命令、参数与用法。"}};
+let kwTimer = null;
+function showKw(kw) {
+  const d = KW_DATA[kw] || KW_EXTRA[kw];
+  if (!d) {
+    document.getElementById('kwpBadge').textContent = kw;
+    document.getElementById('kwpTitle').textContent = kw;
+    document.getElementById('kwpDesc').textContent = '暂无该词条详细解释，可前往官方文档查阅。';
+    document.getElementById('kwpLink').style.display = 'none';
+    const panel = document.getElementById('kwPanel');
+    panel.style.width = '320px';
+    panel.classList.add('open');
+    const bar = document.getElementById('kwBar');
+    bar.style.transition = 'none';
+    bar.style.width = '100%';
+    void bar.offsetWidth;
+    bar.style.transition = 'width 4s linear';
+    bar.style.width = '0%';
+    clearTimeout(kwTimer);
+    kwTimer = setTimeout(hideKw, 4000);
+    return;
+  }
+  document.getElementById('kwpBadge').textContent = kw;
+  document.getElementById('kwpTitle').textContent = d.title;
+  document.getElementById('kwpDesc').textContent = d.desc;
+  var _kwpPfx = location.pathname.indexOf('/doc/') !== -1 || location.pathname.endsWith('/doc/') ? '' : 'doc/';
+  document.getElementById('kwpLink').style.display = '';
+  document.getElementById('kwpLink').href = _kwpPfx + d.doc + '.html';
+  // 弹窗宽度随内容自适应（280-480px）
+  const panel = document.getElementById('kwPanel');
+  const estW = Math.min(480, Math.max(300, 280 + d.desc.length * 0.5));
+  panel.style.width = estW + 'px';
+  // 进度条时长按文本长度：每55字1秒，限4-14秒
+  const dur = Math.min(14, Math.max(4, Math.round(d.desc.length / 55)));
+  panel.classList.add('open');
+  // 重置进度条动画
+  const bar = document.getElementById('kwBar');
+  bar.style.transition = 'none';
+  bar.style.width = '100%';
+  void bar.offsetWidth;
+  bar.style.transition = 'width ' + dur + 's linear';
+  bar.style.width = '0%';
+  clearTimeout(kwTimer);
+  kwTimer = setTimeout(hideKw, dur * 1000);
+}
+function hideKw() {
+  document.getElementById('kwPanel').classList.remove('open');
+  clearTimeout(kwTimer);
+}
+
+// ===== 错误汇报 =====
+function openRpt() {
+  var page = location.pathname.split('/').pop() || 'index.html';
+  document.getElementById('rptPage').textContent = page;
+  document.getElementById('rptDesc').value = '';
+  document.getElementById('rptContact').value = '';
+  document.getElementById('rptForm').style.display = '';
+  document.getElementById('rptOk').style.display = 'none';
+  document.getElementById('rptOverlay').classList.add('show');
+}
+function closeRpt() {
+  document.getElementById('rptOverlay').classList.remove('show');
+}
+function submitRpt() {
+  var desc = document.getElementById('rptDesc').value.trim();
+  if (!desc) { document.getElementById('rptDesc').focus(); return; }
+  var btn = document.getElementById('rptBtn');
+  btn.disabled = true; btn.textContent = '提交中...';
+  var payload = {
+    page: document.getElementById('rptPage').textContent,
+    desc: desc,
+    contact: document.getElementById('rptContact').value.trim(),
+    time: new Date().toLocaleString('zh-CN', {hour12:false}),
+    user_agent: navigator.userAgent
+  };
+  fetch('/api/report', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  }).then(function(r){ return r.json(); }).then(function(d) {
+    btn.disabled = false; btn.textContent = '提交汇报';
+    document.getElementById('rptForm').style.display = 'none';
+    document.getElementById('rptOk').style.display = 'block';
+    setTimeout(closeRpt, 1800);
+  }).catch(function(e) {
+    btn.disabled = false; btn.textContent = '提交汇报';
+    alert('汇报失败，请重试：' + e);
+  });
+}
+</script>
+<!-- 错误汇报弹窗 -->
+<div class="rpt-overlay" id="rptOverlay" onclick="if(event.target===this)closeRpt()">
+  <div class="rpt-modal">
+    <div class="rpt-head">
+      <span class="rpt-title"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9 9v-1a3 3 0 0 1 6 0v1" /> <path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /> <path d="M3 13l4 0" /> <path d="M17 13l4 0" /> <path d="M12 20l0 -6" /> <path d="M4 19l3.35 -2" /> <path d="M20 19l-3.35 -2" /> <path d="M4 7l3.75 2.4" /> <path d="M20 7l-3.75 2.4" /> </svg></span> 文档有误？向服务器汇报！</span>
+      <button class="rpt-close" onclick="closeRpt()">×</button>
+    </div>
+    <div class="rpt-body" id="rptForm">
+      <div class="rpt-field">
+        <label>问题页面</label>
+        <div class="rpt-page" id="rptPage"></div>
+      </div>
+      <div class="rpt-field">
+        <label>问题描述</label>
+        <textarea id="rptDesc" placeholder="请描述你发现的问题：哪个词错了？哪里跳转不对？内容过时了？"></textarea>
+      </div>
+      <div class="rpt-field">
+        <label>联系方式（选填）</label>
+        <input id="rptContact" type="text" placeholder="QQ号 / 邮箱等，方便反馈处理结果">
+      </div>
+      <div class="rpt-tip">提交后内容会发送到服务器 reports/ 目录，管理员会尽快处理喵~</div>
+      <button class="rpt-submit" id="rptBtn" onclick="submitRpt()">提交汇报</button>
+    </div>
+    <div class="rpt-ok" id="rptOk" style="display:none;">
+      <div class="rpt-ok-icon"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span></div>
+      <div class="rpt-ok-title">汇报成功！</div>
+      <div class="rpt-ok-desc">感谢主人的反馈，问题已记录到服务器</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

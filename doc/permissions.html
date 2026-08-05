@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f1117">
+<title>配置权限 - Claude Code 知识库</title>
+<style>
+:root {
+  --bg: #0f1117; --bg2: #16181f; --card: #1b1e26; --card2: #20242e;
+  --border: #2a2e3a; --text: #e2e4ea; --text2: #9aa0ad; --muted: #6b7280;
+  --accent: #8b7cff; --accent2: #a99dff; --code-bg: #0c0e13;
+  --kw-bg: rgba(139,124,255,0.15); --kw-hover: rgba(139,124,255,0.28);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { scroll-behavior:smooth; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); }
+.icon { display:inline-flex; vertical-align:-0.2em; width:1.1em; height:1.1em; margin-right:6px; }
+.icon svg { width:100%; height:100%; }
+.progress-bar { position:fixed; top:0; left:0; height:3px; background:var(--accent); width:0%; z-index:300; transition:width 0.1s linear; }
+.topbar { position:fixed; top:0; left:0; right:0; z-index:200; background:rgba(22,24,31,0.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 12px; height:52px; }
+.topbar .tb-home { display:flex; align-items:center; color:var(--text2); text-decoration:none; font-size:14px; padding:6px 10px; border-radius:8px; }
+.topbar .tb-home:hover { color:var(--text); background:var(--card2); }
+.topbar .tb-title { flex:1; text-align:center; font-size:15px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 10px; }
+.topbar .tb-toc { background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:13px; display:flex; align-items:center; }
+.topbar .tb-toc:hover { color:var(--text); border-color:var(--accent); }
+.reader { display:flex; padding-top:52px; min-height:100vh; }
+.toc-side { width:240px; flex-shrink:0; position:sticky; top:52px; height:calc(100vh - 52px); overflow-y:auto; padding:20px 12px; border-right:1px solid var(--border); background:var(--bg); display:none; }
+.toc-side h3 { font-size:13px; color:var(--muted); margin-bottom:10px; padding-left:8px; letter-spacing:1px; }
+.toc-side a { display:block; color:var(--text2); text-decoration:none; padding:6px 8px; border-radius:6px; font-size:13px; line-height:1.5; border-left:2px solid transparent; }
+.toc-side a:hover { color:var(--text); background:var(--card2); border-left-color:var(--accent); }
+.toc-drawer { position:fixed; top:0; right:-300px; width:280px; max-width:85vw; height:100vh; background:var(--bg2); z-index:250; transition:right 0.25s ease; overflow-y:auto; padding:70px 16px 30px; border-left:1px solid var(--border); }
+.toc-drawer.open { right:0; }
+.toc-drawer h3 { font-size:14px; color:var(--muted); margin-bottom:12px; }
+.toc-drawer a { display:block; color:var(--text2); text-decoration:none; padding:8px 6px; border-radius:6px; font-size:14px; line-height:1.5; }
+.toc-drawer a:hover { color:var(--text); background:var(--card2); }
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:240; display:none; }
+.overlay.show { display:block; }
+.article { flex:1; max-width:760px; margin:0 auto; padding:40px 24px 80px; min-width:0; }
+.article h1 { font-size:26px; margin-bottom:6px; line-height:1.4; }
+.article .doc-meta { color:var(--muted); font-size:13px; margin-bottom:28px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+.article h2 { font-size:21px; margin:36px 0 14px; color:var(--text); line-height:1.4; }
+.article h3 { font-size:18px; margin:28px 0 12px; color:var(--text); }
+.article h4 { font-size:16px; margin:22px 0 10px; color:var(--accent2); }
+.article p { font-size:16.5px; line-height:1.95; margin:14px 0; color:var(--text); }
+.article li { margin-left:24px; line-height:1.9; font-size:16px; color:var(--text); }
+.article a { color:#a78bfa; text-decoration:underline; text-underline-offset:3px; transition:color 0.15s; }
+.article a:hover { color:#c4b5fd; }
+.article a:visited { color:#a78bfa; }
+.article a.kw { color:#c4b5fd; text-decoration:none; }
+.article blockquote { border-left:4px solid var(--accent); padding:10px 16px; background:rgba(139,124,255,0.08); margin:16px 0; color:var(--text2); font-size:15px; border-radius:0 8px 8px 0; }
+.article pre { background:var(--code-bg); color:#d5d8e0; padding:16px 18px; border-radius:10px; overflow-x:auto; -webkit-overflow-scrolling:touch; font-size:13.5px; line-height:1.7; margin:16px 0; white-space:pre; border:1px solid var(--border); }
+.article code { font-family:"JetBrains Mono",Consolas,monospace; }
+.article .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; margin:16px 0; border-radius:8px; border:1px solid var(--border); }
+.article table { width:100%; border-collapse:collapse; font-size:14px; min-width:420px; }
+.article th, .article td { border-bottom:1px solid var(--border); padding:9px 12px; text-align:left; color:var(--text); line-height:1.7; }
+.article th { background:var(--card2); color:var(--accent2); }
+.kw { color:#c4b5fd; background:var(--kw-bg); border-bottom:1px dashed var(--accent); padding:1px 4px; border-radius:4px; text-decoration:none; cursor:pointer; font-weight:500; transition:all 0.15s; }
+.kw:hover { background:var(--kw-hover); color:#fff; }
+.pager { max-width:760px; margin:0 auto; padding:0 24px 60px; display:flex; gap:12px; }
+.pager a { flex:1; display:block; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 18px; text-decoration:none; transition:0.2s; }
+.pager a:hover { border-color:var(--accent); transform:translateY(-2px); }
+.pager .dir { font-size:12px; color:var(--muted); display:block; margin-bottom:6px; }
+.pager .ptitle { font-size:15px; color:var(--text); font-weight:600; display:block; }
+.pager a.next { text-align:right; }
+.pager a:empty { display:none; }
+.scroll-top { position:fixed; right:16px; bottom:20px; width:44px; height:44px; border-radius:50%; background:var(--card2); color:var(--text); border:1px solid var(--border); box-shadow:0 3px 12px rgba(0,0,0,0.4); display:none; z-index:90; align-items:center; justify-content:center; cursor:pointer; }
+.scroll-top.show { display:flex; }
+.scroll-top .icon { margin:0; width:1.4em; height:1.4em; }
+
+.hamburger { background:none; border:none; color:var(--text); cursor:pointer; padding:8px; line-height:1; display:inline-flex; align-items:center; }
+.topbar .logo { display:flex; align-items:center; font-weight:700; font-size:15px; color:var(--text); flex-shrink:0; }
+.topbar .logo .icon { color:var(--accent); }
+.drawer { position:fixed; top:0; left:0; bottom:0; width:250px; background:var(--bg2); color:var(--text); z-index:250; transform:translateX(-100%); transition:transform 0.25s ease; overflow-y:auto; padding-top:60px; border-right:1px solid var(--border); }
+.drawer.open { transform:translateX(0); }
+.drawer nav a { display:flex; align-items:center; padding:12px 20px; color:var(--text2); text-decoration:none; font-size:15px; }
+.drawer nav a:hover, .drawer nav a:active { color:var(--text); background:var(--card2); }
+.drawer a { display:block; color:var(--text2); text-decoration:none; padding:7px 20px; font-size:13.5px; line-height:1.5; }
+.drawer a:hover { color:var(--text); background:var(--card2); }
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:240; display:none; }
+.overlay.show { display:block; }
+
+
+/* ===== MDX组件样式 ===== */
+.card-group { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin:16px 0; }
+.mg-card { display:flex; align-items:flex-start; gap:10px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; text-decoration:none; transition:0.2s; }
+.mg-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+.mg-icon { font-size:20px; flex-shrink:0; color:var(--accent); }
+.mg-card-title { font-size:14px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.mg-card-desc { font-size:12.5px; color:var(--text2); line-height:1.5; }
+.callout { border-left:4px solid var(--accent); padding:10px 16px; margin:14px 0; border-radius:0 8px 8px 0; font-size:14.5px; line-height:1.7; color:var(--text2); }
+.callout-tip { border-left-color:#4caf50; background:rgba(76,175,80,0.08); }
+.callout-note { border-left-color:#42a5f5; background:rgba(66,165,245,0.08); }
+.callout-warning { border-left-color:#ff9800; background:rgba(255,152,0,0.08); }
+.callout-info { border-left-color:#8b7cff; background:rgba(139,124,255,0.08); }
+.steps { list-style:none; counter-reset:step; margin:16px 0; padding:0; }
+.steps > li { position:relative; padding:0 0 16px 44px; margin:0; }
+.steps > li::before { counter-increment:step; content:counter(step); position:absolute; left:0; top:2px; width:28px; height:28px; border-radius:50%; background:var(--accent); color:#fff; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.step-title { font-weight:600; color:var(--text); margin-bottom:6px; font-size:15px; }
+.tabs { margin:16px 0; }
+.tab-item { background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:10px; overflow:hidden; }
+.tab-label { padding:9px 14px; font-size:13px; font-weight:600; color:var(--accent2); background:var(--card2); border-bottom:1px solid var(--border); }
+.tab-body { padding:12px 14px; }
+.acc-group { margin:16px 0; }
+.acc { background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; overflow:hidden; }
+.acc summary { padding:12px 16px; cursor:pointer; font-size:14px; font-weight:600; color:var(--text); }
+.acc summary:hover { background:var(--card2); }
+.acc[open] summary { border-bottom:1px solid var(--border); }
+.article kbd { background:var(--card2); border:1px solid var(--border); border-bottom-width:2px; border-radius:5px; padding:1px 7px; font-size:12px; font-family:inherit; color:var(--text); }
+
+
+.dot { display:inline-block; width:0.85em; height:0.85em; border-radius:50%; vertical-align:-0.1em; margin:0 2px; }
+.dot-red { background:#f03e3e; }
+.dot-yellow { background:#f59f00; }
+.dot-purple { background:#9c36b5; }
+
+@media (min-width: 1024px) { .toc-side { display:block; } .tb-toc { display:none; } }
+@media (max-width: 1023px) { .article { padding:32px 18px 60px; } .article p { font-size:16px; } }
+
+
+/* ===== 关键词弹窗 ===== */
+.kw-panel { position:fixed; left:0; top:50%; transform:translate(-110%,-50%); z-index:400; background:var(--card); border:1px solid var(--accent); border-left:none; border-radius:0 16px 16px 0; box-shadow:0 8px 40px rgba(0,0,0,0.6); transition:transform 0.35s cubic-bezier(0.22,1,0.36,1); max-height:70vh; display:flex; flex-direction:column; }
+.kw-panel.open { transform:translate(0,-50%); }
+.kw-panel .kwp-head { display:flex; align-items:center; gap:8px; padding:14px 18px 10px; border-bottom:1px solid var(--border); }
+.kw-panel .kwp-badge { background:var(--kw-bg); color:var(--accent2); font-size:12px; font-weight:700; padding:3px 10px; border-radius:10px; flex-shrink:0; }
+.kw-panel .kwp-title { font-size:15px; font-weight:600; color:var(--text); flex:1; line-height:1.4; }
+.kw-panel .kwp-close { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:0 4px; line-height:1; flex-shrink:0; }
+.kw-panel .kwp-close:hover { color:var(--text); }
+.kw-panel .kwp-body { padding:14px 18px; overflow-y:auto; flex:1; }
+.kw-panel .kwp-desc { font-size:14px; line-height:1.8; color:var(--text2); }
+.kw-panel .kwp-link { display:inline-flex; align-items:center; margin-top:12px; color:var(--accent2); text-decoration:none; font-size:13px; font-weight:600; }
+.kw-panel .kwp-link:hover { color:var(--accent); }
+.kw-panel .kwp-bar-wrap { height:4px; background:var(--card2); border-radius:0 0 16px 0; overflow:hidden; flex-shrink:0; }
+.kw-panel .kwp-bar { height:100%; width:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:0 0 16px 0; }
+/* ===== 错误汇报 ===== */
+.btn-report { display:inline-flex; align-items:center; gap:4px; background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12.5px; transition:0.15s; }
+.btn-report:hover { color:var(--text); border-color:var(--accent); background:var(--card2); }
+.rpt-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:500; display:none; align-items:center; justify-content:center; padding:20px; }
+.rpt-overlay.show { display:flex; }
+.rpt-modal { background:var(--card); border:1px solid var(--accent); border-radius:16px; width:100%; max-width:460px; box-shadow:0 20px 60px rgba(0,0,0,0.7); overflow:hidden; }
+.rpt-head { display:flex; align-items:center; gap:8px; padding:16px 20px; border-bottom:1px solid var(--border); }
+.rpt-head .rpt-title { font-size:16px; font-weight:700; color:var(--text); flex:1; }
+.rpt-close { background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1; }
+.rpt-close:hover { color:var(--text); }
+.rpt-body { padding:18px 20px; }
+.rpt-field { margin-bottom:14px; }
+.rpt-field label { display:block; font-size:13px; color:var(--text2); margin-bottom:6px; }
+.rpt-field .rpt-page { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:13px; color:var(--accent2); word-break:break-all; }
+.rpt-field input, .rpt-field textarea { width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:14px; color:var(--text); font-family:inherit; resize:vertical; }
+.rpt-field input:focus, .rpt-field textarea:focus { outline:none; border-color:var(--accent); }
+.rpt-field textarea { min-height:90px; }
+.rpt-tip { font-size:12px; color:var(--muted); margin-top:4px; }
+.rpt-submit { width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px; font-size:15px; font-weight:600; cursor:pointer; transition:0.15s; }
+.rpt-submit:hover { background:var(--accent2); }
+.rpt-submit:disabled { opacity:0.5; cursor:not-allowed; }
+.rpt-ok { text-align:center; padding:30px 20px; }
+.rpt-ok .rpt-ok-icon { font-size:42px; margin-bottom:12px; }
+.rpt-ok .rpt-ok-title { font-size:17px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.rpt-ok .rpt-ok-desc { font-size:13px; color:var(--text2); }
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar"></div>
+<header class="topbar">
+  <span class="logo"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6l0 13" /> <path d="M12 6l0 13" /> <path d="M21 6l0 13" /> </svg></span>Claude Code 知识库</span>
+  <div class="tb-title">配置权限</div>
+  <button class="hamburger" onclick="toggleDrawer()" aria-label="菜单"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M4 6l16 0" /> <path d="M4 12l16 0" /> <path d="M4 18l16 0" /> </svg></span></button>
+</header>
+<aside class="drawer" id="drawer">
+  <nav>
+    <a href="../index.html" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l-2 0l9 -9l9 9l-2 0" /> <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /> <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /> </svg></span>返回首页</a>
+    <a href="../index.html#index" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>文档索引</a>
+    <a href="../index.html#manual" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M19 4v16h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12" /> <path d="M19 16h-12a2 2 0 0 0 -2 2" /> <path d="M9 8h6" /> </svg></span>入门手册</a>
+    <a href="../index.html#docs" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>全部文档</a>
+    <a href="#" onclick="closeDrawer();openRpt()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9 9v-1a3 3 0 0 1 6 0v1" /> <path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /> <path d="M3 13l4 0" /> <path d="M17 13l4 0" /> <path d="M12 20l0 -6" /> <path d="M4 19l3.35 -2" /> <path d="M20 19l-3.35 -2" /> <path d="M4 7l3.75 2.4" /> <path d="M20 7l-3.75 2.4" /> </svg></span>文档有误？汇报</a>
+  </nav>
+  <div style="margin:14px 20px 6px;font-size:12px;color:var(--muted);letter-spacing:1px;">本文目录</div>
+  <a href="#sec-permissions-1" style="padding-left:0px;font-size:13px;">配置权限</a>
+<a href="#sec-permissions-2" style="padding-left:14px;font-size:13.5px;">权限系统</a>
+<a href="#sec-permissions-3" style="padding-left:14px;font-size:13.5px;">管理权限</a>
+<a href="#sec-permissions-4" style="padding-left:14px;font-size:13.5px;">权限模式</a>
+<a href="#sec-permissions-5" style="padding-left:14px;font-size:13.5px;">权限规则语法</a>
+<a href="#sec-permissions-6" style="padding-left:28px;font-size:13px;">匹配工具的所有使用</a>
+<a href="#sec-permissions-7" style="padding-left:28px;font-size:13px;">使用说明符进行细粒度控制</a>
+<a href="#sec-permissions-8" style="padding-left:28px;font-size:13px;">按输入参数匹配</a>
+<a href="#sec-permissions-9" style="padding-left:28px;font-size:13px;">通配符模式</a>
+<a href="#sec-permissions-10" style="padding-left:28px;font-size:13px;">工具名称通配符</a>
+<a href="#sec-permissions-11" style="padding-left:14px;font-size:13.5px;">工具特定的权限规则</a>
+<a href="#sec-permissions-12" style="padding-left:28px;font-size:13px;">Bash</a>
+<a href="#sec-permissions-13" style="padding-left:42px;font-size:13px;">复合命令</a>
+<a href="#sec-permissions-14" style="padding-left:42px;font-size:13px;">进程包装器</a>
+<a href="#sec-permissions-15" style="padding-left:42px;font-size:13px;">只读命令</a>
+<a href="#sec-permissions-16" style="padding-left:28px;font-size:13px;">PowerShell</a>
+<a href="#sec-permissions-17" style="padding-left:28px;font-size:13px;">Read 和 Edit</a>
+<a href="#sec-permissions-18" style="padding-left:28px;font-size:13px;">WebFetch</a>
+<a href="#sec-permissions-19" style="padding-left:28px;font-size:13px;">MCP</a>
+<a href="#sec-permissions-20" style="padding-left:28px;font-size:13px;">Agent（subagents）</a>
+<a href="#sec-permissions-21" style="padding-left:28px;font-size:13px;">Cd</a>
+<a href="#sec-permissions-22" style="padding-left:14px;font-size:13.5px;">使用 hooks 扩展权限</a>
+<a href="#sec-permissions-23" style="padding-left:14px;font-size:13.5px;">工作目录</a>
+<a href="#sec-permissions-24" style="padding-left:28px;font-size:13px;">其他目录授予文件访问权限，而不是配置</a>
+<a href="#sec-permissions-25" style="padding-left:14px;font-size:13.5px;">权限如何与沙箱交互</a>
+<a href="#sec-permissions-26" style="padding-left:14px;font-size:13.5px;">托管设置</a>
+<a href="#sec-permissions-27" style="padding-left:28px;font-size:13px;">仅托管设置</a>
+<a href="#sec-permissions-28" style="padding-left:14px;font-size:13.5px;">设置优先级</a>
+<a href="#sec-permissions-29" style="padding-left:14px;font-size:13.5px;">项目允许规则和工作区信任</a>
+<a href="#sec-permissions-30" style="padding-left:14px;font-size:13.5px;">示例配置</a>
+<a href="#sec-permissions-31" style="padding-left:14px;font-size:13.5px;">另请参见</a>
+</aside>
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+
+<div class="reader">
+  <aside class="toc-side">
+    <h3>本文目录</h3>
+    <a href="#sec-permissions-1" style="padding-left:0px;font-size:13px;">配置权限</a>
+<a href="#sec-permissions-2" style="padding-left:14px;font-size:13.5px;">权限系统</a>
+<a href="#sec-permissions-3" style="padding-left:14px;font-size:13.5px;">管理权限</a>
+<a href="#sec-permissions-4" style="padding-left:14px;font-size:13.5px;">权限模式</a>
+<a href="#sec-permissions-5" style="padding-left:14px;font-size:13.5px;">权限规则语法</a>
+<a href="#sec-permissions-6" style="padding-left:28px;font-size:13px;">匹配工具的所有使用</a>
+<a href="#sec-permissions-7" style="padding-left:28px;font-size:13px;">使用说明符进行细粒度控制</a>
+<a href="#sec-permissions-8" style="padding-left:28px;font-size:13px;">按输入参数匹配</a>
+<a href="#sec-permissions-9" style="padding-left:28px;font-size:13px;">通配符模式</a>
+<a href="#sec-permissions-10" style="padding-left:28px;font-size:13px;">工具名称通配符</a>
+<a href="#sec-permissions-11" style="padding-left:14px;font-size:13.5px;">工具特定的权限规则</a>
+<a href="#sec-permissions-12" style="padding-left:28px;font-size:13px;">Bash</a>
+<a href="#sec-permissions-13" style="padding-left:42px;font-size:13px;">复合命令</a>
+<a href="#sec-permissions-14" style="padding-left:42px;font-size:13px;">进程包装器</a>
+<a href="#sec-permissions-15" style="padding-left:42px;font-size:13px;">只读命令</a>
+<a href="#sec-permissions-16" style="padding-left:28px;font-size:13px;">PowerShell</a>
+<a href="#sec-permissions-17" style="padding-left:28px;font-size:13px;">Read 和 Edit</a>
+<a href="#sec-permissions-18" style="padding-left:28px;font-size:13px;">WebFetch</a>
+<a href="#sec-permissions-19" style="padding-left:28px;font-size:13px;">MCP</a>
+<a href="#sec-permissions-20" style="padding-left:28px;font-size:13px;">Agent（subagents）</a>
+<a href="#sec-permissions-21" style="padding-left:28px;font-size:13px;">Cd</a>
+<a href="#sec-permissions-22" style="padding-left:14px;font-size:13.5px;">使用 hooks 扩展权限</a>
+<a href="#sec-permissions-23" style="padding-left:14px;font-size:13.5px;">工作目录</a>
+<a href="#sec-permissions-24" style="padding-left:28px;font-size:13px;">其他目录授予文件访问权限，而不是配置</a>
+<a href="#sec-permissions-25" style="padding-left:14px;font-size:13.5px;">权限如何与沙箱交互</a>
+<a href="#sec-permissions-26" style="padding-left:14px;font-size:13.5px;">托管设置</a>
+<a href="#sec-permissions-27" style="padding-left:28px;font-size:13px;">仅托管设置</a>
+<a href="#sec-permissions-28" style="padding-left:14px;font-size:13.5px;">设置优先级</a>
+<a href="#sec-permissions-29" style="padding-left:14px;font-size:13.5px;">项目允许规则和工作区信任</a>
+<a href="#sec-permissions-30" style="padding-left:14px;font-size:13.5px;">示例配置</a>
+<a href="#sec-permissions-31" style="padding-left:14px;font-size:13.5px;">另请参见</a>
+  </aside>
+
+  <main class="article">
+    <blockquote>## Documentation Index</blockquote>
+<blockquote>Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt</blockquote>
+<blockquote>Use this file to discover all available pages before exploring further.</blockquote>
+
+<h2 id="sec-permissions-1">配置权限</h2>
+
+<blockquote>通过细粒度权限规则、模式和托管策略来控制 Claude Code 可以访问和执行的操作。</blockquote>
+
+<p>Claude Code 支持细粒度<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>，因此您可以精确指定代理允许执行的操作和不允许执行的操作。<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a><a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>可以检入版本控制并分发给组织中的所有开发人员，也可以由个别开发人员自定义。</p>
+
+<h3 id="sec-permissions-2">权限系统</h3>
+
+<p>Claude Code 使用分层<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>系统来平衡功能和安全性：</p>
+
+<div class='table-wrap'><table>
+<tr><th>工具类型</th><th>示例</th><th>需要批准</th><th>&quot;是，不再询问&quot;行为</th></tr>
+<tr><td>只读</td><td>文件读取、Grep</td><td>否，在<a class="kw" onclick="showKw('工作目录和其他目录')" title="点击查看解释">工作目录和其他目录</a>内</td><td>不适用</td></tr>
+<tr><td>Bash 命令</td><td>Shell 执行</td><td>是，除了内置的<a class="kw" onclick="showKw('只读命令')" title="点击查看解释">只读命令</a>集合</td><td>每个项目目录和命令永久有效</td></tr>
+<tr><td>文件修改</td><td>Edit/Write 文件</td><td>是</td><td>直到<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>结束</td></tr>
+</table></div>
+
+<p>在 Bash 或 PowerShell <a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>提示上，按 `Ctrl+E` 显示命令的说明：它的作用、Claude 为什么运行它，以及可能出现的问题，标记为**低风险**、**中风险**或**高风险**。Claude Code 仅在您按 `Ctrl+E` 时将命令和 Claude 自己对调用的描述发送给模型以生成说明，而不是在每个提示上都发送。显示说明不会运行命令；再次按 `Ctrl+E` 隐藏它。</p>
+
+<p>要关闭<a class="kw" onclick="showKw('快捷键')" title="点击查看解释">快捷键</a>，请在 `~/.claude.json` 中将 <a class="kw" onclick="showKw('permissionExplainerEnabled')" title="点击查看解释">permissionExplainerEnabled</a> <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>为 `false`。</p>
+
+<h3 id="sec-permissions-3">管理权限</h3>
+
+<p>您可以使用 `<a class="kw" onclick="showKw('/permissions')" title="点击查看解释">/permissions</a>` 查看和管理 Claude Code 的工具<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>。此 UI 列出所有<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>规则和它们来自的 `<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 文件。</p>
+
+<p>* **Allow** 规则让 Claude Code 使用指定的工具而无需手动批准。</p>
+<p>* **Ask** 规则在 Claude Code 尝试使用指定工具时提示确认。</p>
+<p>* **Deny** 规则防止 Claude Code 使用指定的工具。</p>
+
+<p>规则按顺序评估：deny、ask，然后 allow。该顺序中的第一个匹配项决定结果，规则特异性不会改变顺序。</p>
+
+<p>一个宽泛的 deny 规则（如 `Bash(aws *)`）会阻止每个匹配的调用，包括也匹配更具体的 allow 规则（如 `Bash(aws s3 ls)`）的调用，因此 deny 规则不能包含允许列表例外。ask 和 allow 之间也适用相同的优先级：匹配的 ask 规则即使更具体的 allow 规则也匹配同一调用，也会提示。</p>
+
+<p>Deny 规则的行为取决于它们是命名工具还是在工具内范围化模式。像 `Bash` 这样的裸工具名称会将工具从 Claude 的上下文中完全移除，因此 Claude 永远看不到它。像 `Bash(rm *)` 这样的范围化规则会保留工具的可用性，并在 Claude 尝试时阻止匹配的调用。</p>
+
+<div class="callout callout-note">
+<p>  <a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>规则由 Claude Code 强制执行，而不是由模型强制执行。您的提示或 `<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>` 中的说明会影响 Claude 尝试执行的操作，但它们不会改变 Claude Code 允许的操作。要授予或撤销访问<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>，请使用 `<a class="kw" onclick="showKw('/permissions')" title="点击查看解释">/permissions</a>`、此处描述的规则、<a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a> 或 <a class="kw" onclick="showKw('PreToolUse hook')" title="点击查看解释">PreToolUse hook</a>。</p>
+</div>
+
+<h3 id="sec-permissions-4">权限模式</h3>
+
+<p>Claude Code 支持多种<a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a>来控制工具的批准方式。请参阅<a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a>了解何时使用每种模式。在您的<a class="kw" onclick="showKw('设置文件')" title="点击查看解释">设置文件</a>中<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> `defaultMode`：</p>
+
+<div class='table-wrap'><table>
+<tr><th>模式</th><th>描述</th></tr>
+<tr><td>`default`</td><td>标准行为：在首次使用每个工具时提示<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>。在 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a>、<a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 和 <a class="kw" onclick="showKw('JetBrains')" title="点击查看解释">JetBrains</a> 扩展以及<a class="kw" onclick="showKw('桌面应用')" title="点击查看解释">桌面应用</a>中标记为 Manual，Claude Code 接受 `manual` 作为别名。标签和别名需要 Claude Code v2.1.200 或更高版本。<a class="kw" onclick="showKw('桌面应用')" title="点击查看解释">桌面应用</a>的标签不依赖于您的 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 版本</td></tr>
+<tr><td>`acceptEdits`</td><td>自动接受工作目录或 `additionalDirectories` 中路径的文件编辑和常见文件系统命令（`mkdir`、`touch`、`mv`、`cp` 等）</td></tr>
+<tr><td>`plan`</td><td>Claude 读取文件并运行只读 shell 命令来探索，但不编辑您的源文件。在 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 和 <a class="kw" onclick="showKw('VS Code')" title="点击查看解释">VS Code</a> 扩展中标记为 Plan</td></tr>
+<tr><td>`auto`</td><td>自动批准工具调用，并进行后台安全检查以验证操作与您的请求一致</td></tr>
+<tr><td>`dontAsk`</td><td>自动拒绝工具，除非通过 `<a class="kw" onclick="showKw('/permissions')" title="点击查看解释">/permissions</a>` 或 `permissions.allow` 规则预先批准。`AskUserQuestion`、连接器工具<a class="kw" onclick="showKw('您的组织设置为 ask')" title="点击查看解释">您的组织设置为 ask</a>和标记为 <a class="kw" onclick="showKw('requiresUserInteraction')" title="点击查看解释">requiresUserInteraction</a> 的 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 工具即使您已允许它们也会被拒绝</td></tr>
+<tr><td>`<a class="kw" onclick="showKw('bypassPermissions')" title="点击查看解释">bypassPermissions</a>`</td><td>跳过<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>提示，除了由显式 `ask` 规则强制的提示、连接器工具<a class="kw" onclick="showKw('您的组织设置为 ask')" title="点击查看解释">您的组织设置为 ask</a>和标记为 <a class="kw" onclick="showKw('requiresUserInteraction')" title="点击查看解释">requiresUserInteraction</a> 的 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 工具。根目录和主目录删除操作（如 `rm -rf /`）仍会作为断路器提示</td></tr>
+</table></div>
+
+<div class="callout callout-warning">
+<p>  `<a class="kw" onclick="showKw('bypassPermissions')" title="点击查看解释">bypassPermissions</a>` 模式跳过<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>提示，包括对 `.git`、`.config/git`、`.claude`、`.vscode`、`.idea`、`.husky`、`.cargo`、`.devcontainer`、`.yarn` 和 `.mvn` 的写入。仅在隔离环境（如容器或虚拟机）中使用此模式，其中 Claude Code 无法造成损害。</p>
+
+<p>  此模式中仍会触发一些提示。显式 `ask` 规则、连接器工具<a class="kw" onclick="showKw('您的组织设置为 ask')" title="点击查看解释">您的组织设置为 ask</a>和标记为 <a class="kw" onclick="showKw('requiresUserInteraction')" title="点击查看解释">requiresUserInteraction</a> 的 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 工具仍会提示。针对文件系统根目录或主目录的删除操作（如 `rm -rf /` 和 `rm -rf ~`）也会作为断路器提示以防止模型错误，包括当命令包含带 `$(...)` 或反引号的命令替换或带 `&lt;(...)` 的进程替换时。在 v2.1.208 之前，仅当以纯形式（如 `rm -rf ~` 作为其自己的命令输入）时才会提示；通过替换到达删除操作的命令不会提示。</p>
+</div>
+
+<p>为了防止 `<a class="kw" onclick="showKw('bypassPermissions')" title="点击查看解释">bypassPermissions</a>` 或 `auto` 模式被使用，在任何<a class="kw" onclick="showKw('设置文件')" title="点击查看解释">设置文件</a>中将 `permissions.disableBypassPermissionsMode` 或 `permissions.disableAutoMode` <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>为 `&quot;disable&quot;`。这些在<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>中最有用，因为它们无法被覆盖。</p>
+
+<h3 id="sec-permissions-5">权限规则语法</h3>
+
+<p><a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>规则遵循格式 `Tool` 或 `Tool(specifier)`。</p>
+
+<h4 id="sec-permissions-6">匹配工具的所有使用</h4>
+
+<p>要匹配工具的所有使用，只需使用工具名称而不带括号：</p>
+
+<div class='table-wrap'><table>
+<tr><th>规则</th><th>效果</th></tr>
+<tr><td>`Bash`</td><td>匹配所有 Bash 命令</td></tr>
+<tr><td>`WebFetch`</td><td>匹配所有网络获取请求</td></tr>
+<tr><td>`Read`</td><td>匹配所有文件读取</td></tr>
+</table></div>
+
+<p>`Bash(*)` 等同于 `Bash` 并匹配所有 Bash 命令。作为拒绝规则，两种形式都会从 Claude 的上下文中移除该工具。</p>
+
+<h4 id="sec-permissions-7">使用说明符进行细粒度控制</h4>
+
+<p>在括号中添加说明符以匹配特定的工具使用：</p>
+
+<div class='table-wrap'><table>
+<tr><th>规则</th><th>效果</th></tr>
+<tr><td>`Bash(npm run build)`</td><td>匹配确切的命令 `npm run build`</td></tr>
+<tr><td>`Read(./.env)`</td><td>匹配读取当前目录中的 `.env` 文件</td></tr>
+<tr><td>`WebFetch(domain:example.com)`</td><td>匹配对 example.com 的获取请求</td></tr>
+</table></div>
+
+<h4 id="sec-permissions-8">按输入参数匹配</h4>
+
+<p>拒绝和询问规则可以使用 `Tool(param:value)` 匹配任何工具上的顶级输入参数。当 Claude 调用该工具且该参数<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>为该确切值时，规则匹配。一个参数值的允许规则不会确立该调用总体上是安全的，因此允许规则继续使用每个工具自己的说明符语法。这适用于工具接受的任何标量参数：</p>
+
+<div class='table-wrap'><table>
+<tr><th>规则</th><th>匹配</th></tr>
+<tr><td>`<a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a>(model:opus)`</td><td>请求 Opus 模型层级的 <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> 调用</td></tr>
+<tr><td>`<a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a>(isolation:worktree)`</td><td>请求 git worktree 的 <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> 调用</td></tr>
+<tr><td>`Bash(run_in_background:true)`</td><td>在后台运行的 Bash 调用</td></tr>
+</table></div>
+
+<p>参数匹配遵循以下规则：</p>
+
+<p>* 参数名称必须是工具输入的直接字段，例如 <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> 工具上的 `model`。嵌套在对象或数组内的字段不可匹配</p>
+<p>* 每个规则命名一个参数。要对 `model` 和 `isolation` 进行门控，请编写两个规则 `<a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a>(model:opus)` 和 `<a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a>(isolation:worktree)`，而不是在一个规则中组合它们</p>
+<p>* 该值支持 `*` 作为通配符，匹配任何字符序列，因此 `<a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a>(isolation:*)` 匹配任何显式隔离值。没有 `*` 时匹配是精确的</p>
+<p>* 模型省略的参数永远不会被匹配，因此 `<a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a>(model:*)` 不匹配留下 `model` 未<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>的调用</p>
+<p>* 该值与 Claude 发送的文字输入进行比较，在任何规范化之前。`<a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a>(model:opus)` 匹配别名 `opus` 但不匹配完整模型 ID。使用 <a class="kw" onclick="showKw('--verbose')" title="点击查看解释">--verbose</a> 运行以查看每个工具调用中的确切参数名称和值</p>
+<p>* 冒号周围的空格被忽略</p>
+
+<p>工具已经用自己的规范化规则匹配的字段不能以这种方式匹配：Bash 和 PowerShell 的 `command`、Read、Edit 和 Write 的 `file_path`、Grep 和 Glob 的 `path`、NotebookEdit 的 `notebook_path` 和 WebFetch 的 `url`。像 `Bash(command:rm *)` 这样的规则可以通过复合命令绕过，因此 Claude Code 会忽略它并在启动时发出警告。改用 `Bash(rm *)`、`Read(./path)` 或 `WebFetch(domain:host)`。</p>
+
+<h4 id="sec-permissions-9">通配符模式</h4>
+
+<p>Bash 规则支持带有 `*` 的 glob 模式。通配符可以出现在命令中的任何位置。此配置允许 npm 和 git commit 命令，同时阻止 git push：</p>
+
+<pre><code>
+{
+  &quot;permissions&quot;: {
+    &quot;allow&quot;: [
+      &quot;Bash(npm run *)&quot;,
+      &quot;Bash(git commit *)&quot;,
+      &quot;Bash(git * main)&quot;,
+      &quot;Bash(* --version)&quot;,
+      &quot;Bash(* --help *)&quot;
+    ],
+    &quot;deny&quot;: [
+      &quot;Bash(git push *)&quot;
+    ]
+  }
+}
+</code></pre>
+
+<p>`*` 前的空格很重要：`Bash(ls *)` 匹配 `ls -la` 但不匹配 `lsof`，而 `Bash(ls*)` 匹配两者。`:*` 后缀是编写尾部通配符的等效方式，因此 `Bash(ls:*)` 匹配与 `Bash(ls *)` 相同的命令。</p>
+
+<p>当您为命令前缀选择&quot;是，不再询问&quot;时，<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>对话框会写入空格分隔的形式。`:*` 形式仅在模式末尾被识别。在像 `Bash(git:* push)` 这样的模式中，冒号被视为文字字符，不会匹配 git 命令。</p>
+
+<h4 id="sec-permissions-10">工具名称通配符</h4>
+
+<p>拒绝和询问规则也接受工具名称位置中的 glob 模式。该模式必须匹配完整的工具名称：`&quot;*&quot;` 匹配每个工具，`&quot;mcp__*&quot;` 匹配所有服务器中的每个 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 工具。由裸名称 glob 拒绝规则匹配的工具会从 Claude 的上下文中移除，与裸工具名称相同。此配置拒绝每个 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 工具：</p>
+
+<pre><code>
+{
+  &quot;permissions&quot;: {
+    &quot;deny&quot;: [
+      &quot;mcp__*&quot;
+    ]
+  }
+}
+</code></pre>
+
+<p>允许规则仅在文字 `mcp__&lt;server&gt;__` 前缀之后接受工具名称 glob。服务器段必须不含 glob，以便规则命名您配置的特定服务器。`mcp__puppeteer__*` 匹配来自 `puppeteer` 服务器的每个工具，`mcp__github__get_*` 匹配其 `get_` 工具。未锚定的允许 glob（如 `&quot;*&quot;`、`&quot;B*&quot;` 或 `&quot;mcp__*&quot;`）会被跳过并显示警告，不会自动批准任何内容。</p>
+
+<p>工具名称不匹配任何已知工具的拒绝或询问规则会在启动时产生警告以捕获拼写错误。包含 `_` 或 `*` 的工具名称不受此检查的约束。</p>
+
+<p>转录本和<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>对话框中为工具显示的标签可能与其规范名称不同。例如，转录本中标记为 `Stop Task` 的工具具有规范名称 `TaskStop`。<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>规则和 <a class="kw" onclick="showKw('hook 匹配器')" title="点击查看解释">hook 匹配器</a> 仅匹配规范名称，因此写作为 `Stop Task` 的规则不匹配。对于拒绝和询问规则，上面的启动警告会捕获不匹配。使用 <a class="kw" onclick="showKw('工具参考')" title="点击查看解释">工具参考</a> 中列出的规范名称。</p>
+
+<h3 id="sec-permissions-11">工具特定的权限规则</h3>
+
+<h4 id="sec-permissions-12">Bash</h4>
+
+<p>Bash <a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>规则支持带有 `*` 的通配符匹配。通配符可以出现在命令中的任何位置，包括开头、中间或结尾：</p>
+
+<p>* `Bash(npm run build)` 匹配确切的 Bash 命令 `npm run build`</p>
+<p>* `Bash(npm run test *)` 匹配以 `npm run test` 开头的 Bash 命令</p>
+<p>* `Bash(npm *)` 匹配任何以 `npm ` 开头的命令</p>
+<p>* `Bash(* install)` 匹配任何以 ` install` 结尾的命令</p>
+<p>* `Bash(git * main)` 匹配 `git checkout main` 和 `git log --oneline main` 等命令</p>
+
+<p>单个 `*` 匹配任何字符序列，包括空格，因此一个通配符可以跨越多个参数。`Bash(git *)` 匹配 `git log --oneline --all`，`Bash(git * main)` 匹配 `git push origin main` 以及 `git merge main`。</p>
+
+<p>当 `*` 出现在末尾且前面有空格时（如 `Bash(ls *)`），它强制执行单词边界，要求前缀后跟空格或字符串结尾。例如，`Bash(ls *)` 匹配 `ls -la` 但不匹配 `lsof`。相比之下，`Bash(ls*)` 没有空格匹配 `ls -la` 和 `lsof` 两者，因为没有单词边界约束。</p>
+
+<h5 id="sec-permissions-13">复合命令</h5>
+
+<div class="callout callout-tip">
+<p>  Claude Code 知道 shell 运算符，所以像 `Bash(safe-cmd *)` 这样的规则不会给它<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>运行命令 `safe-cmd &amp;&amp; other-cmd`。识别的命令分隔符是 `&amp;&amp;`、`||`、`;`、`|`、`|&amp;`、`&amp;` 和换行符。规则必须独立匹配每个子命令。</p>
+</div>
+
+<p>当您使用&quot;是，不再询问&quot;批准复合命令时，Claude Code 会为需要批准的每个子命令保存一个单独的规则，而不是为完整的复合字符串保存单个规则。例如，批准 `git status &amp;&amp; npm test` 会为 `npm test` 保存一个规则，因此将来的 `npm test` 调用被识别，无论 `&amp;&amp;` 前面是什么。诸如 `cd` 进入子目录之类的子命令会为该路径生成自己的 Read 规则。单个复合命令最多可能保存 5 个规则。</p>
+
+<h5 id="sec-permissions-14">进程包装器</h5>
+
+<p>在匹配 Bash 规则之前，Claude Code 会剥离一组固定的进程包装器，因此像 `Bash(npm test *)` 这样的规则也匹配 `timeout 30 npm test`。识别的包装器是 `timeout`、`time`、`nice`、`nohup` 和 `stdbuf`。</p>
+
+<p>裸 `xargs` 也被剥离，所以 `Bash(grep *)` 匹配 `xargs grep pattern`。剥离仅在 `xargs` 没有标志时适用：像 `xargs -n1 grep pattern` 这样的调用被匹配为 `xargs` 命令，因此为内部命令编写的规则不涵盖它。</p>
+
+<p>此包装器列表是内置的，不可配置。开发环境运行器，如 `direnv exec`、`devbox run`、`mise exec`、`npx` 和 `docker exec` 不在列表中。因为这些工具将其参数作为命令执行，像 `Bash(devbox run *)` 这样的规则匹配 `run` 之后的任何内容，包括 `devbox run rm -rf .`。要批准环境运行器内的工作，请编写一个包含运行器和内部命令的特定规则，如 `Bash(devbox run npm test)`。为您想要允许的每个内部命令添加一个规则。</p>
+
+<p>Exec 包装器，如 `watch`、`setsid`、`ionice` 和 `flock` 总是提示，无法通过像 `Bash(watch *)` 这样的前缀规则自动批准。同样适用于带有 `-exec` 或 `-delete` 的 `find`：`Bash(find *)` 规则不涵盖这些形式。要批准特定调用，请为完整命令字符串编写精确匹配规则。</p>
+
+<h5 id="sec-permissions-15">只读命令</h5>
+
+<p>Claude Code 将一组内置 Bash 命令识别为只读，并在每种模式下无需<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>提示即可运行它们。这些包括 `ls`、`cat`、`echo`、`pwd`、`head`、`tail`、`grep`、`find`、`wc`、`which`、`diff`、`stat`、`du`、`cd` 和 `git` 的只读形式。该集合不可配置；要对其中一个命令要求提示，请为其添加 `ask` 或 `deny` 规则。</p>
+
+<p>对于每个标志都是只读的命令，允许未引用的 glob 模式，因此 `ls *.ts` 和 `wc -l src/*.py` 无需提示即可运行。带有写入能力或执行能力标志的命令，如 `find`、`sort`、`sed` 和 `git`，在存在未引用的 glob 时仍然提示，因为 glob 可能扩展为像 `-delete` 这样的标志。</p>
+
+<p>`cd` 进入工作目录或<a class="kw" onclick="showKw('其他目录')" title="点击查看解释">其他目录</a>内的路径也是只读的。像 `cd packages/api &amp;&amp; ls` 这样的复合命令在每个部分都符合条件时无需提示即可运行。在一个复合命令中组合 `cd` 和 `git` 时，当 `cd` 改变到不同目录时会提示，因为在新目录中运行 `git` 可以执行该目录的<a class="kw" onclick="showKw('钩子')" title="点击查看解释">钩子</a>。`cd` 的目标解析到当前工作目录是无操作的，不会触发此提示。</p>
+
+<p>在一个复合命令中组合 `cd` 和输出重定向时，当 Claude Code 无法确定在 `cd` 运行后重定向目标解析到哪个目录时也会提示。仅重定向目标为 `/dev/null` 的命令，如 `cd app; grep -r pattern . 2&gt;/dev/null`，不会触发此提示，因为 `/dev/null` 不依赖于工作目录。在 v2.1.207 之前，包含 `cd` 的复合命令会对任何输出重定向提示，包括仅重定向目标为 `/dev/null` 的重定向。</p>
+
+<div class="callout callout-warning">
+<p>  尝试约束命令参数的 Bash <a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a>很脆弱。例如，`Bash(curl http://github.com/ *)` 旨在将 curl 限制为 GitHub URL，但不会匹配以下变体：</p>
+
+<p>  * URL 前的选项：`curl -X GET http://github.com/...`</p>
+<p>  * 不同的协议：`curl https://github.com/...`</p>
+<p>  * 重定向：`curl -L http://bit.ly/xyz`，重定向到 GitHub</p>
+<p>  * 变量：`URL=http://github.com &amp;&amp; curl $URL`</p>
+<p>  * 额外空格：`curl  http://github.com`</p>
+
+<p>  为了更可靠的 URL 过滤，请考虑：</p>
+
+<p>  * **限制 Bash 网络工具**：使用 deny 规则阻止 `curl`、`wget` 和类似命令，然后对允许的域使用带有 `WebFetch(domain:github.com)` <a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>的 WebFetch 工具</p>
+<p>  * **使用 PreToolUse hooks**：实现一个 hook 来验证 Bash 命令中的 URL 并阻止不允许的域</p>
+<p>  * **添加 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 指导**：在 `<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>` 中描述您允许的 curl 模式。这会影响 Claude 尝试的内容，但不会强制执行边界，因此请将其与上述选项之一配对</p>
+
+<p>  请注意，仅使用 WebFetch 不会阻止网络访问。如果允许 Bash，Claude 仍然可以使用 `curl`、`wget` 或其他工具来访问任何 URL。</p>
+</div>
+
+<h4 id="sec-permissions-16">PowerShell</h4>
+
+<p>PowerShell <a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>规则使用与 Bash 规则相同的形式。带有 `*` 的通配符可以在任何位置匹配，`:*` 后缀等同于尾部 ` *`，而裸 `PowerShell` 或 `PowerShell(*)` 匹配每个命令。此配置允许 `Get-ChildItem` 和 `git commit` 命令，同时阻止 `Remove-Item`：</p>
+
+<pre><code>
+{
+  &quot;permissions&quot;: {
+    &quot;allow&quot;: [
+      &quot;PowerShell(Get-ChildItem *)&quot;,
+      &quot;PowerShell(git commit *)&quot;
+    ],
+    &quot;deny&quot;: [
+      &quot;PowerShell(Remove-Item *)&quot;
+    ]
+  }
+}
+</code></pre>
+
+<p>常见别名在匹配前被规范化。为 cmdlet 名称编写的规则也匹配其别名，因此 `PowerShell(Get-ChildItem *)` 匹配 `gci`、`ls` 和 `dir`。匹配不区分大小写。</p>
+
+<p>Claude Code 解析 PowerShell AST 并独立检查复合命令中的每个命令。管道运算符 `|`、语句分隔符 `;` 和 PowerShell 7+ 上的链运算符 `&amp;&amp;` 和 `||` 将复合命令分割为子命令。规则必须匹配每个子命令才能允许复合命令。</p>
+
+<h4 id="sec-permissions-17">Read 和 Edit</h4>
+
+<p>`Edit` 规则适用于所有编辑文件的内置工具。Claude 尽力将 `Read` 规则应用于所有读取文件的内置工具，如 Grep 和 Glob，以及您提示中的 `@file` 提及，以及连接的 <a class="kw" onclick="showKw('IDE')" title="点击查看解释">IDE</a> 与 Claude 共享的选择和打开文件上下文。</p>
+
+<p>`Read` deny 规则也会阻止<a class="kw" onclick="showKw('同一路径上的 Edit 工具')" title="点击查看解释">同一路径上的 Edit 工具</a>，包括在那里创建新文件。Write 和 NotebookEdit 不被覆盖，因此为任何工具都不能更改的路径添加 `Edit` deny 规则。需要 Claude Code v2.1.208 或更高版本。</p>
+
+<div class="callout callout-warning">
+<p>  Read 和 Edit deny 规则适用于 Claude 的内置文件工具和 Claude Code 在 Bash 中识别的文件命令，如 `cat`、`head`、`tail` 和 `sed`。它们不适用于间接读取或写入文件的任意子进程，如打开文件本身的 Python 或 Node 脚本。为了获得阻止所有进程访问路径的 OS 级别强制执行，请<a class="kw" onclick="showKw('启用沙箱')" title="点击查看解释">启用沙箱</a>。</p>
+</div>
+
+<p>Read 和 Edit 规则都遵循 <a class="kw" onclick="showKw('gitignore')" title="点击查看解释">gitignore</a> 规范，具有四种不同的模式类型：</p>
+
+<div class='table-wrap'><table>
+<tr><th>模式</th><th>含义</th><th>示例</th><th>匹配</th></tr>
+<tr><td>`//path`</td><td>来自文件系统根目录的绝对路径</td><td>`Read(//Users/alice/secrets/**)`</td><td>`/Users/alice/secrets/**`</td></tr>
+<tr><td>`~/path`</td><td>来自主目录的路径</td><td>`Read(~/Documents/*.pdf)`</td><td>`/Users/alice/Documents/*.pdf`</td></tr>
+<tr><td>`/path`</td><td>相对于<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>源的路径</td><td>`Edit(/src/**/*.ts)`</td></tr>
+<p>/src/**/*.ts` 在项目<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>中 |</p>
+<tr><td>`path` 或 `./path`</td><td>相对于当前目录的路径</td><td>`Read(*.env)`</td><td>`&lt;cwd&gt;/*.env`</td></tr>
+</table></div>
+
+<div class="callout callout-warning">
+<p>  像 `/Users/alice/file` 这样的模式不是绝对路径。单个前导斜杠锚定在<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>源，而不是文件系统根目录。对于绝对路径，使用 `//Users/alice/file`。</p>
+</div>
+
+<p>`/path` 模式锚定在与定义它的<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>文件关联的目录，因此相同的规则根据您放置它的位置匹配不同的位置：</p>
+
+<div class='table-wrap'><table>
+<tr><th>规则定义在</th><th>`/path` 解析为</th></tr>
+<tr><td>项目或本地<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>，如 `.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>`</td></tr>
+<p>/path`      |</p>
+<tr><td>用户<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>在 `~/.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>`</td><td>`~/.claude/path`</td></tr>
+<tr><td>使用 `--settings &lt;file&gt;` 传递的文件</td><td>`&lt;directory of file&gt;/path`</td></tr>
+<tr><td><a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 标志、`<a class="kw" onclick="showKw('/permissions')" title="点击查看解释">/permissions</a>` 或<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>规则</td><td>`&lt;original cwd&gt;/path`</td></tr>
+</table></div>
+
+<p>像 `Read(/secrets/**)` 这样的 deny 规则在用户<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>中阻止 `~/.claude/secrets/**`，而不是您项目中的 `secrets` 目录。要在用户<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>中编写适用于每个项目内部的规则，请改用 `//` 绝对路径或 `~/` 主目录相对路径。</p>
+
+<p>在 Windows 上，路径在匹配前被规范化为 POSIX 形式。`C:\Users\alice` 变成 `/c/Users/alice`，因此使用 `//c/**/.env` 来匹配该驱动器上的 `.env` 文件。要在所有驱动器上匹配，使用 `//**/.env`。</p>
+
+<p>示例：</p>
+
+<p>* `Edit(/docs/**)`：编辑 `</p>
+<p>/docs/` 中的文件（不是 `/docs/` 也不是 `</p>
+<p>/.claude/docs/`）</p>
+<p>* `Read(~/.zshrc)`：读取您主目录的 `.zshrc`</p>
+<p>* `Edit(//tmp/scratch.txt)`：编辑绝对路径 `/tmp/scratch.txt`</p>
+<p>* `Read(src/**)`：从 `&lt;current-directory&gt;/src/` 读取</p>
+
+<p>一个规则只匹配其锚点下的文件，因此锚点决定了 deny 规则的范围。裸文件名遵循 gitignore 语义并在任何深度匹配，因此 `Read(.env)` 和 `Read(**/.env)` 是等价的：</p>
+
+<div class='table-wrap'><table>
+<tr><th>Deny 规则</th><th>阻止</th><th>不阻止</th></tr>
+<tr><td>`Read(.env)` 或 `Read(**/.env)`</td><td>当前目录或其下的任何 `.env`</td><td>父目录或另一个项目中的 `.env`</td></tr>
+<tr><td>`Read(//**/.env)`</td><td>文件系统上任何地方的任何 `.env`</td><td>无；规则锚定在文件系统根目录</td></tr>
+</table></div>
+
+<div class="callout callout-note">
+<p>  在 gitignore 模式中，`*` 匹配单个路径段内的文本，可以出现在模式中的任何位置，而 `**` 匹配跨目录。要允许所有文件访问，只需使用工具名称而不带括号：`Read`、`Edit` 或 `Write`。</p>
+</div>
+
+<p>当您使用&quot;是，不再询问&quot;批准文件路径时，Claude Code 会转义该路径中的 gitignore 模式字符，如 `[`、`]` 和 `*`，因此生成的规则仅匹配您批准的字面路径。您自己编写的规则不会被转义。在 v2.1.202 之前，Claude Code 保存未转义的路径，因此为名为 `[2024-06] Reports` 的目录生成的规则可能无法匹配其自己的路径或匹配意外的兄弟目录。</p>
+
+<p>当 Claude 访问符号链接时，<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>规则检查两个路径：符号链接本身和它解析到的文件。Allow 和 deny 规则对该对的处理方式不同：allow 规则回退到提示您，而 deny 规则直接阻止。</p>
+
+<p>* **Allow 规则**：仅在符号链接路径及其目标都匹配时适用。允许目录内的符号链接指向其外部仍然会提示您。</p>
+<p>* **Deny 规则**：当符号链接路径或其目标匹配时适用。指向被拒绝文件的符号链接本身被拒绝。</p>
+
+<p>例如，使用 `Read(./project/**)` 允许和 `Read(~/.ssh/**)` 拒绝，`./project/key` 处的符号链接指向 `~/.ssh/id_rsa` 被阻止：目标未通过 allow 规则，并匹配 deny 规则。</p>
+
+<h4 id="sec-permissions-18">WebFetch</h4>
+
+<p>WebFetch 规则使用 `domain:` 前缀并针对请求的 URL 的主机名进行匹配。匹配不区分大小写，支持 `*` 通配符，并从规则和主机名中剥离尾部 `.`，因此 `example.com.` 和 `example.com` 被视为相同。</p>
+
+<p>* `WebFetch(domain:example.com)` 匹配对 `example.com` 的请求</p>
+<p>* `WebFetch(domain:*.example.com)` 匹配任何深度的任何子域，如 `api.example.com` 或 `a.b.example.com`，但不匹配 `example.com` 本身</p>
+<p>* `WebFetch(domain:*)` 匹配每个域，等同于裸 `WebFetch` 规则</p>
+
+<p>在前导 `*.` 或裸 `*` 以外的任何位置，通配符仅匹配两个点之间的文本。`WebFetch(domain:example.*)` 匹配 `example.org`，其中 `*` 变成 `org`，但不匹配 `example.evil.com`，其中 `*` 必须变成 `evil.com` 并跨越一个点。这防止尾部通配符匹配攻击者可以注册的域。</p>
+
+<h4 id="sec-permissions-19">MCP</h4>
+
+<p><a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 规则使用在 Claude Code 中配置的服务器名称，可选地后跟该服务器提供的工具的名称。</p>
+
+<p>* `mcp__puppeteer` 匹配由 `puppeteer` 服务器提供的任何工具</p>
+<p>* `mcp__puppeteer__*` 使用通配符语法，也匹配来自 `puppeteer` 服务器的所有工具</p>
+<p>* `mcp__puppeteer__puppeteer_navigate` 匹配由 `puppeteer` 服务器提供的 `puppeteer_navigate` 工具</p>
+
+<p>如果您的组织已<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a><a class="kw" onclick="showKw('claude.ai 连接器')" title="点击查看解释">claude.ai 连接器</a>工具为 `ask`，该工具的 allow 规则不会生效：Claude Code 在每次调用时都会提示，即使在 `auto` 和 `<a class="kw" onclick="showKw('bypassPermissions')" title="点击查看解释">bypassPermissions</a>` 模式下。在 `dontAsk` 模式下（从不提示），Claude Code 会拒绝调用。连接器工具显示为 `mcp__claude_ai_&lt;server&gt;__&lt;tool&gt;`。</p>
+
+<h4 id="sec-permissions-20">Agent（subagents）</h4>
+
+<p>使用 `<a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a>(<a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a>Name)` 规则来控制 Claude 可以使用哪些<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>：</p>
+
+<p>* `<a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a>(Explore)` 匹配 Explore <a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a></p>
+<p>* `<a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a>(Plan)` 匹配 Plan <a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a></p>
+<p>* `<a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a>(my-custom-agent)` 匹配名为 `my-custom-agent` 的自定义<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a></p>
+
+<p>将这些规则添加到您的<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>中的 `deny` 数组，或使用 `--disallowedTools` <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 标志来禁用特定代理。要禁用 Explore 代理：</p>
+
+<pre><code>
+{
+  &quot;permissions&quot;: {
+    &quot;deny&quot;: [&quot;Agent(Explore)&quot;]
+  }
+}
+</code></pre>
+
+<h4 id="sec-permissions-21">Cd</h4>
+
+<p>`Cd` 规则控制 <a class="kw" onclick="showKw('/cd 命令')" title="点击查看解释">/cd 命令</a>可以将<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>移动到哪些目录。`Cd` 不是模型可调用的工具：Claude 无法调用它，规则仅在您自己运行 `/cd` 时适用。</p>
+
+<p>裸 `Cd` deny 规则完全禁用 `/cd`。`Cd(</p>
+<p>)` deny 规则阻止匹配的目标。Deny 规则检查目标的每个拼写，包括它解析的每个符号链接跳跃，因此为一个路径编写的规则也会阻止解析到它的目标。</p>
+
+<p>添加任何 `Cd` allow 规则会将 `/cd` 切换到允许列表模式：解析的目标目录必须匹配您的一个 allow 规则，否则 `/cd` 拒绝。如果没有配置 `Cd` 规则，`/cd` 保持其默认行为并提示您信任不熟悉的目录。</p>
+
+<p>路径模式共享来自 <a class="kw" onclick="showKw('Read 和 Edit 规则')" title="点击查看解释">Read 和 Edit 规则</a>的 `//`、`~/` 和 `/` 锚点，但匹配锚定到整个目录路径而不是 gitignore 风格。`*` 匹配恰好一个路径段，`**` 匹配跨段。尾部 `/**` 也匹配其命名的根。</p>
+
+<div class='table-wrap'><table>
+<tr><th>规则</th><th>匹配</th><th>不匹配</th></tr>
+<tr><td>`Cd(~/code/*)`</td><td>`~/code/app`</td><td>`~/code/app/src`、`~/code`</td></tr>
+<tr><td>`Cd(~/code/**)`</td><td>`~/code` 和其下的任何目录</td><td>`~/code` 外的目录</td></tr>
+<tr><td>`Cd(**/node_modules)`</td><td>任何深度的任何 `node_modules` 目录</td><td>`node_modules/pkg`</td></tr>
+</table></div>
+
+<h3 id="sec-permissions-22">使用 hooks 扩展权限</h3>
+
+<p><a class="kw" onclick="showKw('Claude Code hooks')" title="点击查看解释">Claude Code hooks</a> 提供了一种方法来注册自定义 shell 命令以在运行时执行<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>评估。当 Claude Code 进行工具调用时，PreToolUse hooks 在<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>提示之前运行。hook 输出可以拒绝工具调用、强制提示或跳过提示以让调用继续。</p>
+
+<p><a class="kw" onclick="showKw('Hook')" title="点击查看解释">Hook</a> 决定不会绕过<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>规则。Claude Code 评估 deny 和 ask 规则，无论 PreToolUse hook 返回什么：匹配的 deny 规则会阻止调用，匹配的 ask 规则即使在 hook 返回 `&quot;allow&quot;` 或 `&quot;ask&quot;` 时仍然会提示。这保留了<a class="kw" onclick="showKw('管理权限')" title="点击查看解释">管理权限</a>中描述的 deny 优先级，包括在<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>中<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>的 deny 规则。</p>
+
+<p>连接器工具<a class="kw" onclick="showKw('您的组织设置为 ask')" title="点击查看解释">您的组织设置为 ask</a>和标记为 <a class="kw" onclick="showKw('requiresUserInteraction')" title="点击查看解释">requiresUserInteraction</a> 的 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 工具在 hook 返回 `&quot;allow&quot;` 时仍然会提示。</p>
+
+<p>阻止 hook 也优先于 allow 规则。以退出代码 2 退出的 hook 在<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>规则被评估之前停止工具调用，因此即使 allow 规则会让调用继续，阻止也适用。要运行所有 Bash 命令而无需提示，除了您想要阻止的少数几个，将 `&quot;Bash&quot;` 添加到您的 allow 列表，并注册一个 PreToolUse hook 来拒绝那些特定命令。请参见<a class="kw" onclick="showKw('阻止对受保护文件的编辑')" title="点击查看解释">阻止对受保护文件的编辑</a>以获取您可以调整的 hook 脚本。</p>
+
+<h3 id="sec-permissions-23">工作目录</h3>
+
+<p>默认情况下，Claude 可以访问启动它的目录中的文件。您可以扩展此访问：</p>
+
+<p>* **启动期间**：使用 `--add-dir </p>
+<p>` <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 参数</p>
+<p>* **<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>期间**：使用 `/add-dir` 命令</p>
+<p>* **持久配置**：添加到<a class="kw" onclick="showKw('设置文件')" title="点击查看解释">设置文件</a>中的 `additionalDirectories`</p>
+
+<p>其他目录中的文件遵循与原始工作目录相同的<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>规则：它们变为可读的而无需提示，文件编辑<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>遵循当前<a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a>。</p>
+
+<p>在 macOS 上的<a class="kw" onclick="showKw('后台会话')" title="点击查看解释">后台会话</a>中，<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>主机会单独从您的终端请求访问受保护的文件夹（如 `~/Desktop`、`~/Documents` 和 `~/Downloads`），当 Claude 需要在那里读取或写入文件时；如果读取失败并显示 `Operation not permitted`，请参阅<a class="kw" onclick="showKw('如何向后台会话授予文件夹访问权限')" title="点击查看解释">如何向后台会话授予文件夹访问权限</a>。</p>
+
+<p>要改变<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的主工作目录而不是添加另一个目录，请使用 <a class="kw" onclick="showKw('/cd')" title="点击查看解释">/cd</a>。`/cd` 命令需要 Claude Code v2.1.169 或更高版本。与 `/add-dir` 不同，它重新定位<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>：新目录的 `<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>` 被加载，`--resume` 从那里找到<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。</p>
+
+<h4 id="sec-permissions-24">其他目录授予文件访问权限，而不是配置</h4>
+
+<p>添加目录扩展 Claude 可以读取和编辑文件的位置。它不会使该目录成为完整的配置根目录：大多数 `.claude/` 配置不是从其他目录发现的，尽管有几种类型作为例外被加载。</p>
+
+<p>这些例外仅适用于使用 `--add-dir` 标志或 `/add-dir` 命令添加的目录。在<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>文件中的 `permissions.additionalDirectories` 中列出的目录仅授予文件访问<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>，不加载以下任何配置。</p>
+
+<p>以下配置类型从 `--add-dir` 目录加载：</p>
+
+<div class='table-wrap'><table>
+<tr><th>配置</th><th>从 `--add-dir` 加载</th></tr>
+<tr><td>`.claude/skills/` 中的 <a class="kw" onclick="showKw('Skills')" title="点击查看解释">Skills</a></td><td>是，带有实时重新加载</td></tr>
+<tr><td>`.claude<a class="kw" onclick="showKw('/agents')" title="点击查看解释">/agents</a>/` 中的 <a class="kw" onclick="showKw('Subagents')" title="点击查看解释">Subagents</a></td><td>是</td></tr>
+<tr><td>`.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 和 `.claude/settings.local.json` 中的<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a></td><td>仅 `enabled<a class="kw" onclick="showKw('Plugin')" title="点击查看解释">Plugin</a>s` 和 `extraKnown<a class="kw" onclick="showKw('Marketplace')" title="点击查看解释">Marketplace</a>s` 键</td></tr>
+<tr><td><a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 文件、`.claude/rules/` 和 `CLAUDE.local.md`</td><td>仅当<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> `CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD=1` 时。`CLAUDE.local.md` 另外需要 `local` <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>源，默认启用</td></tr>
+</table></div>
+
+<p>命令和输出样式从当前工作目录及其父目录、您在 `~/.claude/` 的用户目录和<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>中发现。<a class="kw" onclick="showKw('Hook')" title="点击查看解释">Hook</a>s 和其他 `<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 键从当前工作目录的 `.claude/` 文件夹加载，没有父目录回退，同时从您的用户 `~/.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 和<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>加载。要在项目间共享该配置，请使用以下方法之一：</p>
+
+<p>* **用户级配置**：将文件放在 `~/.claude<a class="kw" onclick="showKw('/agents')" title="点击查看解释">/agents</a>/`、`~/.claude/output-styles/` 或 `~/.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 中，使其在每个项目中可用</p>
+<p>* **<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>**：将配置打包并分发为<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>，团队可以安装</p>
+<p>* **从配置目录启动**：从包含您想要的 `.claude/` 配置的目录运行 Claude Code</p>
+
+<h3 id="sec-permissions-25">权限如何与沙箱交互</h3>
+
+<p><a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>和<a class="kw" onclick="showKw('沙箱')" title="点击查看解释">沙箱</a>是互补的安全层：</p>
+
+<p>* **<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>**控制 Claude Code 可以使用哪些工具以及它可以访问哪些文件或域。它们适用于所有工具，包括 Bash、Read、Edit、WebFetch 和 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a>。</p>
+<p>* **沙箱**提供 OS 级别的强制执行，限制 Bash 工具的文件系统和网络访问。它仅适用于 Bash 命令及其子进程。</p>
+
+<p>使用两者进行深度防御：</p>
+
+<p>* <a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a> deny 规则阻止 Claude 甚至尝试访问受限资源</p>
+<p>* 沙箱限制防止 Bash 命令到达定义边界之外的资源，即使提示注入绕过 Claude 的决策制定</p>
+<p>* 沙箱中的文件系统限制结合 <a class="kw" onclick="showKw('sandbox.filesystem')" title="点击查看解释">sandbox.filesystem</a> <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>与 Read 和 Edit deny 规则；两者都合并到最终的沙箱边界中</p>
+<p>* 网络限制结合 WebFetch <a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>规则与沙箱的 `allowedDomains` 和 `deniedDomains` 列表</p>
+
+<p>当沙箱启用 `autoAllowBashIfSandboxed: true`（这是默认值）时，沙箱化的 Bash 命令无需提示即可运行，即使您的<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>包括裸 `Bash` ask 规则，或<a class="kw" onclick="showKw('等效的 Bash() 形式')" title="点击查看解释">等效的 Bash() 形式</a>：沙箱边界替代了该整体工具提示。这些检查仍然适用：</p>
+
+<p>* 内容范围的 ask 规则（如 `Bash(git push *)`）仍然强制提示</p>
+<p>* 显式 deny 规则仍然适用</p>
+<p>* 针对 `/`、您的主目录或其他关键系统路径的 `rm` 或 `rmdir` 命令仍然会触发提示</p>
+
+<p>不会在沙箱中运行的命令（如排除的命令）按照通常的方式遵守裸 `Bash` ask 规则。请参见<a class="kw" onclick="showKw('沙箱模式')" title="点击查看解释">沙箱模式</a>以更改此行为。</p>
+
+<h3 id="sec-permissions-26">托管设置</h3>
+
+<p>对于需要对 Claude Code 配置进行集中控制的组织，管理员可以部署无法被用户或项目<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>覆盖的<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>。这些策略<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>遵循与常规<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>文件相同的格式，可以通过 MDM/OS 级别策略、<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>文件、<a class="kw" onclick="showKw('服务器托管设置')" title="点击查看解释">服务器托管设置</a>或自托管的 <a class="kw" onclick="showKw('Claude apps gateway')" title="点击查看解释">Claude apps gateway</a> 传递。有关传递机制和文件位置，请参见<a class="kw" onclick="showKw('设置文件')" title="点击查看解释">设置文件</a>。</p>
+
+<h4 id="sec-permissions-27">仅托管设置</h4>
+
+<p>以下<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>仅在<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>中有效。将它们放在用户或项目<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>文件中无效。</p>
+
+<div class='table-wrap'><table>
+<tr><th><a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a></th><th>描述</th></tr>
+<tr><td>`allowAllClaudeAiMcps`</td><td>当为 `true` 时，claude.ai 连接器与已部署的 `managed-mcp.json` 一起加载，而不是被其独占控制所抑制。请参见<a class="kw" onclick="showKw('托管 MCP 配置')" title="点击查看解释">托管 MCP 配置</a></td></tr>
+<tr><td>`allowedChannel<a class="kw" onclick="showKw('Plugin')" title="点击查看解释">Plugin</a>s`</td><td>可能推送消息的频道<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>的允许列表。<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>时替换默认 Anthropic 允许列表。需要 `channelsEnabled: true`。请参见<a class="kw" onclick="showKw('限制哪些频道插件可以运行')" title="点击查看解释">限制哪些频道插件可以运行</a></td></tr>
+<tr><td>`allowManaged<a class="kw" onclick="showKw('Hook')" title="点击查看解释">Hook</a>sOnly`</td><td>当为 `true` 时，仅加载托管 hooks、SDK hooks 和<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a> `enabled<a class="kw" onclick="showKw('Plugin')" title="点击查看解释">Plugin</a>s` 中强制启用的<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>中的 hooks。用户、项目和所有其他<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a> hooks 被阻止</td></tr>
+<tr><td>`allowManagedMcpServersOnly`</td><td>当为 `true` 时，仅尊重来自<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>的 `allowedMcpServers`。`deniedMcpServers` 仍然从所有来源合并。请参见<a class="kw" onclick="showKw('托管 MCP 配置')" title="点击查看解释">托管 MCP 配置</a></td></tr>
+<tr><td>`allowManagedPermissionRulesOnly`</td><td>当为 `true` 时，防止用户和项目<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>定义 `allow`、`ask` 或 `deny` <a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>规则。仅应用<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>中的规则。不影响 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 服务器允许列表；对于此，请<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> `allowManagedMcpServersOnly`</td></tr>
+<tr><td>`blocked<a class="kw" onclick="showKw('Marketplace')" title="点击查看解释">Marketplace</a>s`</td><td><a class="kw" onclick="showKw('市场')" title="点击查看解释">市场</a>来源的黑名单。在下载前检查被阻止的来源，因此它们永远不会接触文件系统。请参见<a class="kw" onclick="showKw('托管市场限制')" title="点击查看解释">托管市场限制</a></td></tr>
+<tr><td>`channelsEnabled`</td><td>允许为组织启用<a class="kw" onclick="showKw('频道')" title="点击查看解释">频道</a>。请参见<a class="kw" onclick="showKw('企业控制')" title="点击查看解释">企业控制</a>了解每个计划的默认<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a></td></tr>
+<tr><td>`disableSideloadFlags`</td><td>在启动时拒绝 `--plugin-dir`、`--plugin-url`、`--agents` 和 `--mcp-config` <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 标志。没有这个，用户可以通过传递这些标志来绕过 `strictKnown<a class="kw" onclick="showKw('Marketplace')" title="点击查看解释">Marketplace</a>s` 进行单次运行。请参见<a class="kw" onclick="showKw('disableSideloadFlags')" title="点击查看解释">disableSideloadFlags</a>。需要 Claude Code v2.1.193 或更高版本</td></tr>
+<tr><td>`forceRemoteSettingsRefresh`</td><td>当为 `true` 时，阻止 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 启动直到远程<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>被新鲜获取，如果获取失败则退出。请参见<a class="kw" onclick="showKw('故障关闭强制执行')" title="点击查看解释">故障关闭强制执行</a></td></tr>
+<tr><td>`pluginTrustMessage`</td><td>自定义消息，附加到安装前显示的<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>信任警告</td></tr>
+<tr><td>`sandbox.filesystem.allowManagedReadPathsOnly`</td><td>当为 `true` 时，仅尊重来自<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>的 `filesystem.allowRead` 路径。`denyRead` 仍然从所有来源合并</td></tr>
+<tr><td>`sandbox.network.allowManagedDomainsOnly`</td><td>当为 `true` 时，仅尊重来自<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>的 `allowedDomains` 和 `WebFetch(domain:...)` allow 规则。非允许的域被自动阻止，不提示用户。被拒绝的域仍然从所有来源合并</td></tr>
+<tr><td>`strictKnown<a class="kw" onclick="showKw('Marketplace')" title="点击查看解释">Marketplace</a>s`</td><td>控制用户可以添加和安装<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>的<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a><a class="kw" onclick="showKw('市场')" title="点击查看解释">市场</a>来源。请参见<a class="kw" onclick="showKw('托管市场限制')" title="点击查看解释">托管市场限制</a></td></tr>
+<tr><td>`strict<a class="kw" onclick="showKw('Plugin')" title="点击查看解释">Plugin</a>OnlyCustomization`</td><td>阻止 skills、agents、hooks 和 <a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a>s 来自用户和项目来源，因此它们只能来自<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>或<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>。`true` 锁定所有四个表面；数组如 `[&quot;skills&quot;, &quot;hooks&quot;]` 仅锁定命名的表面。请参见<a class="kw" onclick="showKw('strictPluginOnlyCustomization')" title="点击查看解释">strictPluginOnlyCustomization</a></td></tr>
+<tr><td>`wslInheritsWindowsSettings`</td><td>当在 Windows HKLM 注册表项或 `C:\Program Files\ClaudeCode\managed-<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 中为 `true` 时，WSL 除了从 `/etc/claude-code` 读取<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>外，还从 Windows 策略链读取<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>。请参见<a class="kw" onclick="showKw('设置文件')" title="点击查看解释">设置文件</a></td></tr>
+</table></div>
+
+<p>`disableBypassPermissionsMode` 通常放在<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>中以强制执行组织策略，但它可以从任何范围工作。用户可以在自己的<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>中<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>它以将自己锁定在绕过模式之外。</p>
+
+<div class="callout callout-note">
+<p>  在 Team 和 Enterprise 计划上，Owner 在<a class="kw" onclick="showKw('Claude Code 管理设置')" title="点击查看解释">Claude Code 管理设置</a>中启用或禁用<a class="kw" onclick="showKw('远程控制')" title="点击查看解释">远程控制</a>和<a class="kw" onclick="showKw('网络会话')" title="点击查看解释">网络会话</a>组织范围内的<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>。<a class="kw" onclick="showKw('远程控制')" title="点击查看解释">远程控制</a>还可以通过 <a class="kw" onclick="showKw('disableRemoteControl')" title="点击查看解释">disableRemoteControl</a> <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>按设备禁用。网络<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>没有按设备<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>密钥。</p>
+</div>
+
+<h3 id="sec-permissions-28">设置优先级</h3>
+
+<p><a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>规则遵循与所有其他 Claude Code <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>相同的<a class="kw" onclick="showKw('设置优先级')" title="点击查看解释">设置优先级</a>：</p>
+
+<p>1. **<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>**：无法被任何其他级别覆盖，包括命令行参数</p>
+<p>2. **命令行参数**：临时<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>覆盖</p>
+<p>3. **本地项目<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>**（`.claude/settings.local.json`）</p>
+<p>4. **共享项目<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>**（`.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>`）</p>
+<p>5. **用户<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>**（`~/.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>`）</p>
+
+<p>如果工具在任何级别被拒绝，没有其他级别可以允许它。例如，<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a> deny 无法被 `--allowedTools` 覆盖，`--disallowedTools` 可以添加超出<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>定义的限制。</p>
+
+<p>同样的规则也适用于<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>范围：如果用户<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>允许某个<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>而项目<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>拒绝它，deny 规则会阻止它。反之亦然：用户级别的 deny 会阻止项目级别的 allow，因为来自任何范围的 deny 规则在 allow 规则之前被评估。</p>
+
+<p>嵌入主机可以在 <a class="kw" onclick="showKw('parentSettingsBehavior')" title="点击查看解释">parentSettingsBehavior</a> <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>为 `&quot;merge&quot;` 时，通过 SDK `managedSettings` 选项提供额外的托管策略；嵌入器值可以收紧策略但不能放松它。</p>
+
+<h3 id="sec-permissions-29">项目允许规则和工作区信任</h3>
+
+<p>项目的 `.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 中的 `permissions.allow` 规则和 `permissions.additionalDirectories` 条目授予功能，因此 Claude Code 仅在您接受该工作区的<a class="kw" onclick="showKw('工作区信任对话框')" title="点击查看解释">工作区信任对话框</a>后才应用它们。在此之前，Claude Code 会读取规则但不应用它们。信任对话框列出了该文件夹将授予的允许规则和其他目录，以便您可以在接受前查看它们。`deny` 和 `ask` 规则不受影响，因为它们仅限制。</p>
+
+<p>Claude Code 按工作区保存信任，以 git 存储库根目录为键，或在存储库外，以您启动 Claude Code 的目录为键。当您从主目录启动时，信任仅在当前<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>期间保持，不会写入磁盘；请参阅<a class="kw" onclick="showKw('其他保护措施')" title="点击查看解释">其他保护措施</a>说明。信任父目录不会应用嵌套项目的允许规则。</p>
+
+<p>`.claude/settings.local.json` 是您自己的文件，因此工作区信任检查通常不适用于它。当存储库可能提供了该文件时，例如当它提交到 git 或 `.claude` 是符号链接时，其允许规则和其他目录会像项目<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>一样通过信任检查。</p>
+
+<p>Claude Code 运行 git 来检查存储库是否提供了该文件，并且仅在被接受的信任对话框覆盖的文件夹中运行该检查，对于该文件夹或其父目录之一。在您尚未信任的文件夹中的交互式<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中，`.claude/settings.local.json` 中的允许规则和其他目录会像项目<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>一样通过信任检查，直到您接受对话框，除非<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在您自己的配置主目录中运行，如下所述。在以下两个例外中，只有配置主目录例外在对话框之前适用，因为它不需要运行 git。确定目录不在 git 存储库内使用相同的 git 检查，因此不在存储库内的例外在接受覆盖该文件夹的信任对话框后生效。在 v2.1.207 之前，未跟踪的 `.claude/settings.local.json` 在您接受对话框之前在该文件夹中应用其允许规则。</p>
+
+<p>`.claude/settings.local.json` 中的允许规则和其他目录在两种情况下也可以在没有工作区信任的情况下应用：</p>
+
+<p>* 您启动 Claude Code 的目录不在 git 存储库内。</p>
+<p>* <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在您自己的配置主目录中运行：您的主目录或任何您已将其 `.claude` 子目录<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>为 <a class="kw" onclick="showKw('CLAUDE_CONFIG_DIR')" title="点击查看解释">CLAUDE_CONFIG_DIR</a> 的目录。</p>
+
+<p>在这两种情况下，该文件都是您创建的，而不是存储库可能提供的文件，并且存储库提交的 `.claude/settings.local.json` 仍然需要工作区信任。版本 2.1.196 至 2.1.199 在这些工作区中将该文件视为存储库提供的文件，忽略其允许规则，并向 stderr 打印 <a class="kw" onclick="showKw('this workspace has not been trusted')" title="点击查看解释">this workspace has not been trusted</a> 警告。上述两个例外与 v2.1.195 及更早版本相匹配，并在 v2.1.200 中恢复。</p>
+
+<p>同样从 v2.1.200 开始，一个工作区的允许规则或其他目录仍未被应用，但由于父目录已被信任而从未显示信任对话框，会在您下次在那里交互式启动 Claude Code 时显示对话框。对话框提供两个选择：</p>
+
+<p>* **Yes, I trust this folder**：保存该工作区的信任并在同一<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中应用规则。</p>
+<p>* **No, continue without these permissions**：继续工作，忽略这些规则。对话框将在下一个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中再次出现。</p>
+
+<p>在<a class="kw" onclick="showKw('非交互模式')" title="点击查看解释">非交互模式</a>中使用 `-p`，不会出现对话框，规则保持被忽略。</p>
+
+<h3 id="sec-permissions-30">示例配置</h3>
+
+<p>此<a class="kw" onclick="showKw('存储库')" title="点击查看解释">存储库</a>包括常见部署场景的启动<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>配置。将这些用作起点并根据您的需要调整它们。</p>
+
+<h3 id="sec-permissions-31">另请参见</h3>
+
+<p>* <a class="kw" onclick="showKw('Settings')" title="点击查看解释">Settings</a>：完整的配置参考，包括<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a><a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>表</p>
+<p>* <a class="kw" onclick="showKw('Configure auto mode')" title="点击查看解释">Configure auto mode</a>：告诉<a class="kw" onclick="showKw('自动模式')" title="点击查看解释">自动模式</a>分类器您的组织信任哪些基础设施</p>
+<p>* <a class="kw" onclick="showKw('Sandboxing')" title="点击查看解释">Sandboxing</a>：Bash 命令的 OS 级文件系统和网络隔离</p>
+<p>* <a class="kw" onclick="showKw('Authentication')" title="点击查看解释">Authentication</a>：<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>用户对 Claude Code 的访问</p>
+<p>* <a class="kw" onclick="showKw('Security')" title="点击查看解释">Security</a>：安全保障和<a class="kw" onclick="showKw('最佳实践')" title="点击查看解释">最佳实践</a></p>
+<p>* <a class="kw" onclick="showKw('Hooks')" title="点击查看解释">Hooks</a>：自动化<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>并扩展<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>评估</p>
+
+  </main>
+</div>
+
+<nav class="pager">
+  <a href="permission-modes.html"><span class="dir">← 上一篇</span><span class="ptitle">选择权限模式</span></a>
+  <a class="next" href="platforms.html"><span class="dir">下一篇 →</span><span class="ptitle">平台和集成</span></a>
+</nav>
+
+<button class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="返回顶部"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 5l0 14" /> <path d="M18 11l-6 -6" /> <path d="M6 11l6 -6" /> </svg></span></button>
+
+<!-- 关键词解释弹窗 -->
+<div class="kw-panel" id="kwPanel">
+  <div class="kwp-head">
+    <span class="kwp-badge" id="kwpBadge"></span>
+    <span class="kwp-title" id="kwpTitle"></span>
+    <button class="kwp-close" onclick="hideKw()">×</button>
+  </div>
+  <div class="kwp-body">
+    <div class="kwp-desc" id="kwpDesc"></div>
+    <a class="kwp-link" id="kwpLink" target="_blank">阅读完整文档<span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l14 0" /> <path d="M13 18l6 -6" /> <path d="M13 6l6 6" /> </svg></span></a>
+  </div>
+  <div class="kwp-bar-wrap"><div class="kwp-bar" id="kwBar"></div></div>
+</div>
+
+<script>
+function toggleDrawer() {
+  document.getElementById('drawer').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+window.addEventListener('scroll', function() {
+  var st = document.getElementById('scrollTop');
+  st.classList.toggle('show', window.scrollY > 400);
+  var h = document.documentElement.scrollHeight - window.innerHeight;
+  var pct = h > 0 ? (window.scrollY / h * 100) : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+});
+
+// ===== 关键词弹窗逻辑 =====
+const KW_DATA = {"Marketplace": {"doc": "plugin-marketplaces", "title": "创建和分发 plugin marketplace", "desc": "**plugin marketplace** 是一个目录，让你能够将 plugins 分发给他人。Marketplace 提供集中式发现、版本跟踪、自动更新以及对多种源类型（包括 git 存储库和本地路径）的支持。本指南展示了如何创建自己的 marketplace，与你的团队或社区共享 plugins。"}, "市场": {"doc": "plugin-marketplaces", "title": "创建和分发 plugin marketplace", "desc": "**plugin marketplace** 是一个目录，让你能够将 plugins 分发给他人。Marketplace 提供集中式发现、版本跟踪、自动更新以及对多种源类型（包括 git 存储库和本地路径）的支持。本指南展示了如何创建自己的 marketplace，与你的团队或社区共享 plugins。"}, "Plugin": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "插件": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "Skill": {"doc": "skills", "title": "使用 skills 扩展 Claude", "desc": "Skills 扩展了 Claude 能做的事情。创建一个 `SKILL.md` 文件，其中包含说明，Claude 会将其添加到其工具包中。Claude 在相关时使用 skills，或者你可以使用 `/skill-name` 直接调用一个。"}, "技能": {"doc": "skills", "title": "使用 skills 扩展 Claude", "desc": "Skills 扩展了 Claude 能做的事情。创建一个 `SKILL.md` 文件，其中包含说明，Claude 会将其添加到其工具包中。Claude 在相关时使用 skills，或者你可以使用 `/skill-name` 直接调用一个。"}, "Agent": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "Subagent": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "子代理": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "Hook": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "钩子": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "MCP": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "CLI": {"doc": "cli-reference", "title": "CLI 参考", "desc": "CLI 命令"}, "斜杠命令": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "快捷键": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "keybindings": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "权限模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Permission Mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "上下文窗口": {"doc": "context-window", "title": "探索上下文窗口", "desc": "了解 Claude Code 的上下文窗口如何工作：上下文包含哪些内容、如何高效利用、以及自动压缩等机制。"}, "Context Window": {"doc": "context-window", "title": "探索上下文窗口", "desc": "了解 Claude Code 的上下文窗口如何工作：上下文包含哪些内容、如何高效利用、以及自动压缩等机制。"}, "设置": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "环境变量": {"doc": "env-vars", "title": "环境变量", "desc": "环境变量可以控制 Claude Code 的行为，例如模型选择、身份验证、请求路由和功能切换。许多相同的行为也可以通过设置文件字段、CLI 标志或会话内命令（如 `/model`）进行配置。"}, "Environment Variables": {"doc": "env-vars", "title": "环境变量", "desc": "环境变量可以控制 Claude Code 的行为，例如模型选择、身份验证、请求路由和功能切换。许多相同的行为也可以通过设置文件字段、CLI 标志或会话内命令（如 `/model`）进行配置。"}, "记忆": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "Memory": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "会话": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "Session": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "状态栏": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "Statusline": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "CLAUDE.md": {"doc": "claude-directory", "title": "探索 .claude 目录", "desc": "Claude Code 在项目根目录读取的指令文件，每次会话都会加载，用来定义项目约定、常用命令和架构上下文。"}, ".claude 目录": {"doc": "claude-directory", "title": "探索 .claude 目录", "desc": "Claude Code 读取 CLAUDE.md、settings.json、hooks、skills、commands、subagents 等配置的目录结构。"}, "keybindings.json": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "settings.json": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "Prompt caching": {"doc": "prompt-caching", "title": "Claude Code 如何使用 prompt caching", "desc": "Prompt caching 使 Claude Code 更快、更经济高效。没有缓存，API 会在每个回合重新处理您的完整历史记录。有了缓存，它会重用已经处理过的内容，只对更改的部分进行新工作。"}, "提示词缓存": {"doc": "prompt-caching", "title": "Claude Code 如何使用 prompt caching", "desc": "Prompt caching 使 Claude Code 更快、更经济高效。没有缓存，API 会在每个回合重新处理您的完整历史记录。有了缓存，它会重用已经处理过的内容，只对更改的部分进行新工作。"}, "提示词库": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类（理解、计划、原型、构建等），帮助快速上手常见任务。"}, "Prompt library": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类（理解、计划、原型、构建等），帮助快速上手常见任务。"}, "提示词": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类，帮助快速上手 Claude Code 常见任务。"}, "auto memory": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "自动记忆": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "后台会话": {"doc": "agent-view", "title": "使用 agent view 管理多个代理", "desc": "Agent view 通过 `claude agents` 打开，是所有后台会话的一个屏幕：什么正在运行、什么需要你的输入、什么已完成。调度新会话，一目了然地查看它们的状态而不是滚动浏览记录，只在需要时才介入。每个后台会话都是一个完整的 Claude Code 对话，在没有终端连接的情况下继续运行，所以你可以随时打开它、回复并离开。"}, "代理视图": {"doc": "agent-view", "title": "使用 agent view 管理多个代理", "desc": "Agent view 通过 `claude agents` 打开，是所有后台会话的一个屏幕：什么正在运行、什么需要你的输入、什么已完成。调度新会话，一目了然地查看它们的状态而不是滚动浏览记录，只在需要时才介入。每个后台会话都是一个完整的 Claude Code 对话，在没有终端连接的情况下继续运行，所以你可以随时打开它、回复并离开。"}, "远程控制": {"doc": "remote-control", "title": "使用 Remote Control 从任何设备继续本地会话", "desc": "Remote Control 处于研究预览阶段，在所有计划中都可用。在 Team 和 Enterprise 上，在所有者在 Claude Code 管理员设置中启用 Remote Control 切换之前，它默认处于关闭状态。"}, "Remote Control": {"doc": "remote-control", "title": "使用 Remote Control 从任何设备继续本地会话", "desc": "Remote Control 处于研究预览阶段，在所有计划中都可用。在 Team 和 Enterprise 上，在所有者在 Claude Code 管理员设置中启用 Remote Control 切换之前，它默认处于关闭状态。"}, "计划任务": {"doc": "scheduled-tasks", "title": "按计划运行提示词", "desc": "计划任务让 Claude 按间隔自动重新运行提示词。使用它们来轮询部署、监督 PR、检查长时间运行的构建，或在会话中稍后提醒自己做某事。要对事件进行实时反应而不是轮询，请参阅 Channels：您的 CI 可以直接将失败推送到会话中。要保持会话工作转向转向直到满足条件而不是按间隔，请参阅 `/goal`。"}, "定期任务": {"doc": "desktop-scheduled-tasks", "title": "在 Claude Code Desktop 中安排定期任务", "desc": "定期任务在您选择的时间和频率自动启动新会话。使用它们进行定期工作，如日常代码审查、依赖项更新检查或从您的日历和收件箱中提取信息的早晨简报。"}, "例程": {"doc": "routines", "title": "使用例程自动化工作", "desc": "Routines 处于研究预览阶段。行为、限制和 API 表面可能会改变。"}, "Routines": {"doc": "routines", "title": "使用例程自动化工作", "desc": "Routines 处于研究预览阶段。行为、限制和 API 表面可能会改变。"}, "代码审查": {"doc": "code-review", "title": "Code Review", "desc": "Code Review 处于研究预览阶段，仅适用于 Team 和 Enterprise 订阅。对于启用了 Zero Data Retention 的组织，此功能不可用。"}, "Code Review": {"doc": "code-review", "title": "Code Review", "desc": "Code Review 处于研究预览阶段，仅适用于 Team 和 Enterprise 订阅。对于启用了 Zero Data Retention 的组织，此功能不可用。"}, "检查点": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "Checkpointing": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "工作流": {"doc": "workflows", "title": "使用动态工作流大规模编排子代理", "desc": "动态工作流需要 Claude Code v2.1.154 或更高版本，在所有付费计划上可用，具有 Anthropic API 访问权限，以及在 Amazon Bedrock、Google Cloud 的 Agent Platform 和 Microsoft Foundry 上可用。在 Pro 上，从 `/config` 中的\"Dynamic workflows\"行启用它们。"}, "Workflows": {"doc": "workflows", "title": "使用动态工作流大规模编排子代理", "desc": "动态工作流需要 Claude Code v2.1.154 或更高版本，在所有付费计划上可用，具有 Anthropic API 访问权限，以及在 Amazon Bedrock、Google Cloud 的 Agent Platform 和 Microsoft Foundry 上可用。在 Pro 上，从 `/config` 中的\"Dynamic workflows\"行启用它们。"}, "最佳实践": {"doc": "best-practices", "title": "Claude Code 最佳实践", "desc": "Claude Code 是一个代理式编码环境。与等待回答问题的聊天机器人不同，Claude Code 可以读取你的文件、运行命令、进行更改，并在你观看、重定向或完全离开的情况下自主解决问题。"}, "Best Practices": {"doc": "best-practices", "title": "Claude Code 最佳实践", "desc": "Claude Code 是一个代理式编码环境。与等待回答问题的聊天机器人不同，Claude Code 可以读取你的文件、运行命令、进行更改，并在你观看、重定向或完全离开的情况下自主解决问题。"}, "交互模式": {"doc": "interactive-mode", "title": "交互模式", "desc": "键盘快捷键"}, "交互式模式": {"doc": "interactive-mode", "title": "交互模式", "desc": "键盘快捷键"}, "常见工作流": {"doc": "common-workflows", "title": "常见工作流程", "desc": "本页收集了日常开发的简短工作流程。有关提示和上下文管理的更高级指导，请参阅最佳实践。"}, "JetBrains": {"doc": "jetbrains", "title": "JetBrains IDEs", "desc": "Claude Code 通过专用插件与 JetBrains IDE 集成，提供交互式差异查看、选择上下文共享等功能。"}, "VS Code": {"doc": "vs-code", "title": "在 VS Code 中使用 Claude Code", "desc": "VS Code 扩展为 Claude Code 提供了原生图形界面，直接集成到您的 IDE 中。这是在 VS Code 中使用 Claude Code 的推荐方式。"}, "GitHub Actions": {"doc": "github-actions", "title": "Claude Code GitHub Actions", "desc": "Claude Code GitHub Actions 为您的 GitHub 工作流带来了 AI 驱动的自动化。只需在任何 PR 或 issue 中简单地提及 `@claude`，Claude 就可以分析您的代码、创建拉取请求、实现功能和修复错误 - 所有这些都遵循您项目的标准。如需在每个 PR 上自动发布评论而无需触发器，请参阅 GitHub Code Review。"}, "GitLab CI": {"doc": "gitlab-ci-cd", "title": "Claude Code GitLab CI/CD", "desc": "Claude Code for GitLab CI/CD 目前处于测试阶段。随着我们完善体验，功能和特性可能会发生变化。"}, "桌面应用": {"doc": "desktop", "title": "Desktop application", "desc": "Claude Desktop 应用有三个选项卡：Chat 用于对话，Cowork 用于 Dispatch 和更长的代理工作，Code 用于软件开发。本页是 Code 选项卡的参考。"}, "计划模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Plan mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "自动模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "auto mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Accept Edits": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "bypassPermissions": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "权限": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "/plugin": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "/mcp": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "/hooks": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "/agents": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "/clear": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/compact": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/config": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "/resume": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/continue": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/fork": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/checkpoint": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "/cost": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/permissions": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "/statusline": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "/keybindings": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "术语表": {"doc": "glossary", "title": "术语表", "desc": "本术语表定义了 Claude Code 术语。每个条目都链接到深入讨论该概念的页面。对于模型级概念（如 tokens、temperature 和 RAG），请参阅平台术语表。"}, "OAuth": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "MCP server": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "MCP Server": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "组织设置": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "托管设置": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "服务器托管": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "快速开始": {"doc": "quickstart", "title": "快速开始", "desc": "本快速开始指南将在几分钟内让您使用 AI 驱动的编码辅助。完成本指南后，您将了解如何使用 Claude Code 完成常见的开发任务。"}, "故障排除": {"doc": "troubleshooting", "title": "故障排除", "desc": "本页涵盖 Claude Code 运行后的性能、稳定性和搜索问题。对于其他问题，请从与您遇到的问题相匹配的页面开始："}, "Troubleshooting": {"doc": "troubleshooting", "title": "故障排除", "desc": "本页涵盖 Claude Code 运行后的性能、稳定性和搜索问题。对于其他问题，请从与您遇到的问题相匹配的页面开始："}, "完整文档": {"doc": "overview", "title": "概述", "desc": "Claude Code 是一个由 AI 驱动的编码助手，可帮助你构建功能、修复错误和自动化开发任务。它理解你的整个代码库，可以跨多个文件和工具工作以完成任务。"}, "概述": {"doc": "overview", "title": "概述", "desc": "Claude Code 是一个由 AI 驱动的编码助手，可帮助你构建功能、修复错误和自动化开发任务。它理解你的整个代码库，可以跨多个文件和工具工作以完成任务。"}};
+  const KW_EXTRA = {"skills": {"doc": "skills", "title": "Skills 技能", "desc": "Claude Code 技能扩展。SKILL.md 提供操作说明，Claude 按需调用完成任务。"}, "Skills": {"doc": "skills", "title": "Skills 技能", "desc": "Claude Code 技能扩展。SKILL.md 提供操作说明，Claude 按需调用完成任务。"}, "skill": {"doc": "skills", "title": "Skill 技能", "desc": "单个技能定义，包含 SKILL.md 说明文件，供 Claude 按需调用。"}, "Hooks": {"doc": "hooks", "title": "Hooks 钩子", "desc": "生命周期钩子。在 Claude Code 操作前后自动运行脚本，如格式化、lint。"}, "hooks": {"doc": "hooks", "title": "Hooks 钩子", "desc": "生命周期钩子。在 Claude Code 操作前后自动运行脚本，如格式化、lint。"}, "hook": {"doc": "hooks", "title": "Hook 钩子", "desc": "单个钩子，监听事件并在操作前后执行命令。"}, "hook 事件": {"doc": "hooks", "title": "Hook 事件", "desc": "钩子可监听的事件，如 PreToolUse、SessionStart 等。"}, "Subagents": {"doc": "sub-agents", "title": "Subagents 子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行，只返回摘要。"}, "subagents": {"doc": "sub-agents", "title": "子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行。"}, "subagent": {"doc": "sub-agents", "title": "子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行。"}, "agent team": {"doc": "agents", "title": "Agent team 代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "agent teams": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "Agent teams": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "代理团队": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "Plugins": {"doc": "plugins", "title": "Plugins 插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包，可共享给团队。"}, "plugins": {"doc": "plugins", "title": "插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包。"}, "plugin": {"doc": "plugins", "title": "插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包。"}, "MCP servers": {"doc": "mcp", "title": "MCP 服务器", "desc": "通过 Model Context Protocol 连接外部工具与数据源的服务器。"}, "MCP 服务器": {"doc": "mcp", "title": "MCP 服务器", "desc": "通过 Model Context Protocol 连接外部工具与数据源的服务器。"}, "Amazon Bedrock": {"doc": "third-party-integrations", "title": "Amazon Bedrock", "desc": "AWS 托管 AI 平台，可运行 Claude 模型并接入 Claude Code。"}, "Microsoft Foundry": {"doc": "third-party-integrations", "title": "Microsoft Foundry", "desc": "微软云 AI 平台，提供模型托管服务，支持 Claude Code 接入。"}, "Claude apps gateway": {"doc": "desktop", "title": "Claude apps gateway", "desc": "Anthropic 官方网关，管理桌面端与网络服务的连接。"}, "Agent SDK": {"doc": "agent-sdk_overview", "title": "Claude Agent SDK", "desc": "官方工具包，用于以编程方式构建和集成 Claude Code 代理。"}, "动态工作流": {"doc": "workflows", "title": "动态工作流", "desc": "通过 JSON/JS 定义步骤，让 Claude 编排子代理执行复杂任务。"}, "LLM 网关": {"doc": "third-party-integrations", "title": "LLM 网关", "desc": "大模型网关，统一路由、代理和管控 LLM API 请求的中间层。"}, "自动内存": {"doc": "memory", "title": "自动内存", "desc": "自动将重要信息写入记忆文档，跨会话保持上下文连续。"}, "Slack": {"doc": "slack", "title": "Slack", "desc": "协作平台。可通过 Claude Code 集成在 Slack 中运行 AI 代理。"}, "Dispatch": {"doc": "desktop", "title": "Dispatch", "desc": "桌面应用功能，将任务分派给代理在后台执行。"}, "Desktop": {"doc": "desktop", "title": "桌面应用", "desc": "Claude Code 桌面应用，提供 Chat、Cowork、Code 图形界面。"}, "Channels": {"doc": "channels", "title": "Channels 频道", "desc": "将 Claude Code 会话接入 Telegram、Discord 等平台的插件系统。"}, "Sandboxing": {"doc": "settings", "title": "沙箱", "desc": "限制 Bash 工具访问范围的安全隔离机制。"}, "沙箱": {"doc": "settings", "title": "沙箱", "desc": "限制工具文件系统访问的安全隔离环境。"}, "非交互模式": {"doc": "cli-reference", "title": "非交互模式", "desc": "通过 -p 参数在脚本中无交互运行 Claude Code，适合自动化。"}, "快速模式": {"doc": "settings", "title": "快速模式", "desc": "提高速率限制的付费模式，响应速度更快。"}, "Plan Mode": {"doc": "permission-modes", "title": "计划模式", "desc": "只分析不执行，先产出修改方案供确认再动手。"}, "Auto mode": {"doc": "permission-modes", "title": "自动模式", "desc": "自动批准低风险操作，减少交互打断，提升效率。"}, "状态行": {"doc": "statusline", "title": "状态行", "desc": "可自定义的底部状态栏，显示上下文、成本等信息。"}, "工具搜索": {"doc": "mcp", "title": "MCP 工具搜索", "desc": "让 Claude 按需搜索并发现更多 MCP 工具，扩展能力。"}, "扩展思考": {"doc": "common-workflows", "title": "扩展思考", "desc": "让 Claude 回答前进行更深入的多步推理，提升复杂问题准确率。"}, "计算机使用": {"doc": "computer-use", "title": "计算机使用", "desc": "让 Claude 控制屏幕、操作应用的实验性功能。"}, "云会话": {"doc": "claude-code-on-the-web", "title": "云会话", "desc": "在 Anthropic 云端运行的 Claude Code 会话。"}, "第三方提供商": {"doc": "third-party-integrations", "title": "第三方提供商", "desc": "通过兼容 API 使用非 Anthropic 模型的服务商。"}, "身份验证": {"doc": "settings", "title": "身份验证", "desc": "Claude Code 登录与凭证验证机制。"}, "网络配置": {"doc": "settings", "title": "网络配置", "desc": "Claude Code 访问网络端点与代理的设置。"}, "语音听写": {"doc": "desktop", "title": "语音听写", "desc": "通过语音转文字向 Claude 下达指令。"}, "权限规则": {"doc": "permission-modes", "title": "权限规则", "desc": "定义允许、询问、拒绝操作的规则。"}, "输出样式": {"doc": "settings", "title": "输出样式", "desc": "自定义 Claude 回复格式的样式文件。"}, "工作量级别": {"doc": "settings", "title": "工作量级别", "desc": "控制模型推理深度的设置。"}, "努力级别": {"doc": "settings", "title": "努力级别", "desc": "控制模型推理深度的设置。"}, "Worktrees": {"doc": "common-workflows", "title": "Git worktree", "desc": "Git 并行工作树，支持多会话同时开发互不干扰。"}, "git worktree": {"doc": "common-workflows", "title": "Git worktree", "desc": "Git 并行工作树，支持多会话同时开发互不干扰。"}, "后台代理": {"doc": "agent-view", "title": "后台代理", "desc": "在后台运行、无需终端连接的 Claude Code 会话。"}, "自动修复": {"doc": "github-actions", "title": "自动修复", "desc": "Claude 自动修复 PR 或代码问题并提交。"}, "顾问工具": {"doc": "code-review", "title": "顾问工具", "desc": "提供代码审查建议的辅助工具。"}, "SSH": {"doc": "remote-control", "title": "SSH", "desc": "安全外壳协议，用于远程连接与加密通信。"}, "连接器": {"doc": "channels", "title": "连接器", "desc": "Claude 连接外部工具和数据源的官方集成。"}, "Artifact": {"doc": "desktop", "title": "Artifact 工件", "desc": "Claude 生成的可共享成果物。"}, "管理会话": {"doc": "sessions", "title": "会话管理", "desc": "保存、恢复、分叉 Claude Code 对话。"}, "命令参考": {"doc": "commands", "title": "命令参考", "desc": "Claude Code 斜杠命令的说明文档。"}, "插件参考": {"doc": "plugins-reference", "title": "插件参考", "desc": "插件组件与配置的参考文档。"}, "自适应推理": {"doc": "settings", "title": "自适应推理", "desc": "根据任务难度动态调整模型推理强度。"}, "环境缓存": {"doc": "settings", "title": "环境缓存", "desc": "缓存已验证的脚本环境，加快工具执行。"}, "扩展上下文": {"doc": "context-window", "title": "扩展上下文", "desc": "增大上下文窗口容量，处理更长内容。"}, "内置命令": {"doc": "commands", "title": "内置命令", "desc": "Claude Code 自带的斜杠命令。"}, "权限设置": {"doc": "permission-modes", "title": "权限设置", "desc": "控制 Claude 操作权限的配置。"}, "环境": {"doc": "env-vars", "title": "环境", "desc": "影响 Claude Code 运行的系统环境配置。"}, "Chrome": {"doc": "chrome", "title": "Chrome 扩展", "desc": "Claude in Chrome 浏览器扩展，在网页中调用 Claude。"}, "iOS": {"doc": "desktop", "title": "iOS 应用", "desc": "Claude 移动端应用，支持远程控制与推送。"}, "Android": {"doc": "desktop", "title": "Android 应用", "desc": "Claude 移动端应用，支持远程控制与推送。"}, "网页": {"doc": "claude-code-on-the-web", "title": "Claude Code 网页版", "desc": "在浏览器中使用的 Claude Code，无需安装 CLI，登录即用。"}, "GitLab": {"doc": "gitlab-ci-cd", "title": "GitLab", "desc": "代码托管平台。可通过 GitLab CI/CD 集成 Claude Code 实现自动化。"}, "CI/CD": {"doc": "github-actions", "title": "CI/CD", "desc": "持续集成/持续交付，自动化完成构建、测试和部署的流水线。"}, "终端 CLI": {"doc": "cli-reference", "title": "终端 CLI", "desc": "命令行界面工具，在终端中直接运行 Claude Code 管理项目。"}, "终端指南": {"doc": "overview", "title": "终端指南", "desc": "终端基础使用入门，介绍如何用命令行操作 Claude Code。"}, "Claude Console": {"doc": "overview", "title": "Anthropic 控制台", "desc": "Anthropic 官方控制台，管理 API 密钥、查看用量和账单。"}, "Claude 订阅": {"doc": "overview", "title": "Claude 订阅", "desc": "Claude 付费套餐（Pro/Max/Team/Enterprise），解锁全部功能。"}, "支持的云提供商": {"doc": "third-party-integrations", "title": "支持的云提供商", "desc": "Amazon Bedrock、Google Cloud 等可托管并运行 Claude 模型的云平台。"}, "凭证管理": {"doc": "settings", "title": "凭证管理", "desc": "管理 API 密钥、登录凭证和身份验证的机制。"}, "Git for Windows": {"doc": "settings", "title": "Git for Windows", "desc": "Windows 版 Git，安装后 Claude Code 可使用 Bash 工具。"}, "Discord": {"doc": "channels", "title": "Discord", "desc": "社区平台。可通过 Channels 插件在 Discord 中使用 Claude Code。"}, "所有界面": {"doc": "overview", "title": "所有界面", "desc": "Claude Code 的多种使用方式：终端、IDE、桌面应用、网页等。"}, "Amazon Bedrock、Google Cloud 的 Agent Platform 或 Microsoft Foundry": {"doc": "third-party-integrations", "title": "三大云平台", "desc": "AWS、谷歌云、微软云三大平台，均可托管 Claude 模型接入 Claude Code。"}, "Claude Pro、Max、Team 或 Enterprise": {"doc": "overview", "title": "Claude 订阅套餐", "desc": "Claude 的付费订阅层级，提供不同额度的模型访问与功能。"}, "Troubleshoot installation": {"doc": "troubleshoot-install", "title": "安装故障排除", "desc": "安装 Claude Code 出错时的排查指南与替代安装方法。"}, "终端": {"doc": "cli-reference", "title": "终端", "desc": "命令行环境，Claude Code 的主要使用场景。"}, "GitHub Actions": {"doc": "github-actions", "title": "GitHub Actions", "desc": "GitHub 的 CI/CD 自动化平台，可集成 Claude Code 自动审查和修复。"}, "JetBrains IDE": {"doc": "jetbrains", "title": "JetBrains IDE", "desc": "JetBrains 系列 IDE（IDEA、PyCharm 等）的 Claude Code 插件。"}, "apt, dnf, or apk": {"doc": "setup", "title": "Linux 包管理器", "desc": "Linux 包管理器：apt 用于 Debian/Ubuntu，dnf 用于 Fedora。"}, "CLI 参考": {"doc": "cli-reference", "title": "CLI 参考", "desc": "Claude Code 命令行参考，列出全部命令、参数与用法。"}};
+let kwTimer = null;
+function showKw(kw) {
+  const d = KW_DATA[kw] || KW_EXTRA[kw];
+  if (!d) {
+    document.getElementById('kwpBadge').textContent = kw;
+    document.getElementById('kwpTitle').textContent = kw;
+    document.getElementById('kwpDesc').textContent = '暂无该词条详细解释，可前往官方文档查阅。';
+    document.getElementById('kwpLink').style.display = 'none';
+    const panel = document.getElementById('kwPanel');
+    panel.style.width = '320px';
+    panel.classList.add('open');
+    const bar = document.getElementById('kwBar');
+    bar.style.transition = 'none';
+    bar.style.width = '100%';
+    void bar.offsetWidth;
+    bar.style.transition = 'width 4s linear';
+    bar.style.width = '0%';
+    clearTimeout(kwTimer);
+    kwTimer = setTimeout(hideKw, 4000);
+    return;
+  }
+  document.getElementById('kwpBadge').textContent = kw;
+  document.getElementById('kwpTitle').textContent = d.title;
+  document.getElementById('kwpDesc').textContent = d.desc;
+  var _kwpPfx = location.pathname.indexOf('/doc/') !== -1 || location.pathname.endsWith('/doc/') ? '' : 'doc/';
+  document.getElementById('kwpLink').style.display = '';
+  document.getElementById('kwpLink').href = _kwpPfx + d.doc + '.html';
+  // 弹窗宽度随内容自适应（280-480px）
+  const panel = document.getElementById('kwPanel');
+  const estW = Math.min(480, Math.max(300, 280 + d.desc.length * 0.5));
+  panel.style.width = estW + 'px';
+  // 进度条时长按文本长度：每55字1秒，限4-14秒
+  const dur = Math.min(14, Math.max(4, Math.round(d.desc.length / 55)));
+  panel.classList.add('open');
+  // 重置进度条动画
+  const bar = document.getElementById('kwBar');
+  bar.style.transition = 'none';
+  bar.style.width = '100%';
+  void bar.offsetWidth;
+  bar.style.transition = 'width ' + dur + 's linear';
+  bar.style.width = '0%';
+  clearTimeout(kwTimer);
+  kwTimer = setTimeout(hideKw, dur * 1000);
+}
+function hideKw() {
+  document.getElementById('kwPanel').classList.remove('open');
+  clearTimeout(kwTimer);
+}
+
+// ===== 错误汇报 =====
+function openRpt() {
+  var page = location.pathname.split('/').pop() || 'index.html';
+  document.getElementById('rptPage').textContent = page;
+  document.getElementById('rptDesc').value = '';
+  document.getElementById('rptContact').value = '';
+  document.getElementById('rptForm').style.display = '';
+  document.getElementById('rptOk').style.display = 'none';
+  document.getElementById('rptOverlay').classList.add('show');
+}
+function closeRpt() {
+  document.getElementById('rptOverlay').classList.remove('show');
+}
+function submitRpt() {
+  var desc = document.getElementById('rptDesc').value.trim();
+  if (!desc) { document.getElementById('rptDesc').focus(); return; }
+  var btn = document.getElementById('rptBtn');
+  btn.disabled = true; btn.textContent = '提交中...';
+  var payload = {
+    page: document.getElementById('rptPage').textContent,
+    desc: desc,
+    contact: document.getElementById('rptContact').value.trim(),
+    time: new Date().toLocaleString('zh-CN', {hour12:false}),
+    user_agent: navigator.userAgent
+  };
+  fetch('/api/report', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  }).then(function(r){ return r.json(); }).then(function(d) {
+    btn.disabled = false; btn.textContent = '提交汇报';
+    document.getElementById('rptForm').style.display = 'none';
+    document.getElementById('rptOk').style.display = 'block';
+    setTimeout(closeRpt, 1800);
+  }).catch(function(e) {
+    btn.disabled = false; btn.textContent = '提交汇报';
+    alert('汇报失败，请重试：' + e);
+  });
+}
+</script>
+<!-- 错误汇报弹窗 -->
+<div class="rpt-overlay" id="rptOverlay" onclick="if(event.target===this)closeRpt()">
+  <div class="rpt-modal">
+    <div class="rpt-head">
+      <span class="rpt-title"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9 9v-1a3 3 0 0 1 6 0v1" /> <path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /> <path d="M3 13l4 0" /> <path d="M17 13l4 0" /> <path d="M12 20l0 -6" /> <path d="M4 19l3.35 -2" /> <path d="M20 19l-3.35 -2" /> <path d="M4 7l3.75 2.4" /> <path d="M20 7l-3.75 2.4" /> </svg></span> 文档有误？向服务器汇报！</span>
+      <button class="rpt-close" onclick="closeRpt()">×</button>
+    </div>
+    <div class="rpt-body" id="rptForm">
+      <div class="rpt-field">
+        <label>问题页面</label>
+        <div class="rpt-page" id="rptPage"></div>
+      </div>
+      <div class="rpt-field">
+        <label>问题描述</label>
+        <textarea id="rptDesc" placeholder="请描述你发现的问题：哪个词错了？哪里跳转不对？内容过时了？"></textarea>
+      </div>
+      <div class="rpt-field">
+        <label>联系方式（选填）</label>
+        <input id="rptContact" type="text" placeholder="QQ号 / 邮箱等，方便反馈处理结果">
+      </div>
+      <div class="rpt-tip">提交后内容会发送到服务器 reports/ 目录，管理员会尽快处理喵~</div>
+      <button class="rpt-submit" id="rptBtn" onclick="submitRpt()">提交汇报</button>
+    </div>
+    <div class="rpt-ok" id="rptOk" style="display:none;">
+      <div class="rpt-ok-icon"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span></div>
+      <div class="rpt-ok-title">汇报成功！</div>
+      <div class="rpt-ok-desc">感谢主人的反馈，问题已记录到服务器</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

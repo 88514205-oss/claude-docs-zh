@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f1117">
+<title>Claude Code 如何使用 prompt caching - Claude Code 知识库</title>
+<style>
+:root {
+  --bg: #0f1117; --bg2: #16181f; --card: #1b1e26; --card2: #20242e;
+  --border: #2a2e3a; --text: #e2e4ea; --text2: #9aa0ad; --muted: #6b7280;
+  --accent: #8b7cff; --accent2: #a99dff; --code-bg: #0c0e13;
+  --kw-bg: rgba(139,124,255,0.15); --kw-hover: rgba(139,124,255,0.28);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { scroll-behavior:smooth; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); }
+.icon { display:inline-flex; vertical-align:-0.2em; width:1.1em; height:1.1em; margin-right:6px; }
+.icon svg { width:100%; height:100%; }
+.progress-bar { position:fixed; top:0; left:0; height:3px; background:var(--accent); width:0%; z-index:300; transition:width 0.1s linear; }
+.topbar { position:fixed; top:0; left:0; right:0; z-index:200; background:rgba(22,24,31,0.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 12px; height:52px; }
+.topbar .tb-home { display:flex; align-items:center; color:var(--text2); text-decoration:none; font-size:14px; padding:6px 10px; border-radius:8px; }
+.topbar .tb-home:hover { color:var(--text); background:var(--card2); }
+.topbar .tb-title { flex:1; text-align:center; font-size:15px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 10px; }
+.topbar .tb-toc { background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:13px; display:flex; align-items:center; }
+.topbar .tb-toc:hover { color:var(--text); border-color:var(--accent); }
+.reader { display:flex; padding-top:52px; min-height:100vh; }
+.toc-side { width:240px; flex-shrink:0; position:sticky; top:52px; height:calc(100vh - 52px); overflow-y:auto; padding:20px 12px; border-right:1px solid var(--border); background:var(--bg); display:none; }
+.toc-side h3 { font-size:13px; color:var(--muted); margin-bottom:10px; padding-left:8px; letter-spacing:1px; }
+.toc-side a { display:block; color:var(--text2); text-decoration:none; padding:6px 8px; border-radius:6px; font-size:13px; line-height:1.5; border-left:2px solid transparent; }
+.toc-side a:hover { color:var(--text); background:var(--card2); border-left-color:var(--accent); }
+.toc-drawer { position:fixed; top:0; right:-300px; width:280px; max-width:85vw; height:100vh; background:var(--bg2); z-index:250; transition:right 0.25s ease; overflow-y:auto; padding:70px 16px 30px; border-left:1px solid var(--border); }
+.toc-drawer.open { right:0; }
+.toc-drawer h3 { font-size:14px; color:var(--muted); margin-bottom:12px; }
+.toc-drawer a { display:block; color:var(--text2); text-decoration:none; padding:8px 6px; border-radius:6px; font-size:14px; line-height:1.5; }
+.toc-drawer a:hover { color:var(--text); background:var(--card2); }
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:240; display:none; }
+.overlay.show { display:block; }
+.article { flex:1; max-width:760px; margin:0 auto; padding:40px 24px 80px; min-width:0; }
+.article h1 { font-size:26px; margin-bottom:6px; line-height:1.4; }
+.article .doc-meta { color:var(--muted); font-size:13px; margin-bottom:28px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+.article h2 { font-size:21px; margin:36px 0 14px; color:var(--text); line-height:1.4; }
+.article h3 { font-size:18px; margin:28px 0 12px; color:var(--text); }
+.article h4 { font-size:16px; margin:22px 0 10px; color:var(--accent2); }
+.article p { font-size:16.5px; line-height:1.95; margin:14px 0; color:var(--text); }
+.article li { margin-left:24px; line-height:1.9; font-size:16px; color:var(--text); }
+.article a { color:#a78bfa; text-decoration:underline; text-underline-offset:3px; transition:color 0.15s; }
+.article a:hover { color:#c4b5fd; }
+.article a:visited { color:#a78bfa; }
+.article a.kw { color:#c4b5fd; text-decoration:none; }
+.article blockquote { border-left:4px solid var(--accent); padding:10px 16px; background:rgba(139,124,255,0.08); margin:16px 0; color:var(--text2); font-size:15px; border-radius:0 8px 8px 0; }
+.article pre { background:var(--code-bg); color:#d5d8e0; padding:16px 18px; border-radius:10px; overflow-x:auto; -webkit-overflow-scrolling:touch; font-size:13.5px; line-height:1.7; margin:16px 0; white-space:pre; border:1px solid var(--border); }
+.article code { font-family:"JetBrains Mono",Consolas,monospace; }
+.article .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; margin:16px 0; border-radius:8px; border:1px solid var(--border); }
+.article table { width:100%; border-collapse:collapse; font-size:14px; min-width:420px; }
+.article th, .article td { border-bottom:1px solid var(--border); padding:9px 12px; text-align:left; color:var(--text); line-height:1.7; }
+.article th { background:var(--card2); color:var(--accent2); }
+.kw { color:#c4b5fd; background:var(--kw-bg); border-bottom:1px dashed var(--accent); padding:1px 4px; border-radius:4px; text-decoration:none; cursor:pointer; font-weight:500; transition:all 0.15s; }
+.kw:hover { background:var(--kw-hover); color:#fff; }
+.pager { max-width:760px; margin:0 auto; padding:0 24px 60px; display:flex; gap:12px; }
+.pager a { flex:1; display:block; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 18px; text-decoration:none; transition:0.2s; }
+.pager a:hover { border-color:var(--accent); transform:translateY(-2px); }
+.pager .dir { font-size:12px; color:var(--muted); display:block; margin-bottom:6px; }
+.pager .ptitle { font-size:15px; color:var(--text); font-weight:600; display:block; }
+.pager a.next { text-align:right; }
+.pager a:empty { display:none; }
+.scroll-top { position:fixed; right:16px; bottom:20px; width:44px; height:44px; border-radius:50%; background:var(--card2); color:var(--text); border:1px solid var(--border); box-shadow:0 3px 12px rgba(0,0,0,0.4); display:none; z-index:90; align-items:center; justify-content:center; cursor:pointer; }
+.scroll-top.show { display:flex; }
+.scroll-top .icon { margin:0; width:1.4em; height:1.4em; }
+
+.hamburger { background:none; border:none; color:var(--text); cursor:pointer; padding:8px; line-height:1; display:inline-flex; align-items:center; }
+.topbar .logo { display:flex; align-items:center; font-weight:700; font-size:15px; color:var(--text); flex-shrink:0; }
+.topbar .logo .icon { color:var(--accent); }
+.drawer { position:fixed; top:0; left:0; bottom:0; width:250px; background:var(--bg2); color:var(--text); z-index:250; transform:translateX(-100%); transition:transform 0.25s ease; overflow-y:auto; padding-top:60px; border-right:1px solid var(--border); }
+.drawer.open { transform:translateX(0); }
+.drawer nav a { display:flex; align-items:center; padding:12px 20px; color:var(--text2); text-decoration:none; font-size:15px; }
+.drawer nav a:hover, .drawer nav a:active { color:var(--text); background:var(--card2); }
+.drawer a { display:block; color:var(--text2); text-decoration:none; padding:7px 20px; font-size:13.5px; line-height:1.5; }
+.drawer a:hover { color:var(--text); background:var(--card2); }
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:240; display:none; }
+.overlay.show { display:block; }
+
+
+/* ===== MDX组件样式 ===== */
+.card-group { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin:16px 0; }
+.mg-card { display:flex; align-items:flex-start; gap:10px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; text-decoration:none; transition:0.2s; }
+.mg-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+.mg-icon { font-size:20px; flex-shrink:0; color:var(--accent); }
+.mg-card-title { font-size:14px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.mg-card-desc { font-size:12.5px; color:var(--text2); line-height:1.5; }
+.callout { border-left:4px solid var(--accent); padding:10px 16px; margin:14px 0; border-radius:0 8px 8px 0; font-size:14.5px; line-height:1.7; color:var(--text2); }
+.callout-tip { border-left-color:#4caf50; background:rgba(76,175,80,0.08); }
+.callout-note { border-left-color:#42a5f5; background:rgba(66,165,245,0.08); }
+.callout-warning { border-left-color:#ff9800; background:rgba(255,152,0,0.08); }
+.callout-info { border-left-color:#8b7cff; background:rgba(139,124,255,0.08); }
+.steps { list-style:none; counter-reset:step; margin:16px 0; padding:0; }
+.steps > li { position:relative; padding:0 0 16px 44px; margin:0; }
+.steps > li::before { counter-increment:step; content:counter(step); position:absolute; left:0; top:2px; width:28px; height:28px; border-radius:50%; background:var(--accent); color:#fff; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.step-title { font-weight:600; color:var(--text); margin-bottom:6px; font-size:15px; }
+.tabs { margin:16px 0; }
+.tab-item { background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:10px; overflow:hidden; }
+.tab-label { padding:9px 14px; font-size:13px; font-weight:600; color:var(--accent2); background:var(--card2); border-bottom:1px solid var(--border); }
+.tab-body { padding:12px 14px; }
+.acc-group { margin:16px 0; }
+.acc { background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; overflow:hidden; }
+.acc summary { padding:12px 16px; cursor:pointer; font-size:14px; font-weight:600; color:var(--text); }
+.acc summary:hover { background:var(--card2); }
+.acc[open] summary { border-bottom:1px solid var(--border); }
+.article kbd { background:var(--card2); border:1px solid var(--border); border-bottom-width:2px; border-radius:5px; padding:1px 7px; font-size:12px; font-family:inherit; color:var(--text); }
+
+
+.dot { display:inline-block; width:0.85em; height:0.85em; border-radius:50%; vertical-align:-0.1em; margin:0 2px; }
+.dot-red { background:#f03e3e; }
+.dot-yellow { background:#f59f00; }
+.dot-purple { background:#9c36b5; }
+
+@media (min-width: 1024px) { .toc-side { display:block; } .tb-toc { display:none; } }
+@media (max-width: 1023px) { .article { padding:32px 18px 60px; } .article p { font-size:16px; } }
+
+
+/* ===== 关键词弹窗 ===== */
+.kw-panel { position:fixed; left:0; top:50%; transform:translate(-110%,-50%); z-index:400; background:var(--card); border:1px solid var(--accent); border-left:none; border-radius:0 16px 16px 0; box-shadow:0 8px 40px rgba(0,0,0,0.6); transition:transform 0.35s cubic-bezier(0.22,1,0.36,1); max-height:70vh; display:flex; flex-direction:column; }
+.kw-panel.open { transform:translate(0,-50%); }
+.kw-panel .kwp-head { display:flex; align-items:center; gap:8px; padding:14px 18px 10px; border-bottom:1px solid var(--border); }
+.kw-panel .kwp-badge { background:var(--kw-bg); color:var(--accent2); font-size:12px; font-weight:700; padding:3px 10px; border-radius:10px; flex-shrink:0; }
+.kw-panel .kwp-title { font-size:15px; font-weight:600; color:var(--text); flex:1; line-height:1.4; }
+.kw-panel .kwp-close { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:0 4px; line-height:1; flex-shrink:0; }
+.kw-panel .kwp-close:hover { color:var(--text); }
+.kw-panel .kwp-body { padding:14px 18px; overflow-y:auto; flex:1; }
+.kw-panel .kwp-desc { font-size:14px; line-height:1.8; color:var(--text2); }
+.kw-panel .kwp-link { display:inline-flex; align-items:center; margin-top:12px; color:var(--accent2); text-decoration:none; font-size:13px; font-weight:600; }
+.kw-panel .kwp-link:hover { color:var(--accent); }
+.kw-panel .kwp-bar-wrap { height:4px; background:var(--card2); border-radius:0 0 16px 0; overflow:hidden; flex-shrink:0; }
+.kw-panel .kwp-bar { height:100%; width:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:0 0 16px 0; }
+/* ===== 错误汇报 ===== */
+.btn-report { display:inline-flex; align-items:center; gap:4px; background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12.5px; transition:0.15s; }
+.btn-report:hover { color:var(--text); border-color:var(--accent); background:var(--card2); }
+.rpt-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:500; display:none; align-items:center; justify-content:center; padding:20px; }
+.rpt-overlay.show { display:flex; }
+.rpt-modal { background:var(--card); border:1px solid var(--accent); border-radius:16px; width:100%; max-width:460px; box-shadow:0 20px 60px rgba(0,0,0,0.7); overflow:hidden; }
+.rpt-head { display:flex; align-items:center; gap:8px; padding:16px 20px; border-bottom:1px solid var(--border); }
+.rpt-head .rpt-title { font-size:16px; font-weight:700; color:var(--text); flex:1; }
+.rpt-close { background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1; }
+.rpt-close:hover { color:var(--text); }
+.rpt-body { padding:18px 20px; }
+.rpt-field { margin-bottom:14px; }
+.rpt-field label { display:block; font-size:13px; color:var(--text2); margin-bottom:6px; }
+.rpt-field .rpt-page { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:13px; color:var(--accent2); word-break:break-all; }
+.rpt-field input, .rpt-field textarea { width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:14px; color:var(--text); font-family:inherit; resize:vertical; }
+.rpt-field input:focus, .rpt-field textarea:focus { outline:none; border-color:var(--accent); }
+.rpt-field textarea { min-height:90px; }
+.rpt-tip { font-size:12px; color:var(--muted); margin-top:4px; }
+.rpt-submit { width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px; font-size:15px; font-weight:600; cursor:pointer; transition:0.15s; }
+.rpt-submit:hover { background:var(--accent2); }
+.rpt-submit:disabled { opacity:0.5; cursor:not-allowed; }
+.rpt-ok { text-align:center; padding:30px 20px; }
+.rpt-ok .rpt-ok-icon { font-size:42px; margin-bottom:12px; }
+.rpt-ok .rpt-ok-title { font-size:17px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.rpt-ok .rpt-ok-desc { font-size:13px; color:var(--text2); }
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar"></div>
+<header class="topbar">
+  <span class="logo"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6l0 13" /> <path d="M12 6l0 13" /> <path d="M21 6l0 13" /> </svg></span>Claude Code 知识库</span>
+  <div class="tb-title">Claude Code 如何使用 prompt caching</div>
+  <button class="hamburger" onclick="toggleDrawer()" aria-label="菜单"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M4 6l16 0" /> <path d="M4 12l16 0" /> <path d="M4 18l16 0" /> </svg></span></button>
+</header>
+<aside class="drawer" id="drawer">
+  <nav>
+    <a href="../index.html" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l-2 0l9 -9l9 9l-2 0" /> <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /> <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /> </svg></span>返回首页</a>
+    <a href="../index.html#index" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>文档索引</a>
+    <a href="../index.html#manual" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M19 4v16h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12" /> <path d="M19 16h-12a2 2 0 0 0 -2 2" /> <path d="M9 8h6" /> </svg></span>入门手册</a>
+    <a href="../index.html#docs" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>全部文档</a>
+    <a href="#" onclick="closeDrawer();openRpt()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9 9v-1a3 3 0 0 1 6 0v1" /> <path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /> <path d="M3 13l4 0" /> <path d="M17 13l4 0" /> <path d="M12 20l0 -6" /> <path d="M4 19l3.35 -2" /> <path d="M20 19l-3.35 -2" /> <path d="M4 7l3.75 2.4" /> <path d="M20 7l-3.75 2.4" /> </svg></span>文档有误？汇报</a>
+  </nav>
+  <div style="margin:14px 20px 6px;font-size:12px;color:var(--muted);letter-spacing:1px;">本文目录</div>
+  <a href="#sec-prompt-caching-1" style="padding-left:0px;font-size:13px;">Claude Code 如何使用 prompt caching</a>
+<a href="#sec-prompt-caching-2" style="padding-left:14px;font-size:13.5px;">缓存的组织方式</a>
+<a href="#sec-prompt-caching-3" style="padding-left:28px;font-size:13px;">缓存位置</a>
+<a href="#sec-prompt-caching-4" style="padding-left:14px;font-size:13.5px;">使缓存失效的操作</a>
+<a href="#sec-prompt-caching-5" style="padding-left:28px;font-size:13px;">切换模型</a>
+<a href="#sec-prompt-caching-6" style="padding-left:28px;font-size:13px;">更改工作量级别</a>
+<a href="#sec-prompt-caching-7" style="padding-left:28px;font-size:13px;">启用快速模式</a>
+<a href="#sec-prompt-caching-8" style="padding-left:28px;font-size:13px;">连接或断开 MCP 服务器</a>
+<a href="#sec-prompt-caching-9" style="padding-left:28px;font-size:13px;">启用或禁用插件</a>
+<a href="#sec-prompt-caching-10" style="padding-left:28px;font-size:13px;">拒绝整个工具</a>
+<a href="#sec-prompt-caching-11" style="padding-left:28px;font-size:13px;">压缩对话</a>
+<a href="#sec-prompt-caching-12" style="padding-left:28px;font-size:13px;">升级 Claude Code</a>
+<a href="#sec-prompt-caching-13" style="padding-left:14px;font-size:13.5px;">保持缓存的操作</a>
+<a href="#sec-prompt-caching-14" style="padding-left:28px;font-size:13px;">编辑存储库中的文件</a>
+<a href="#sec-prompt-caching-15" style="padding-left:28px;font-size:13px;">在会话中期编辑 CLAUDE.md</a>
+<a href="#sec-prompt-caching-16" style="padding-left:28px;font-size:13px;">更改输出样式</a>
+<a href="#sec-prompt-caching-17" style="padding-left:28px;font-size:13px;">更改权限模式</a>
+<a href="#sec-prompt-caching-18" style="padding-left:28px;font-size:13px;">调用技能和命令</a>
+<a href="#sec-prompt-caching-19" style="padding-left:28px;font-size:13px;">运行 `/recap`</a>
+<a href="#sec-prompt-caching-20" style="padding-left:28px;font-size:13px;">重绕对话</a>
+<a href="#sec-prompt-caching-21" style="padding-left:14px;font-size:13.5px;">缓存生命周期</a>
+<a href="#sec-prompt-caching-22" style="padding-left:28px;font-size:13px;">在 Claude 订阅上</a>
+<a href="#sec-prompt-caching-23" style="padding-left:28px;font-size:13px;">在 API 密钥或第三方提供商上</a>
+<a href="#sec-prompt-caching-24" style="padding-left:28px;font-size:13px;">覆盖 TTL</a>
+<a href="#sec-prompt-caching-25" style="padding-left:14px;font-size:13.5px;">缓存范围</a>
+<a href="#sec-prompt-caching-26" style="padding-left:14px;font-size:13.5px;">检查缓存性能</a>
+<a href="#sec-prompt-caching-27" style="padding-left:14px;font-size:13.5px;">子代理和缓存</a>
+<a href="#sec-prompt-caching-28" style="padding-left:14px;font-size:13.5px;">禁用 prompt caching</a>
+<a href="#sec-prompt-caching-29" style="padding-left:14px;font-size:13.5px;">相关资源</a>
+</aside>
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+
+<div class="reader">
+  <aside class="toc-side">
+    <h3>本文目录</h3>
+    <a href="#sec-prompt-caching-1" style="padding-left:0px;font-size:13px;">Claude Code 如何使用 prompt caching</a>
+<a href="#sec-prompt-caching-2" style="padding-left:14px;font-size:13.5px;">缓存的组织方式</a>
+<a href="#sec-prompt-caching-3" style="padding-left:28px;font-size:13px;">缓存位置</a>
+<a href="#sec-prompt-caching-4" style="padding-left:14px;font-size:13.5px;">使缓存失效的操作</a>
+<a href="#sec-prompt-caching-5" style="padding-left:28px;font-size:13px;">切换模型</a>
+<a href="#sec-prompt-caching-6" style="padding-left:28px;font-size:13px;">更改工作量级别</a>
+<a href="#sec-prompt-caching-7" style="padding-left:28px;font-size:13px;">启用快速模式</a>
+<a href="#sec-prompt-caching-8" style="padding-left:28px;font-size:13px;">连接或断开 MCP 服务器</a>
+<a href="#sec-prompt-caching-9" style="padding-left:28px;font-size:13px;">启用或禁用插件</a>
+<a href="#sec-prompt-caching-10" style="padding-left:28px;font-size:13px;">拒绝整个工具</a>
+<a href="#sec-prompt-caching-11" style="padding-left:28px;font-size:13px;">压缩对话</a>
+<a href="#sec-prompt-caching-12" style="padding-left:28px;font-size:13px;">升级 Claude Code</a>
+<a href="#sec-prompt-caching-13" style="padding-left:14px;font-size:13.5px;">保持缓存的操作</a>
+<a href="#sec-prompt-caching-14" style="padding-left:28px;font-size:13px;">编辑存储库中的文件</a>
+<a href="#sec-prompt-caching-15" style="padding-left:28px;font-size:13px;">在会话中期编辑 CLAUDE.md</a>
+<a href="#sec-prompt-caching-16" style="padding-left:28px;font-size:13px;">更改输出样式</a>
+<a href="#sec-prompt-caching-17" style="padding-left:28px;font-size:13px;">更改权限模式</a>
+<a href="#sec-prompt-caching-18" style="padding-left:28px;font-size:13px;">调用技能和命令</a>
+<a href="#sec-prompt-caching-19" style="padding-left:28px;font-size:13px;">运行 `/recap`</a>
+<a href="#sec-prompt-caching-20" style="padding-left:28px;font-size:13px;">重绕对话</a>
+<a href="#sec-prompt-caching-21" style="padding-left:14px;font-size:13.5px;">缓存生命周期</a>
+<a href="#sec-prompt-caching-22" style="padding-left:28px;font-size:13px;">在 Claude 订阅上</a>
+<a href="#sec-prompt-caching-23" style="padding-left:28px;font-size:13px;">在 API 密钥或第三方提供商上</a>
+<a href="#sec-prompt-caching-24" style="padding-left:28px;font-size:13px;">覆盖 TTL</a>
+<a href="#sec-prompt-caching-25" style="padding-left:14px;font-size:13.5px;">缓存范围</a>
+<a href="#sec-prompt-caching-26" style="padding-left:14px;font-size:13.5px;">检查缓存性能</a>
+<a href="#sec-prompt-caching-27" style="padding-left:14px;font-size:13.5px;">子代理和缓存</a>
+<a href="#sec-prompt-caching-28" style="padding-left:14px;font-size:13.5px;">禁用 prompt caching</a>
+<a href="#sec-prompt-caching-29" style="padding-left:14px;font-size:13.5px;">相关资源</a>
+  </aside>
+
+  <main class="article">
+    <blockquote>## Documentation Index</blockquote>
+<blockquote>Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt</blockquote>
+<blockquote>Use this file to discover all available pages before exploring further.</blockquote>
+
+<h2 id="sec-prompt-caching-1">Claude Code 如何使用 prompt caching</h2>
+
+<blockquote>Claude Code 自动管理 prompt caching。了解为什么模型切换会触发缓慢的未缓存回合、`/compact` 的成本、为什么 CLAUDE.md 编辑在会话中期不适用，以及如何检查缓存命中率。</blockquote>
+
+<p><a class="kw" onclick="showKw('Prompt caching')" title="点击查看解释">Prompt caching</a> 使 Claude Code 更快、更经济高效。没有缓存，API 会在每个回合重新处理您的完整历史记录。有了缓存，它会重用已经处理过的内容，只对更改的部分进行新工作。</p>
+
+<p>Claude Code 为您处理 prompt caching，除非您<a class="kw" onclick="showKw('禁用它')" title="点击查看解释">禁用它</a>。了解 prompt caching 的工作原理仍然很有用，因为某些操作会使缓存失效，使下一个响应更慢、更昂贵，同时它重建缓存。本页涵盖哪些操作会这样做、为什么某些<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>等待重启才能应用，以及当使用量看起来很高时如何检查缓存性能。</p>
+
+<h3 id="sec-prompt-caching-2">缓存的组织方式</h3>
+
+<p>每次您在 Claude Code 中发送消息时，它都会发出新的 API 请求。模型在请求之间不记得任何东西，所以 Claude Code 重新发送完整的上下文：系统提示、您的项目上下文、每条先前的消息和工具结果，以及您的新消息。新内容附加在末尾，这意味着每个请求的大部分与前一个请求相同。<a class="kw" onclick="showKw('Prompt caching')" title="点击查看解释">Prompt caching</a> 是 API 避免重新处理未更改部分的方式。</p>
+
+<p>API 通过将每个请求的开始部分（称为前缀）与最近处理过的内容进行匹配来缓存。在正常回合中，前缀是整个先前请求，只有最新的交换是新的。匹配是精确的，所以前缀中任何地方的更改都会重新计算其后的所有内容。没有按文件或按段的缓存。有关底层机制，请参阅 API 参考中的<a class="kw" onclick="showKw('prompt caching 如何工作')" title="点击查看解释">prompt caching 如何工作</a>。</p>
+
+<p>&lt;img src=&quot;https://mintcdn.com/claude-code/VbDJw--l6T9a9Wvm/images/prompt-caching-prefix.svg?fit=max&amp;auto=format&amp;n=VbDJw--l6T9a9Wvm&amp;q=85&amp;s=f2e8f0b8298a50305fe428ca3f1d1594&quot; className=&quot;dark:hidden&quot; alt=&quot;四个回合显示为增长的水平条。每个回合的请求包含前一个回合的所有内容加上最后附加的最新交换。在第二和第三个回合中，未更改的前缀从缓存中读取，只处理新的交换。在第四个回合中，系统提示更改了，所以前缀不再匹配，整个请求被重新处理并写入。&quot; width=&quot;720&quot; height=&quot;454&quot; data-path=&quot;images/prompt-caching-prefix.svg&quot; /&gt;</p>
+
+<p>&lt;img src=&quot;https://mintcdn.com/claude-code/_xqph1dUOslCOwsj/images/prompt-caching-prefix-dark.svg?fit=max&amp;auto=format&amp;n=_xqph1dUOslCOwsj&amp;q=85&amp;s=297dc1c639f0915cae858d0c4b6f3be5&quot; className=&quot;hidden dark:block&quot; alt=&quot;四个回合显示为增长的水平条。每个回合的请求包含前一个回合的所有内容加上最后附加的最新交换。在第二和第三个回合中，未更改的前缀从缓存中读取，只处理新的交换。在第四个回合中，系统提示更改了，所以前缀不再匹配，整个请求被重新处理并写入。&quot; width=&quot;720&quot; height=&quot;454&quot; data-path=&quot;images/prompt-caching-prefix-dark.svg&quot; /&gt;</p>
+
+<p>为了充分利用前缀匹配，Claude Code 组织每个请求，使回合之间很少更改的内容首先出现：</p>
+
+<div class='table-wrap'><table>
+<tr><th>层</th><th>内容</th><th>更改时间</th></tr>
+<tr><td>系统提示</td><td>核心指令、工具定义、输出样式</td><td>加载的工具定义集合更改，或 Claude Code 升级</td></tr>
+<tr><td>项目上下文</td><td><a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>、自动内存、无范围规则</td><td><a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>开始，或在 `<a class="kw" onclick="showKw('/clear')" title="点击查看解释">/clear</a>` 或 `<a class="kw" onclick="showKw('/compact')" title="点击查看解释">/compact</a>` 之后</td></tr>
+<tr><td>对话</td><td>您的消息、Claude 的响应、工具结果</td><td>每个回合</td></tr>
+</table></div>
+
+<p>对对话层的更改会保留系统提示和项目上下文缓存。对系统提示的更改会使所有内容失效，因为所有后续内容现在位于不同的前缀后面。第三列给出常见触发器而不是详尽列表，下面的部分涵盖完整集合，包括在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>开始时固定的输出样式等内容。</p>
+
+<p>前缀匹配规则解释了本页上的大多数行为。例如，<a class="kw" onclick="showKw('Plan Mode')" title="点击查看解释">Plan Mode</a> 和<a class="kw" onclick="showKw('技能加载')" title="点击查看解释">技能加载</a>将其指令附加为对话消息，所以缓存的前缀保持完整。</p>
+
+<p>两个<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>根本不是提示文本的一部分，所以它们不出现在层表中，但两者都是缓存密钥的一部分：</p>
+
+<p>* **Model**：每个模型都有自己的缓存。切换模型会重新计算整个请求，即使内容相同。请参阅下面的<a class="kw" onclick="showKw('切换模型')" title="点击查看解释">切换模型</a>。</p>
+<p>* **Effort level**：同一模型的每个工作量级别都有自己的缓存。在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中期更改它会重新计算整个请求，Claude Code 会要求您在应用更改之前确认。请参阅下面的<a class="kw" onclick="showKw('更改工作量级别')" title="点击查看解释">更改工作量级别</a>。</p>
+
+<div class="callout callout-tip">
+<p>  在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>顶部选择您的模型和工作量级别，然后在任务之间的自然中断处保存 `<a class="kw" onclick="showKw('/compact')" title="点击查看解释">/compact</a>`。您在任务中期进行的更改越少，缓存命中率就越高。</p>
+</div>
+
+<h4 id="sec-prompt-caching-3">缓存位置</h4>
+
+<p>缓存发生在服务器端，在为您的模型提供服务的任何基础设施中。它的位置取决于您如何进行身份验证：</p>
+
+<p>* **API 密钥、Claude 订阅或 <a class="kw" onclick="showKw('Claude Platform on AWS')" title="点击查看解释">Claude Platform on AWS</a>**：缓存位于 Anthropic 的基础设施中，通过 <a class="kw" onclick="showKw('Claude API')" title="点击查看解释">Claude API</a> 访问</p>
+<p>* **Amazon Bedrock 或 Google Cloud 的 <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> Platform**：缓存位于您的云提供商的服务基础设施中</p>
+<p>* **Microsoft Foundry**：请求路由到 Anthropic 的基础设施</p>
+<p>* **自定义 `ANTHROPIC_BASE_URL` 或 <a class="kw" onclick="showKw('LLM gateway')" title="点击查看解释">LLM gateway</a>**：缓存位于您的请求转发到的任何地方，缓存是否工作取决于网关</p>
+
+<p>有关每个提供商存储和处理的内容，请参阅<a class="kw" onclick="showKw('数据使用')" title="点击查看解释">数据使用</a>。无论缓存位于何处，条目在不活动期间后过期，<a class="kw" onclick="showKw('缓存生命周期')" title="点击查看解释">缓存生命周期</a>下面涵盖 TTL 以及如何延长它。</p>
+
+<h3 id="sec-prompt-caching-4">使缓存失效的操作</h3>
+
+<p>这些操作会导致下一个请求错过部分或全部缓存。您会看到一个一次性的较慢、更昂贵的回合，之后新的前缀被缓存。一旦您知道它们有成本，大多数都可以在任务中期避免。模型切换可能感觉是免费的，直到您注意到随后的较慢回合。</p>
+
+<p>* <a class="kw" onclick="showKw('切换模型')" title="点击查看解释">切换模型</a></p>
+<p>* <a class="kw" onclick="showKw('更改工作量级别')" title="点击查看解释">更改工作量级别</a></p>
+<p>* <a class="kw" onclick="showKw('启用快速模式')" title="点击查看解释">启用快速模式</a></p>
+<p>* <a class="kw" onclick="showKw('连接或断开 MCP 服务器')" title="点击查看解释">连接或断开 MCP 服务器</a></p>
+<p>* <a class="kw" onclick="showKw('启用或禁用插件')" title="点击查看解释">启用或禁用插件</a></p>
+<p>* <a class="kw" onclick="showKw('拒绝整个工具')" title="点击查看解释">拒绝整个工具</a></p>
+<p>* <a class="kw" onclick="showKw('压缩对话')" title="点击查看解释">压缩对话</a></p>
+<p>* <a class="kw" onclick="showKw('升级 Claude Code')" title="点击查看解释">升级 Claude Code</a></p>
+
+<h4 id="sec-prompt-caching-5">切换模型</h4>
+
+<p>每个模型都有自己的缓存。使用 <a class="kw" onclick="showKw('/model')" title="点击查看解释">/model</a> 切换意味着下一个请求读取整个对话历史记录而没有缓存命中，即使内容相同。</p>
+
+<p><a class="kw" onclick="showKw('opusplan 模型设置')" title="点击查看解释">opusplan 模型设置</a>在 Plan Mode 期间解析为 Opus，在执行期间解析为 Sonnet，所以每个 Plan Mode 切换都是模型切换并启动新缓存。</p>
+
+<p><a class="kw" onclick="showKw('Fable 5 上的自动模型回退')" title="点击查看解释">Fable 5 上的自动模型回退</a>也是一个模型切换。当安全分类器标记请求时，Claude Code 在默认 Opus 模型上重新运行它，<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>继续进行。</p>
+
+<h4 id="sec-prompt-caching-6">更改工作量级别</h4>
+
+<p>缓存由<a class="kw" onclick="showKw('工作量级别')" title="点击查看解释">工作量级别</a>以及模型进行键控，所以使用 `/effort` 切换意味着下一个请求读取整个对话历史记录而没有缓存命中。一旦对话已开始，Claude Code 会在应用会使缓存失效的工作量更改之前显示确认对话框。解析为已生效的相同级别的更改（例如显式<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>模型的默认值）会跳过对话框并保持缓存。</p>
+
+<h4 id="sec-prompt-caching-7">启用快速模式</h4>
+
+<p>启用<a class="kw" onclick="showKw('快速模式')" title="点击查看解释">快速模式</a>会添加一个请求头，该请求头是缓存键的一部分，所以下一个请求读取整个对话历史记录而没有缓存命中。这些未缓存的输入令牌按<a class="kw" onclick="showKw('快速模式费率')" title="点击查看解释">快速模式费率</a>计费，这就是为什么在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>开始时启用它的成本低于在长<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>深处启用它的成本。从非 Opus 模型启用快速模式也会<a class="kw" onclick="showKw('切换您的模型')" title="点击查看解释">切换您的模型</a>，这本身会启动新缓存。</p>
+
+<p>成本每个对话应用一次。在第一个快速模式回合之后，Claude Code 继续发送请求头，仅改变请求的速度<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>，这不是缓存键的一部分。关闭快速模式、<a class="kw" onclick="showKw('在速率限制后自动回退到标准速度')" title="点击查看解释">在速率限制后自动回退到标准速度</a>以及稍后重新启用它都保持缓存。`<a class="kw" onclick="showKw('/clear')" title="点击查看解释">/clear</a>` 和 `<a class="kw" onclick="showKw('/compact')" title="点击查看解释">/compact</a>` 重置这个，因为它们无论如何都在这些点重建缓存。</p>
+
+<h4 id="sec-prompt-caching-8">连接或断开 MCP 服务器</h4>
+
+<p>工具定义位于系统提示层中，所以当请求之间的工具定义集合更改时，缓存会失效。切换<a class="kw" onclick="showKw('顾问工具')" title="点击查看解释">顾问工具</a>是一个例外：其定义位于缓存断点之后，所以启用或禁用 `/advisor` 会保持缓存的前缀完整。<a class="kw" onclick="showKw('MCP 服务器')" title="点击查看解释">MCP 服务器</a>更改是否执行此操作取决于其工具是否由<a class="kw" onclick="showKw('工具搜索')" title="点击查看解释">工具搜索</a>延迟或加载到前缀中：</p>
+
+<p>* **延迟工具**，在支持的模型上是默认<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>：服务器连接、断开连接或更改其工具列表仅附加新内容，不会扰乱已缓存的任何内容。</p>
+<p>* **加载到前缀中的工具**：对它们的任何更改都会使缓存失效。这发生在<a class="kw" onclick="showKw('工具搜索不可用或被禁用')" title="点击查看解释">工具搜索不可用或被禁用</a>时，例如在 Google Cloud 的 <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> Platform 上或使用自定义 `ANTHROPIC_BASE_URL` 网关时。它也发生在标记为 <a class="kw" onclick="showKw('alwaysLoad')" title="点击查看解释">alwaysLoad</a> 的服务器或工具上，以及由<a class="kw" onclick="showKw('基于阈值的加载')" title="点击查看解释">基于阈值的加载</a>保持在前面的定义上。</p>
+
+<p>当工具加载到前缀中时，失效的最常见原因是服务器在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中期连接或断开连接，这可能在没有您采取任何操作的情况下发生：stdio 服务器的进程退出、HTTP <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>过期或服务器<a class="kw" onclick="showKw('在暂时故障后自动重新连接')" title="点击查看解释">在暂时故障后自动重新连接</a>。连接的服务器也可以推送<a class="kw" onclick="showKw('动态工具更新')" title="点击查看解释">动态工具更新</a>来更改其工具列表。</p>
+
+<p>编辑您的 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 配置本身不会改变缓存。新配置仅在重启后生效，这是服务器连接或断开连接的时间。</p>
+
+<h4 id="sec-prompt-caching-9">启用或禁用插件</h4>
+
+<p><a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>捆绑了多个组件类型，更改的成本取决于<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>提供的组件。<a class="kw" onclick="showKw('Skill')" title="点击查看解释">Skill</a>s、commands、agents、hooks、LSP 服务器、monitors 和 themes 永远不会使缓存失效：它们添加到请求中的任何内容都附加在现有对话之后，所以下一个请求为新内容付费，但仍然从缓存中读取它之前的所有内容。</p>
+
+<p>例外是提供 <a class="kw" onclick="showKw('MCP 服务器')" title="点击查看解释">MCP 服务器</a>的<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>。启用或禁用一个遵循与<a class="kw" onclick="showKw('连接或断开 MCP 服务器')" title="点击查看解释">连接或断开 MCP 服务器</a>相同的规则：当服务器的工具被延迟时缓存保存，当它们加载到前缀中时下一个请求重新读取整个对话。</p>
+
+<p><a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>更改在您运行 <a class="kw" onclick="showKw('/reload-plugins')" title="点击查看解释">/reload-plugins</a> 或启动新<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>时应用。成本（无论是附加的公告还是完整的重新读取）显示在重新加载后的第一个回合，而不是当您运行 `<a class="kw" onclick="showKw('/plugin')" title="点击查看解释">/plugin</a> install`、`<a class="kw" onclick="showKw('/plugin')" title="点击查看解释">/plugin</a> enable` 或 `<a class="kw" onclick="showKw('/plugin')" title="点击查看解释">/plugin</a> disable` 时。从 v2.1.163 开始，当重新加载会触发完整重新读取时，`/reload-plugins` 会显示警告并不应用重新加载。传递 `--force` 以强制应用。</p>
+
+<p>禁用您在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>早期启用的<a class="kw" onclick="showKw('插件')" title="点击查看解释">插件</a>会恢复之前的请求形状。如果该前缀仍在其<a class="kw" onclick="showKw('缓存生命周期')" title="点击查看解释">缓存生命周期</a>内，下一个请求读取较旧的缓存条目而不是重建。</p>
+
+<h4 id="sec-prompt-caching-10">拒绝整个工具</h4>
+
+<p>添加像 `Bash` 或 `WebFetch` 这样的裸工具名称作为<a class="kw" onclick="showKw('拒绝规则')" title="点击查看解释">拒绝规则</a>会将该工具从 Claude 的上下文中完全移除。内置工具定义加载到系统提示层中，所以在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中期添加或移除这些规则之一会使缓存失效。无论您通过 `<a class="kw" onclick="showKw('/permissions')" title="点击查看解释">/permissions</a>` 添加它还是通过<a class="kw" onclick="showKw('直接编辑设置文件')" title="点击查看解释">直接编辑设置文件</a>，更改都会在下一个回合生效。</p>
+
+<p>只有与工具名称位置匹配的拒绝规则才有这种效果：裸工具名称、等效的 `Bash(*)` 形式或<a class="kw" onclick="showKw('工具名称通配符')" title="点击查看解释">工具名称通配符</a>如 `&quot;*&quot;`。匹配仅 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 工具的通配符（如 `&quot;mcp__*&quot;`）以相同方式移除这些工具，但当匹配的工具被<a class="kw" onclick="showKw('延迟')" title="点击查看解释">延迟</a>时保持缓存完整，这是默认<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>，因为延迟定义从未在缓存的前缀中。作用域拒绝规则如 `Bash(rm *)`，以及所有允许和询问规则，都不会改变 Claude 看到的工具。Claude Code 在 Claude 尝试调用时检查它们，保持前缀完整。</p>
+
+<h4 id="sec-prompt-caching-11">压缩对话</h4>
+
+<p><a class="kw" onclick="showKw('压缩')" title="点击查看解释">压缩</a>用摘要替换您的消息历史记录。根据设计，这会使对话层失效，因为下一个请求有一个新的、更短的历史记录，与旧的历史记录不共享前缀。Claude Code 重用系统提示层并从磁盘重新加载项目上下文，只有在 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 和内存自<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>开始以来未更改时才缓存命中。</p>
+
+<p>为了生成摘要，Claude Code 发送一个一次性请求，其系统提示、工具和历史记录与您的对话相同，加上作为最终用户消息附加的摘要指令。因为它共享您的前缀，该请求读取现有缓存而不是重新处理完整历史记录。压缩的大部分时间用于生成摘要，而不是缓存未命中。随后的回合仅为更短的摘要重建对话缓存，所以压缩后的回合不是缓慢的部分。</p>
+
+<div class="callout callout-tip">
+<p>  当您丢弃的上下文是您不再需要的内容时，压缩对您有利。要选择其开销何时发生，请在工作中的自然中断处（例如任务之间）运行 `<a class="kw" onclick="showKw('/compact')" title="点击查看解释">/compact</a>`，而不是等待自动压缩在任务中期触发。如果您走上了想要完全放弃的路径，请改为<a class="kw" onclick="showKw('/rewind')" title="点击查看解释">/rewind</a>到较早的回合。重绕会截断回到已经缓存的前缀，而不是像压缩那样构建新的前缀。</p>
+</div>
+
+<h4 id="sec-prompt-caching-12">升级 Claude Code</h4>
+
+<p>新的 Claude Code 版本通常会更新系统提示或工具定义，所以升级后的第一个请求从顶部重建缓存。<a class="kw" onclick="showKw('自动更新')" title="点击查看解释">自动更新</a>在后台下载新版本，但在下次启动时应用它们，从不在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中期，所以您会看到这是重启后的一个未缓存的第一个回合，而不是<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>期间的惊喜。<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> `DISABLE_AUTOUPDATER=1` 来控制何时应用升级。</p>
+
+<div class="callout callout-note">
+<p>  升级后<a class="kw" onclick="showKw('恢复会话')" title="点击查看解释">恢复会话</a>会重新处理整个对话历史记录而没有缓存命中，因为历史记录现在位于不同的系统提示后面。成本随着恢复的对话有多长而扩展，所以回到长<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的第一个回合可能是您发送的最昂贵的请求。</p>
+</div>
+
+<h3 id="sec-prompt-caching-13">保持缓存的操作</h3>
+
+<p>这些操作要么附加到对话的末尾，要么根本不接触请求。其中一些，例如编辑 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 或更改输出样式，也是为什么<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>更改等待重启才能应用的原因。</p>
+
+<p>* <a class="kw" onclick="showKw('编辑存储库中的文件')" title="点击查看解释">编辑存储库中的文件</a></p>
+<p>* <a class="kw" onclick="showKw('在会话中期编辑 CLAUDE.md')" title="点击查看解释">在会话中期编辑 CLAUDE.md</a></p>
+<p>* <a class="kw" onclick="showKw('更改输出样式')" title="点击查看解释">更改输出样式</a></p>
+<p>* <a class="kw" onclick="showKw('更改权限模式')" title="点击查看解释">更改权限模式</a></p>
+<p>* <a class="kw" onclick="showKw('调用技能和命令')" title="点击查看解释">调用技能和命令</a></p>
+<p>* <a class="kw" onclick="showKw('运行 /recap')" title="点击查看解释">运行 /recap</a></p>
+<p>* <a class="kw" onclick="showKw('重绕对话')" title="点击查看解释">重绕对话</a></p>
+<p>* <a class="kw" onclick="showKw('生成子代理')" title="点击查看解释">生成子代理</a></p>
+
+<h4 id="sec-prompt-caching-14">编辑存储库中的文件</h4>
+
+<p>文件内容仅在 Claude 读取它们时进入上下文，读取附加到对话。编辑 Claude 之前读过的文件不会追溯更改历史记录中的较早读取。相反，Claude Code 附加一个 `&lt;system-reminder&gt;` 注意文件已更改，如果需要，Claude 会重新读取它。</p>
+
+<h4 id="sec-prompt-caching-15">在会话中期编辑 CLAUDE.md</h4>
+
+<p>您的项目根目录和用户级 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 文件在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>开始时读取一次并保存在内存中。在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中期编辑它们不会使缓存失效，但编辑也不适用。Claude 继续使用在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>开始时加载的版本。新内容在下一个 `<a class="kw" onclick="showKw('/clear')" title="点击查看解释">/clear</a>`、`<a class="kw" onclick="showKw('/compact')" title="点击查看解释">/compact</a>` 或重启时加载。</p>
+
+<p><a class="kw" onclick="showKw('子目录中的嵌套 CLAUDE.md 文件')" title="点击查看解释">子目录中的嵌套 CLAUDE.md 文件</a>和<a class="kw" onclick="showKw('带有 paths: frontmatter 的规则')" title="点击查看解释">带有 paths: frontmatter 的规则</a>稍后加载，当 Claude 首次读取匹配文件时。在加载前编辑一个确实会生效。加载后，内容是对话历史记录的一部分，所以中期编辑不会追溯更改它。</p>
+
+<h4 id="sec-prompt-caching-16">更改输出样式</h4>
+
+<p><a class="kw" onclick="showKw('输出样式')" title="点击查看解释">输出样式</a>是系统提示的一部分，Claude Code 在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>开始时读取一次。通过 `<a class="kw" onclick="showKw('/config')" title="点击查看解释">/config</a>` 或 `outputStyle` <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中期更改它不会使缓存失效，但更改也不适用。Claude 继续使用在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>开始时加载的样式。新样式在下一个 `<a class="kw" onclick="showKw('/clear')" title="点击查看解释">/clear</a>` 或重启时加载。</p>
+
+<h4 id="sec-prompt-caching-17">更改权限模式</h4>
+
+<p>在<a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a>之间切换，例如从默认到接受编辑，不会改变系统提示或工具定义，所以模式更改是缓存安全的。例外是带有 <a class="kw" onclick="showKw('opusplan')" title="点击查看解释">opusplan</a> 模型<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>的 Plan Mode，它在进入或离开 Plan Mode 时在 Opus 和 Sonnet 之间切换模型。这使模式切换成为<a class="kw" onclick="showKw('模型切换')" title="点击查看解释">模型切换</a>。</p>
+
+<h4 id="sec-prompt-caching-18">调用技能和命令</h4>
+
+<p><a class="kw" onclick="showKw('技能')" title="点击查看解释">技能</a>和<a class="kw" onclick="showKw('命令')" title="点击查看解释">命令</a>在调用点将其指令注入为用户消息。对话中较早的任何内容都不会改变。</p>
+
+<h4 id="sec-prompt-caching-19">运行 `/recap`</h4>
+
+<p><a class="kw" onclick="showKw('/recap')" title="点击查看解释">/recap</a> 生成一个摘要以在您的终端中显示。与 `<a class="kw" onclick="showKw('/compact')" title="点击查看解释">/compact</a>` 不同，它将摘要附加为命令输出而不是替换您的消息历史记录，所以缓存的前缀保持完整。</p>
+
+<h4 id="sec-prompt-caching-20">重绕对话</h4>
+
+<p><a class="kw" onclick="showKw('/rewind')" title="点击查看解释">/rewind</a> 将您的对话截断回较早的回合。剩余的历史记录是缓存在该点构建时的相同内容，系统提示和项目上下文层未更改，所以下一个请求命中较早的缓存条目。自那时以来的每个回合都通过该前缀读取，即使原始回合比 TTL 更久远，也保持条目温暖。</p>
+
+<p>恢复文件<a class="kw" onclick="showKw('检查点')" title="点击查看解释">检查点</a>与对话一起对缓存没有单独的影响。文件内容仅在 Claude 读取它们时进入上下文，与<a class="kw" onclick="showKw('编辑存储库中的文件')" title="点击查看解释">编辑存储库中的文件</a>相同。</p>
+
+<h3 id="sec-prompt-caching-21">缓存生命周期</h3>
+
+<p>缓存的前缀在不活动期间后过期。每个命中缓存的请求都会重置计时器，所以只要您继续工作，缓存就保持温暖。在足够长的间隙之后，下一个请求重新计算完整输入并重新建立缓存，这就是为什么步开后的第一个回合可能明显更慢。</p>
+
+<p>生存时间 (TTL) 控制缓存存活的间隙有多长。API 提供两个：五分钟 TTL 和<a class="kw" onclick="showKw('一小时 TTL')" title="点击查看解释">一小时 TTL</a>，它通过更长的中断保持缓存温暖，但<a class="kw" onclick="showKw('以更高的速率计费缓存写入')" title="点击查看解释">以更高的速率计费缓存写入</a>。Claude Code 根据您如何进行身份验证为您选择 TTL，您可以使用<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>覆盖它。</p>
+
+<h4 id="sec-prompt-caching-22">在 Claude 订阅上</h4>
+
+<p>在 Claude 订阅上，Claude Code 自动请求一小时 TTL。使用包含在您的计划中，而不是按令牌计费，所以更长的 TTL 不会额外花费您任何费用，只会影响缓存保持温暖的时间。</p>
+
+<p>如果您已超过计划的使用限制，Claude Code 正在使用<a class="kw" onclick="showKw('使用额度')" title="点击查看解释">使用额度</a>，您需要为该使用付费，所以 Claude Code 自动将 TTL 降低到五分钟。</p>
+
+<h4 id="sec-prompt-caching-23">在 API 密钥或第三方提供商上</h4>
+
+<p>在 API 密钥、Amazon Bedrock、Google Cloud 的 <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> Platform、Microsoft Foundry 或 Claude Platform on AWS 上，您支付按令牌费率，所以 TTL 默认保持在更便宜的五分钟。要选择加入<a class="kw" onclick="showKw('一小时 TTL')" title="点击查看解释">一小时 TTL</a>，<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> `ENABLE_PROMPT_CACHING_1H=1`。</p>
+
+<p>在 Amazon Bedrock 上，prompt caching 支持、最小可缓存前缀长度和一小时 TTL 可用性都因模型而异。如果缓存令牌计数保持为零，请检查 Amazon Bedrock 文档中的<a class="kw" onclick="showKw('支持的模型、区域和限制')" title="点击查看解释">支持的模型、区域和限制</a>。</p>
+
+<h4 id="sec-prompt-caching-24">覆盖 TTL</h4>
+
+<p><a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> `FORCE_PROMPT_CACHING_5M=1` 以强制五分钟 TTL，无论身份验证如何。这在您调试缓存行为、比较两个 TTL 或覆盖在<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>中<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>的 `ENABLE_PROMPT_CACHING_1H` 时很有用。</p>
+
+<h3 id="sec-prompt-caching-25">缓存范围</h3>
+
+<p>在 Claude Code 中，缓存有效地限定在一台机器和目录。系统提示嵌入工作目录、平台、shell、OS 版本和自动内存路径，所以两个不同目录中的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>构建不同的前缀并错过彼此的缓存。这包括同一存储库的 worktrees，因为每个 worktree 都有自己的工作目录。</p>
+
+<p>您在同一目录中并行运行的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>构建匹配的前缀并读取彼此的缓存。顺序<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>仅当启动时的 git 状态快照匹配时才共享前缀，因为系统提示也捕获分支和最近的提交。</p>
+
+<p>底层 API 缓存更广泛。缓存在组织之间隔离，在某些提供商上，<a class="kw" onclick="showKw('在组织内的工作区之间隔离')" title="点击查看解释">在组织内的工作区之间隔离</a>。在这些边界内，任何两个具有相同模型和前缀的请求读取相同的缓存。对于运行自动化流程队列的 <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> SDK 调用者，请参阅<a class="kw" onclick="showKw('改进跨用户和机器的 prompt caching')" title="点击查看解释">改进跨用户和机器的 prompt caching</a>以抑制系统提示的按机器部分并跨机器共享缓存。</p>
+
+<h3 id="sec-prompt-caching-26">检查缓存性能</h3>
+
+<p>缓存性能显示为 API 在每个响应上报告的两个令牌计数。实时观看它们的最直接方式是读取 `current_usage` 对象的<a class="kw" onclick="showKw('状态行脚本')" title="点击查看解释">状态行脚本</a>：</p>
+
+<div class='table-wrap'><table>
+<tr><th>字段</th><th>含义</th></tr>
+<tr><td>`cache_creation_input_tokens`</td><td>在此回合写入缓存的令牌，按缓存写入速率计费</td></tr>
+<tr><td>`cache_read_input_tokens`</td><td>在此回合从缓存提供的令牌，按标准输入速率的大约 10% 计费</td></tr>
+</table></div>
+
+<p>高读取与创建比率意味着缓存工作良好。如果创建在回合之间保持高位，您的前缀中有什么在改变。<a class="kw" onclick="showKw('使缓存失效的操作')" title="点击查看解释">使缓存失效的操作</a>部分列出了常见原因。</p>
+
+<p>为了在整个组织中获得可见性，OpenTelemetry 导出器报告每个用户和<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的缓存读取和创建令牌。有关指标和事件属性参考，请参阅<a class="kw" onclick="showKw('监控使用')" title="点击查看解释">监控使用</a>。</p>
+
+<h3 id="sec-prompt-caching-27">子代理和缓存</h3>
+
+<p><a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>启动自己的对话，具有自己的系统提示和工具集，与父代的分开。它构建自己的缓存，在第一次调用时没有缓存命中，并在自己的回合中预热。<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>使用五分钟 TTL，即使在订阅上，因为自动一小时 TTL 适用于主对话。</p>
+
+<p>父代的缓存不受影响。从父代的一侧，<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>的调用和结果附加到对话，保留父代的前缀完整。</p>
+
+<p><a class="kw" onclick="showKw('分叉')" title="点击查看解释">分叉</a>相比之下，完全继承父代的系统提示、工具和对话历史记录，所以其第一个请求读取父代的缓存。<a class="kw" onclick="showKw('压缩对话')" title="点击查看解释">压缩对话</a>中描述的压缩摘要调用使用相同的前缀共享方法。</p>
+
+<h3 id="sec-prompt-caching-28">禁用 prompt caching</h3>
+
+<p>禁用缓存在使用特定模型或提供商调试缓存行为时偶尔很有用。要关闭它，请将以下<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>之一<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>为 `1`：</p>
+
+<div class='table-wrap'><table>
+<tr><th>变量</th><th>效果</th></tr>
+<tr><td>`DISABLE_PROMPT_CACHING`</td><td>对所有模型禁用</td></tr>
+<tr><td>`DISABLE_PROMPT_CACHING_HAIKU`</td><td>仅对 Haiku 禁用</td></tr>
+<tr><td>`DISABLE_PROMPT_CACHING_SONNET`</td><td>仅对 Sonnet 禁用</td></tr>
+<tr><td>`DISABLE_PROMPT_CACHING_OPUS`</td><td>仅对 Opus 禁用</td></tr>
+<tr><td>`DISABLE_PROMPT_CACHING_FABLE`</td><td>仅对 Fable 禁用</td></tr>
+</table></div>
+
+<p>要在整个组织中<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>缓存策略，请将这些或<a class="kw" onclick="showKw('TTL 变量')" title="点击查看解释">TTL 变量</a>中的任何一个放在<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>的 `env` 块中。对于正常使用，保持缓存启用。</p>
+
+<h3 id="sec-prompt-caching-29">相关资源</h3>
+
+<p>* <a class="kw" onclick="showKw('从构建 Claude Code 中学到的经验：Prompt caching 就是一切')" title="点击查看解释">从构建 Claude Code 中学到的经验：Prompt caching 就是一切</a>：Plan Mode、延迟工具加载和压缩的设计原理</p>
+<p>* <a class="kw" onclick="showKw('探索上下文窗口')" title="点击查看解释">探索上下文窗口</a>：什么加载到上下文中以及何时加载</p>
+<p>* <a class="kw" onclick="showKw('减少令牌使用')" title="点击查看解释">减少令牌使用</a>：超越缓存的策略，用于管理上下文大小</p>
+<p>* <a class="kw" onclick="showKw('跟踪和减少成本')" title="点击查看解释">跟踪和减少成本</a>：<a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> SDK 调用者的缓存令牌跟踪和 TTL 配置</p>
+<p>* <a class="kw" onclick="showKw('Prompt caching')" title="点击查看解释">Prompt caching</a>：底层 API 机制、断点和定价</p>
+
+  </main>
+</div>
+
+<nav class="pager">
+  <a href="plugins.html"><span class="dir">← 上一篇</span><span class="ptitle">创建插件</span></a>
+  <a class="next" href="prompt-library.html"><span class="dir">下一篇 →</span><span class="ptitle">提示词库</span></a>
+</nav>
+
+<button class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="返回顶部"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 5l0 14" /> <path d="M18 11l-6 -6" /> <path d="M6 11l6 -6" /> </svg></span></button>
+
+<!-- 关键词解释弹窗 -->
+<div class="kw-panel" id="kwPanel">
+  <div class="kwp-head">
+    <span class="kwp-badge" id="kwpBadge"></span>
+    <span class="kwp-title" id="kwpTitle"></span>
+    <button class="kwp-close" onclick="hideKw()">×</button>
+  </div>
+  <div class="kwp-body">
+    <div class="kwp-desc" id="kwpDesc"></div>
+    <a class="kwp-link" id="kwpLink" target="_blank">阅读完整文档<span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l14 0" /> <path d="M13 18l6 -6" /> <path d="M13 6l6 6" /> </svg></span></a>
+  </div>
+  <div class="kwp-bar-wrap"><div class="kwp-bar" id="kwBar"></div></div>
+</div>
+
+<script>
+function toggleDrawer() {
+  document.getElementById('drawer').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+window.addEventListener('scroll', function() {
+  var st = document.getElementById('scrollTop');
+  st.classList.toggle('show', window.scrollY > 400);
+  var h = document.documentElement.scrollHeight - window.innerHeight;
+  var pct = h > 0 ? (window.scrollY / h * 100) : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+});
+
+// ===== 关键词弹窗逻辑 =====
+const KW_DATA = {"Marketplace": {"doc": "plugin-marketplaces", "title": "创建和分发 plugin marketplace", "desc": "**plugin marketplace** 是一个目录，让你能够将 plugins 分发给他人。Marketplace 提供集中式发现、版本跟踪、自动更新以及对多种源类型（包括 git 存储库和本地路径）的支持。本指南展示了如何创建自己的 marketplace，与你的团队或社区共享 plugins。"}, "市场": {"doc": "plugin-marketplaces", "title": "创建和分发 plugin marketplace", "desc": "**plugin marketplace** 是一个目录，让你能够将 plugins 分发给他人。Marketplace 提供集中式发现、版本跟踪、自动更新以及对多种源类型（包括 git 存储库和本地路径）的支持。本指南展示了如何创建自己的 marketplace，与你的团队或社区共享 plugins。"}, "Plugin": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "插件": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "Skill": {"doc": "skills", "title": "使用 skills 扩展 Claude", "desc": "Skills 扩展了 Claude 能做的事情。创建一个 `SKILL.md` 文件，其中包含说明，Claude 会将其添加到其工具包中。Claude 在相关时使用 skills，或者你可以使用 `/skill-name` 直接调用一个。"}, "技能": {"doc": "skills", "title": "使用 skills 扩展 Claude", "desc": "Skills 扩展了 Claude 能做的事情。创建一个 `SKILL.md` 文件，其中包含说明，Claude 会将其添加到其工具包中。Claude 在相关时使用 skills，或者你可以使用 `/skill-name` 直接调用一个。"}, "Agent": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "Subagent": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "子代理": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "Hook": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "钩子": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "MCP": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "CLI": {"doc": "cli-reference", "title": "CLI 参考", "desc": "CLI 命令"}, "斜杠命令": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "快捷键": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "keybindings": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "权限模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Permission Mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "上下文窗口": {"doc": "context-window", "title": "探索上下文窗口", "desc": "了解 Claude Code 的上下文窗口如何工作：上下文包含哪些内容、如何高效利用、以及自动压缩等机制。"}, "Context Window": {"doc": "context-window", "title": "探索上下文窗口", "desc": "了解 Claude Code 的上下文窗口如何工作：上下文包含哪些内容、如何高效利用、以及自动压缩等机制。"}, "设置": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "环境变量": {"doc": "env-vars", "title": "环境变量", "desc": "环境变量可以控制 Claude Code 的行为，例如模型选择、身份验证、请求路由和功能切换。许多相同的行为也可以通过设置文件字段、CLI 标志或会话内命令（如 `/model`）进行配置。"}, "Environment Variables": {"doc": "env-vars", "title": "环境变量", "desc": "环境变量可以控制 Claude Code 的行为，例如模型选择、身份验证、请求路由和功能切换。许多相同的行为也可以通过设置文件字段、CLI 标志或会话内命令（如 `/model`）进行配置。"}, "记忆": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "Memory": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "会话": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "Session": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "状态栏": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "Statusline": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "CLAUDE.md": {"doc": "claude-directory", "title": "探索 .claude 目录", "desc": "Claude Code 在项目根目录读取的指令文件，每次会话都会加载，用来定义项目约定、常用命令和架构上下文。"}, ".claude 目录": {"doc": "claude-directory", "title": "探索 .claude 目录", "desc": "Claude Code 读取 CLAUDE.md、settings.json、hooks、skills、commands、subagents 等配置的目录结构。"}, "keybindings.json": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "settings.json": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "Prompt caching": {"doc": "prompt-caching", "title": "Claude Code 如何使用 prompt caching", "desc": "Prompt caching 使 Claude Code 更快、更经济高效。没有缓存，API 会在每个回合重新处理您的完整历史记录。有了缓存，它会重用已经处理过的内容，只对更改的部分进行新工作。"}, "提示词缓存": {"doc": "prompt-caching", "title": "Claude Code 如何使用 prompt caching", "desc": "Prompt caching 使 Claude Code 更快、更经济高效。没有缓存，API 会在每个回合重新处理您的完整历史记录。有了缓存，它会重用已经处理过的内容，只对更改的部分进行新工作。"}, "提示词库": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类（理解、计划、原型、构建等），帮助快速上手常见任务。"}, "Prompt library": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类（理解、计划、原型、构建等），帮助快速上手常见任务。"}, "提示词": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类，帮助快速上手 Claude Code 常见任务。"}, "auto memory": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "自动记忆": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "后台会话": {"doc": "agent-view", "title": "使用 agent view 管理多个代理", "desc": "Agent view 通过 `claude agents` 打开，是所有后台会话的一个屏幕：什么正在运行、什么需要你的输入、什么已完成。调度新会话，一目了然地查看它们的状态而不是滚动浏览记录，只在需要时才介入。每个后台会话都是一个完整的 Claude Code 对话，在没有终端连接的情况下继续运行，所以你可以随时打开它、回复并离开。"}, "代理视图": {"doc": "agent-view", "title": "使用 agent view 管理多个代理", "desc": "Agent view 通过 `claude agents` 打开，是所有后台会话的一个屏幕：什么正在运行、什么需要你的输入、什么已完成。调度新会话，一目了然地查看它们的状态而不是滚动浏览记录，只在需要时才介入。每个后台会话都是一个完整的 Claude Code 对话，在没有终端连接的情况下继续运行，所以你可以随时打开它、回复并离开。"}, "远程控制": {"doc": "remote-control", "title": "使用 Remote Control 从任何设备继续本地会话", "desc": "Remote Control 处于研究预览阶段，在所有计划中都可用。在 Team 和 Enterprise 上，在所有者在 Claude Code 管理员设置中启用 Remote Control 切换之前，它默认处于关闭状态。"}, "Remote Control": {"doc": "remote-control", "title": "使用 Remote Control 从任何设备继续本地会话", "desc": "Remote Control 处于研究预览阶段，在所有计划中都可用。在 Team 和 Enterprise 上，在所有者在 Claude Code 管理员设置中启用 Remote Control 切换之前，它默认处于关闭状态。"}, "计划任务": {"doc": "scheduled-tasks", "title": "按计划运行提示词", "desc": "计划任务让 Claude 按间隔自动重新运行提示词。使用它们来轮询部署、监督 PR、检查长时间运行的构建，或在会话中稍后提醒自己做某事。要对事件进行实时反应而不是轮询，请参阅 Channels：您的 CI 可以直接将失败推送到会话中。要保持会话工作转向转向直到满足条件而不是按间隔，请参阅 `/goal`。"}, "定期任务": {"doc": "desktop-scheduled-tasks", "title": "在 Claude Code Desktop 中安排定期任务", "desc": "定期任务在您选择的时间和频率自动启动新会话。使用它们进行定期工作，如日常代码审查、依赖项更新检查或从您的日历和收件箱中提取信息的早晨简报。"}, "例程": {"doc": "routines", "title": "使用例程自动化工作", "desc": "Routines 处于研究预览阶段。行为、限制和 API 表面可能会改变。"}, "Routines": {"doc": "routines", "title": "使用例程自动化工作", "desc": "Routines 处于研究预览阶段。行为、限制和 API 表面可能会改变。"}, "代码审查": {"doc": "code-review", "title": "Code Review", "desc": "Code Review 处于研究预览阶段，仅适用于 Team 和 Enterprise 订阅。对于启用了 Zero Data Retention 的组织，此功能不可用。"}, "Code Review": {"doc": "code-review", "title": "Code Review", "desc": "Code Review 处于研究预览阶段，仅适用于 Team 和 Enterprise 订阅。对于启用了 Zero Data Retention 的组织，此功能不可用。"}, "检查点": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "Checkpointing": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "工作流": {"doc": "workflows", "title": "使用动态工作流大规模编排子代理", "desc": "动态工作流需要 Claude Code v2.1.154 或更高版本，在所有付费计划上可用，具有 Anthropic API 访问权限，以及在 Amazon Bedrock、Google Cloud 的 Agent Platform 和 Microsoft Foundry 上可用。在 Pro 上，从 `/config` 中的\"Dynamic workflows\"行启用它们。"}, "Workflows": {"doc": "workflows", "title": "使用动态工作流大规模编排子代理", "desc": "动态工作流需要 Claude Code v2.1.154 或更高版本，在所有付费计划上可用，具有 Anthropic API 访问权限，以及在 Amazon Bedrock、Google Cloud 的 Agent Platform 和 Microsoft Foundry 上可用。在 Pro 上，从 `/config` 中的\"Dynamic workflows\"行启用它们。"}, "最佳实践": {"doc": "best-practices", "title": "Claude Code 最佳实践", "desc": "Claude Code 是一个代理式编码环境。与等待回答问题的聊天机器人不同，Claude Code 可以读取你的文件、运行命令、进行更改，并在你观看、重定向或完全离开的情况下自主解决问题。"}, "Best Practices": {"doc": "best-practices", "title": "Claude Code 最佳实践", "desc": "Claude Code 是一个代理式编码环境。与等待回答问题的聊天机器人不同，Claude Code 可以读取你的文件、运行命令、进行更改，并在你观看、重定向或完全离开的情况下自主解决问题。"}, "交互模式": {"doc": "interactive-mode", "title": "交互模式", "desc": "键盘快捷键"}, "交互式模式": {"doc": "interactive-mode", "title": "交互模式", "desc": "键盘快捷键"}, "常见工作流": {"doc": "common-workflows", "title": "常见工作流程", "desc": "本页收集了日常开发的简短工作流程。有关提示和上下文管理的更高级指导，请参阅最佳实践。"}, "JetBrains": {"doc": "jetbrains", "title": "JetBrains IDEs", "desc": "Claude Code 通过专用插件与 JetBrains IDE 集成，提供交互式差异查看、选择上下文共享等功能。"}, "VS Code": {"doc": "vs-code", "title": "在 VS Code 中使用 Claude Code", "desc": "VS Code 扩展为 Claude Code 提供了原生图形界面，直接集成到您的 IDE 中。这是在 VS Code 中使用 Claude Code 的推荐方式。"}, "GitHub Actions": {"doc": "github-actions", "title": "Claude Code GitHub Actions", "desc": "Claude Code GitHub Actions 为您的 GitHub 工作流带来了 AI 驱动的自动化。只需在任何 PR 或 issue 中简单地提及 `@claude`，Claude 就可以分析您的代码、创建拉取请求、实现功能和修复错误 - 所有这些都遵循您项目的标准。如需在每个 PR 上自动发布评论而无需触发器，请参阅 GitHub Code Review。"}, "GitLab CI": {"doc": "gitlab-ci-cd", "title": "Claude Code GitLab CI/CD", "desc": "Claude Code for GitLab CI/CD 目前处于测试阶段。随着我们完善体验，功能和特性可能会发生变化。"}, "桌面应用": {"doc": "desktop", "title": "Desktop application", "desc": "Claude Desktop 应用有三个选项卡：Chat 用于对话，Cowork 用于 Dispatch 和更长的代理工作，Code 用于软件开发。本页是 Code 选项卡的参考。"}, "计划模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Plan mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "自动模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "auto mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Accept Edits": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "bypassPermissions": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "权限": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "/plugin": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "/mcp": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "/hooks": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "/agents": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "/clear": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/compact": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/config": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "/resume": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/continue": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/fork": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/checkpoint": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "/cost": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/permissions": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "/statusline": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "/keybindings": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "术语表": {"doc": "glossary", "title": "术语表", "desc": "本术语表定义了 Claude Code 术语。每个条目都链接到深入讨论该概念的页面。对于模型级概念（如 tokens、temperature 和 RAG），请参阅平台术语表。"}, "OAuth": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "MCP server": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "MCP Server": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "组织设置": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "托管设置": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "服务器托管": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "快速开始": {"doc": "quickstart", "title": "快速开始", "desc": "本快速开始指南将在几分钟内让您使用 AI 驱动的编码辅助。完成本指南后，您将了解如何使用 Claude Code 完成常见的开发任务。"}, "故障排除": {"doc": "troubleshooting", "title": "故障排除", "desc": "本页涵盖 Claude Code 运行后的性能、稳定性和搜索问题。对于其他问题，请从与您遇到的问题相匹配的页面开始："}, "Troubleshooting": {"doc": "troubleshooting", "title": "故障排除", "desc": "本页涵盖 Claude Code 运行后的性能、稳定性和搜索问题。对于其他问题，请从与您遇到的问题相匹配的页面开始："}, "完整文档": {"doc": "overview", "title": "概述", "desc": "Claude Code 是一个由 AI 驱动的编码助手，可帮助你构建功能、修复错误和自动化开发任务。它理解你的整个代码库，可以跨多个文件和工具工作以完成任务。"}, "概述": {"doc": "overview", "title": "概述", "desc": "Claude Code 是一个由 AI 驱动的编码助手，可帮助你构建功能、修复错误和自动化开发任务。它理解你的整个代码库，可以跨多个文件和工具工作以完成任务。"}};
+  const KW_EXTRA = {"skills": {"doc": "skills", "title": "Skills 技能", "desc": "Claude Code 技能扩展。SKILL.md 提供操作说明，Claude 按需调用完成任务。"}, "Skills": {"doc": "skills", "title": "Skills 技能", "desc": "Claude Code 技能扩展。SKILL.md 提供操作说明，Claude 按需调用完成任务。"}, "skill": {"doc": "skills", "title": "Skill 技能", "desc": "单个技能定义，包含 SKILL.md 说明文件，供 Claude 按需调用。"}, "Hooks": {"doc": "hooks", "title": "Hooks 钩子", "desc": "生命周期钩子。在 Claude Code 操作前后自动运行脚本，如格式化、lint。"}, "hooks": {"doc": "hooks", "title": "Hooks 钩子", "desc": "生命周期钩子。在 Claude Code 操作前后自动运行脚本，如格式化、lint。"}, "hook": {"doc": "hooks", "title": "Hook 钩子", "desc": "单个钩子，监听事件并在操作前后执行命令。"}, "hook 事件": {"doc": "hooks", "title": "Hook 事件", "desc": "钩子可监听的事件，如 PreToolUse、SessionStart 等。"}, "Subagents": {"doc": "sub-agents", "title": "Subagents 子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行，只返回摘要。"}, "subagents": {"doc": "sub-agents", "title": "子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行。"}, "subagent": {"doc": "sub-agents", "title": "子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行。"}, "agent team": {"doc": "agents", "title": "Agent team 代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "agent teams": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "Agent teams": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "代理团队": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "Plugins": {"doc": "plugins", "title": "Plugins 插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包，可共享给团队。"}, "plugins": {"doc": "plugins", "title": "插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包。"}, "plugin": {"doc": "plugins", "title": "插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包。"}, "MCP servers": {"doc": "mcp", "title": "MCP 服务器", "desc": "通过 Model Context Protocol 连接外部工具与数据源的服务器。"}, "MCP 服务器": {"doc": "mcp", "title": "MCP 服务器", "desc": "通过 Model Context Protocol 连接外部工具与数据源的服务器。"}, "Amazon Bedrock": {"doc": "third-party-integrations", "title": "Amazon Bedrock", "desc": "AWS 托管 AI 平台，可运行 Claude 模型并接入 Claude Code。"}, "Microsoft Foundry": {"doc": "third-party-integrations", "title": "Microsoft Foundry", "desc": "微软云 AI 平台，提供模型托管服务，支持 Claude Code 接入。"}, "Claude apps gateway": {"doc": "desktop", "title": "Claude apps gateway", "desc": "Anthropic 官方网关，管理桌面端与网络服务的连接。"}, "Agent SDK": {"doc": "agent-sdk_overview", "title": "Claude Agent SDK", "desc": "官方工具包，用于以编程方式构建和集成 Claude Code 代理。"}, "动态工作流": {"doc": "workflows", "title": "动态工作流", "desc": "通过 JSON/JS 定义步骤，让 Claude 编排子代理执行复杂任务。"}, "LLM 网关": {"doc": "third-party-integrations", "title": "LLM 网关", "desc": "大模型网关，统一路由、代理和管控 LLM API 请求的中间层。"}, "自动内存": {"doc": "memory", "title": "自动内存", "desc": "自动将重要信息写入记忆文档，跨会话保持上下文连续。"}, "Slack": {"doc": "slack", "title": "Slack", "desc": "协作平台。可通过 Claude Code 集成在 Slack 中运行 AI 代理。"}, "Dispatch": {"doc": "desktop", "title": "Dispatch", "desc": "桌面应用功能，将任务分派给代理在后台执行。"}, "Desktop": {"doc": "desktop", "title": "桌面应用", "desc": "Claude Code 桌面应用，提供 Chat、Cowork、Code 图形界面。"}, "Channels": {"doc": "channels", "title": "Channels 频道", "desc": "将 Claude Code 会话接入 Telegram、Discord 等平台的插件系统。"}, "Sandboxing": {"doc": "settings", "title": "沙箱", "desc": "限制 Bash 工具访问范围的安全隔离机制。"}, "沙箱": {"doc": "settings", "title": "沙箱", "desc": "限制工具文件系统访问的安全隔离环境。"}, "非交互模式": {"doc": "cli-reference", "title": "非交互模式", "desc": "通过 -p 参数在脚本中无交互运行 Claude Code，适合自动化。"}, "快速模式": {"doc": "settings", "title": "快速模式", "desc": "提高速率限制的付费模式，响应速度更快。"}, "Plan Mode": {"doc": "permission-modes", "title": "计划模式", "desc": "只分析不执行，先产出修改方案供确认再动手。"}, "Auto mode": {"doc": "permission-modes", "title": "自动模式", "desc": "自动批准低风险操作，减少交互打断，提升效率。"}, "状态行": {"doc": "statusline", "title": "状态行", "desc": "可自定义的底部状态栏，显示上下文、成本等信息。"}, "工具搜索": {"doc": "mcp", "title": "MCP 工具搜索", "desc": "让 Claude 按需搜索并发现更多 MCP 工具，扩展能力。"}, "扩展思考": {"doc": "common-workflows", "title": "扩展思考", "desc": "让 Claude 回答前进行更深入的多步推理，提升复杂问题准确率。"}, "计算机使用": {"doc": "computer-use", "title": "计算机使用", "desc": "让 Claude 控制屏幕、操作应用的实验性功能。"}, "云会话": {"doc": "claude-code-on-the-web", "title": "云会话", "desc": "在 Anthropic 云端运行的 Claude Code 会话。"}, "第三方提供商": {"doc": "third-party-integrations", "title": "第三方提供商", "desc": "通过兼容 API 使用非 Anthropic 模型的服务商。"}, "身份验证": {"doc": "settings", "title": "身份验证", "desc": "Claude Code 登录与凭证验证机制。"}, "网络配置": {"doc": "settings", "title": "网络配置", "desc": "Claude Code 访问网络端点与代理的设置。"}, "语音听写": {"doc": "desktop", "title": "语音听写", "desc": "通过语音转文字向 Claude 下达指令。"}, "权限规则": {"doc": "permission-modes", "title": "权限规则", "desc": "定义允许、询问、拒绝操作的规则。"}, "输出样式": {"doc": "settings", "title": "输出样式", "desc": "自定义 Claude 回复格式的样式文件。"}, "工作量级别": {"doc": "settings", "title": "工作量级别", "desc": "控制模型推理深度的设置。"}, "努力级别": {"doc": "settings", "title": "努力级别", "desc": "控制模型推理深度的设置。"}, "Worktrees": {"doc": "common-workflows", "title": "Git worktree", "desc": "Git 并行工作树，支持多会话同时开发互不干扰。"}, "git worktree": {"doc": "common-workflows", "title": "Git worktree", "desc": "Git 并行工作树，支持多会话同时开发互不干扰。"}, "后台代理": {"doc": "agent-view", "title": "后台代理", "desc": "在后台运行、无需终端连接的 Claude Code 会话。"}, "自动修复": {"doc": "github-actions", "title": "自动修复", "desc": "Claude 自动修复 PR 或代码问题并提交。"}, "顾问工具": {"doc": "code-review", "title": "顾问工具", "desc": "提供代码审查建议的辅助工具。"}, "SSH": {"doc": "remote-control", "title": "SSH", "desc": "安全外壳协议，用于远程连接与加密通信。"}, "连接器": {"doc": "channels", "title": "连接器", "desc": "Claude 连接外部工具和数据源的官方集成。"}, "Artifact": {"doc": "desktop", "title": "Artifact 工件", "desc": "Claude 生成的可共享成果物。"}, "管理会话": {"doc": "sessions", "title": "会话管理", "desc": "保存、恢复、分叉 Claude Code 对话。"}, "命令参考": {"doc": "commands", "title": "命令参考", "desc": "Claude Code 斜杠命令的说明文档。"}, "插件参考": {"doc": "plugins-reference", "title": "插件参考", "desc": "插件组件与配置的参考文档。"}, "自适应推理": {"doc": "settings", "title": "自适应推理", "desc": "根据任务难度动态调整模型推理强度。"}, "环境缓存": {"doc": "settings", "title": "环境缓存", "desc": "缓存已验证的脚本环境，加快工具执行。"}, "扩展上下文": {"doc": "context-window", "title": "扩展上下文", "desc": "增大上下文窗口容量，处理更长内容。"}, "内置命令": {"doc": "commands", "title": "内置命令", "desc": "Claude Code 自带的斜杠命令。"}, "权限设置": {"doc": "permission-modes", "title": "权限设置", "desc": "控制 Claude 操作权限的配置。"}, "环境": {"doc": "env-vars", "title": "环境", "desc": "影响 Claude Code 运行的系统环境配置。"}, "Chrome": {"doc": "chrome", "title": "Chrome 扩展", "desc": "Claude in Chrome 浏览器扩展，在网页中调用 Claude。"}, "iOS": {"doc": "desktop", "title": "iOS 应用", "desc": "Claude 移动端应用，支持远程控制与推送。"}, "Android": {"doc": "desktop", "title": "Android 应用", "desc": "Claude 移动端应用，支持远程控制与推送。"}, "网页": {"doc": "claude-code-on-the-web", "title": "Claude Code 网页版", "desc": "在浏览器中使用的 Claude Code，无需安装 CLI，登录即用。"}, "GitLab": {"doc": "gitlab-ci-cd", "title": "GitLab", "desc": "代码托管平台。可通过 GitLab CI/CD 集成 Claude Code 实现自动化。"}, "CI/CD": {"doc": "github-actions", "title": "CI/CD", "desc": "持续集成/持续交付，自动化完成构建、测试和部署的流水线。"}, "终端 CLI": {"doc": "cli-reference", "title": "终端 CLI", "desc": "命令行界面工具，在终端中直接运行 Claude Code 管理项目。"}, "终端指南": {"doc": "overview", "title": "终端指南", "desc": "终端基础使用入门，介绍如何用命令行操作 Claude Code。"}, "Claude Console": {"doc": "overview", "title": "Anthropic 控制台", "desc": "Anthropic 官方控制台，管理 API 密钥、查看用量和账单。"}, "Claude 订阅": {"doc": "overview", "title": "Claude 订阅", "desc": "Claude 付费套餐（Pro/Max/Team/Enterprise），解锁全部功能。"}, "支持的云提供商": {"doc": "third-party-integrations", "title": "支持的云提供商", "desc": "Amazon Bedrock、Google Cloud 等可托管并运行 Claude 模型的云平台。"}, "凭证管理": {"doc": "settings", "title": "凭证管理", "desc": "管理 API 密钥、登录凭证和身份验证的机制。"}, "Git for Windows": {"doc": "settings", "title": "Git for Windows", "desc": "Windows 版 Git，安装后 Claude Code 可使用 Bash 工具。"}, "Discord": {"doc": "channels", "title": "Discord", "desc": "社区平台。可通过 Channels 插件在 Discord 中使用 Claude Code。"}, "所有界面": {"doc": "overview", "title": "所有界面", "desc": "Claude Code 的多种使用方式：终端、IDE、桌面应用、网页等。"}, "Amazon Bedrock、Google Cloud 的 Agent Platform 或 Microsoft Foundry": {"doc": "third-party-integrations", "title": "三大云平台", "desc": "AWS、谷歌云、微软云三大平台，均可托管 Claude 模型接入 Claude Code。"}, "Claude Pro、Max、Team 或 Enterprise": {"doc": "overview", "title": "Claude 订阅套餐", "desc": "Claude 的付费订阅层级，提供不同额度的模型访问与功能。"}, "Troubleshoot installation": {"doc": "troubleshoot-install", "title": "安装故障排除", "desc": "安装 Claude Code 出错时的排查指南与替代安装方法。"}, "终端": {"doc": "cli-reference", "title": "终端", "desc": "命令行环境，Claude Code 的主要使用场景。"}, "GitHub Actions": {"doc": "github-actions", "title": "GitHub Actions", "desc": "GitHub 的 CI/CD 自动化平台，可集成 Claude Code 自动审查和修复。"}, "JetBrains IDE": {"doc": "jetbrains", "title": "JetBrains IDE", "desc": "JetBrains 系列 IDE（IDEA、PyCharm 等）的 Claude Code 插件。"}, "apt, dnf, or apk": {"doc": "setup", "title": "Linux 包管理器", "desc": "Linux 包管理器：apt 用于 Debian/Ubuntu，dnf 用于 Fedora。"}, "CLI 参考": {"doc": "cli-reference", "title": "CLI 参考", "desc": "Claude Code 命令行参考，列出全部命令、参数与用法。"}};
+let kwTimer = null;
+function showKw(kw) {
+  const d = KW_DATA[kw] || KW_EXTRA[kw];
+  if (!d) {
+    document.getElementById('kwpBadge').textContent = kw;
+    document.getElementById('kwpTitle').textContent = kw;
+    document.getElementById('kwpDesc').textContent = '暂无该词条详细解释，可前往官方文档查阅。';
+    document.getElementById('kwpLink').style.display = 'none';
+    const panel = document.getElementById('kwPanel');
+    panel.style.width = '320px';
+    panel.classList.add('open');
+    const bar = document.getElementById('kwBar');
+    bar.style.transition = 'none';
+    bar.style.width = '100%';
+    void bar.offsetWidth;
+    bar.style.transition = 'width 4s linear';
+    bar.style.width = '0%';
+    clearTimeout(kwTimer);
+    kwTimer = setTimeout(hideKw, 4000);
+    return;
+  }
+  document.getElementById('kwpBadge').textContent = kw;
+  document.getElementById('kwpTitle').textContent = d.title;
+  document.getElementById('kwpDesc').textContent = d.desc;
+  var _kwpPfx = location.pathname.indexOf('/doc/') !== -1 || location.pathname.endsWith('/doc/') ? '' : 'doc/';
+  document.getElementById('kwpLink').style.display = '';
+  document.getElementById('kwpLink').href = _kwpPfx + d.doc + '.html';
+  // 弹窗宽度随内容自适应（280-480px）
+  const panel = document.getElementById('kwPanel');
+  const estW = Math.min(480, Math.max(300, 280 + d.desc.length * 0.5));
+  panel.style.width = estW + 'px';
+  // 进度条时长按文本长度：每55字1秒，限4-14秒
+  const dur = Math.min(14, Math.max(4, Math.round(d.desc.length / 55)));
+  panel.classList.add('open');
+  // 重置进度条动画
+  const bar = document.getElementById('kwBar');
+  bar.style.transition = 'none';
+  bar.style.width = '100%';
+  void bar.offsetWidth;
+  bar.style.transition = 'width ' + dur + 's linear';
+  bar.style.width = '0%';
+  clearTimeout(kwTimer);
+  kwTimer = setTimeout(hideKw, dur * 1000);
+}
+function hideKw() {
+  document.getElementById('kwPanel').classList.remove('open');
+  clearTimeout(kwTimer);
+}
+
+// ===== 错误汇报 =====
+function openRpt() {
+  var page = location.pathname.split('/').pop() || 'index.html';
+  document.getElementById('rptPage').textContent = page;
+  document.getElementById('rptDesc').value = '';
+  document.getElementById('rptContact').value = '';
+  document.getElementById('rptForm').style.display = '';
+  document.getElementById('rptOk').style.display = 'none';
+  document.getElementById('rptOverlay').classList.add('show');
+}
+function closeRpt() {
+  document.getElementById('rptOverlay').classList.remove('show');
+}
+function submitRpt() {
+  var desc = document.getElementById('rptDesc').value.trim();
+  if (!desc) { document.getElementById('rptDesc').focus(); return; }
+  var btn = document.getElementById('rptBtn');
+  btn.disabled = true; btn.textContent = '提交中...';
+  var payload = {
+    page: document.getElementById('rptPage').textContent,
+    desc: desc,
+    contact: document.getElementById('rptContact').value.trim(),
+    time: new Date().toLocaleString('zh-CN', {hour12:false}),
+    user_agent: navigator.userAgent
+  };
+  fetch('/api/report', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  }).then(function(r){ return r.json(); }).then(function(d) {
+    btn.disabled = false; btn.textContent = '提交汇报';
+    document.getElementById('rptForm').style.display = 'none';
+    document.getElementById('rptOk').style.display = 'block';
+    setTimeout(closeRpt, 1800);
+  }).catch(function(e) {
+    btn.disabled = false; btn.textContent = '提交汇报';
+    alert('汇报失败，请重试：' + e);
+  });
+}
+</script>
+<!-- 错误汇报弹窗 -->
+<div class="rpt-overlay" id="rptOverlay" onclick="if(event.target===this)closeRpt()">
+  <div class="rpt-modal">
+    <div class="rpt-head">
+      <span class="rpt-title"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9 9v-1a3 3 0 0 1 6 0v1" /> <path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /> <path d="M3 13l4 0" /> <path d="M17 13l4 0" /> <path d="M12 20l0 -6" /> <path d="M4 19l3.35 -2" /> <path d="M20 19l-3.35 -2" /> <path d="M4 7l3.75 2.4" /> <path d="M20 7l-3.75 2.4" /> </svg></span> 文档有误？向服务器汇报！</span>
+      <button class="rpt-close" onclick="closeRpt()">×</button>
+    </div>
+    <div class="rpt-body" id="rptForm">
+      <div class="rpt-field">
+        <label>问题页面</label>
+        <div class="rpt-page" id="rptPage"></div>
+      </div>
+      <div class="rpt-field">
+        <label>问题描述</label>
+        <textarea id="rptDesc" placeholder="请描述你发现的问题：哪个词错了？哪里跳转不对？内容过时了？"></textarea>
+      </div>
+      <div class="rpt-field">
+        <label>联系方式（选填）</label>
+        <input id="rptContact" type="text" placeholder="QQ号 / 邮箱等，方便反馈处理结果">
+      </div>
+      <div class="rpt-tip">提交后内容会发送到服务器 reports/ 目录，管理员会尽快处理喵~</div>
+      <button class="rpt-submit" id="rptBtn" onclick="submitRpt()">提交汇报</button>
+    </div>
+    <div class="rpt-ok" id="rptOk" style="display:none;">
+      <div class="rpt-ok-icon"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span></div>
+      <div class="rpt-ok-title">汇报成功！</div>
+      <div class="rpt-ok-desc">感谢主人的反馈，问题已记录到服务器</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

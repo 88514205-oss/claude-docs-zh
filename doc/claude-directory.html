@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f1117">
+<title>探索 .claude 目录 - Claude Code 知识库</title>
+<style>
+:root {
+  --bg: #0f1117; --bg2: #16181f; --card: #1b1e26; --card2: #20242e;
+  --border: #2a2e3a; --text: #e2e4ea; --text2: #9aa0ad; --muted: #6b7280;
+  --accent: #8b7cff; --accent2: #a99dff; --code-bg: #0c0e13;
+  --kw-bg: rgba(139,124,255,0.15); --kw-hover: rgba(139,124,255,0.28);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { scroll-behavior:smooth; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); }
+.icon { display:inline-flex; vertical-align:-0.2em; width:1.1em; height:1.1em; margin-right:6px; }
+.icon svg { width:100%; height:100%; }
+.progress-bar { position:fixed; top:0; left:0; height:3px; background:var(--accent); width:0%; z-index:300; transition:width 0.1s linear; }
+.topbar { position:fixed; top:0; left:0; right:0; z-index:200; background:rgba(22,24,31,0.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 12px; height:52px; }
+.topbar .tb-home { display:flex; align-items:center; color:var(--text2); text-decoration:none; font-size:14px; padding:6px 10px; border-radius:8px; }
+.topbar .tb-home:hover { color:var(--text); background:var(--card2); }
+.topbar .tb-title { flex:1; text-align:center; font-size:15px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 10px; }
+.topbar .tb-toc { background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:13px; display:flex; align-items:center; }
+.topbar .tb-toc:hover { color:var(--text); border-color:var(--accent); }
+.reader { display:flex; padding-top:52px; min-height:100vh; }
+.toc-side { width:240px; flex-shrink:0; position:sticky; top:52px; height:calc(100vh - 52px); overflow-y:auto; padding:20px 12px; border-right:1px solid var(--border); background:var(--bg); display:none; }
+.toc-side h3 { font-size:13px; color:var(--muted); margin-bottom:10px; padding-left:8px; letter-spacing:1px; }
+.toc-side a { display:block; color:var(--text2); text-decoration:none; padding:6px 8px; border-radius:6px; font-size:13px; line-height:1.5; border-left:2px solid transparent; }
+.toc-side a:hover { color:var(--text); background:var(--card2); border-left-color:var(--accent); }
+.toc-drawer { position:fixed; top:0; right:-300px; width:280px; max-width:85vw; height:100vh; background:var(--bg2); z-index:250; transition:right 0.25s ease; overflow-y:auto; padding:70px 16px 30px; border-left:1px solid var(--border); }
+.toc-drawer.open { right:0; }
+.toc-drawer h3 { font-size:14px; color:var(--muted); margin-bottom:12px; }
+.toc-drawer a { display:block; color:var(--text2); text-decoration:none; padding:8px 6px; border-radius:6px; font-size:14px; line-height:1.5; }
+.toc-drawer a:hover { color:var(--text); background:var(--card2); }
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:240; display:none; }
+.overlay.show { display:block; }
+.article { flex:1; max-width:760px; margin:0 auto; padding:40px 24px 80px; min-width:0; }
+.article h1 { font-size:26px; margin-bottom:6px; line-height:1.4; }
+.article .doc-meta { color:var(--muted); font-size:13px; margin-bottom:28px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+.article h2 { font-size:21px; margin:36px 0 14px; color:var(--text); line-height:1.4; }
+.article h3 { font-size:18px; margin:28px 0 12px; color:var(--text); }
+.article h4 { font-size:16px; margin:22px 0 10px; color:var(--accent2); }
+.article p { font-size:16.5px; line-height:1.95; margin:14px 0; color:var(--text); }
+.article li { margin-left:24px; line-height:1.9; font-size:16px; color:var(--text); }
+.article a { color:#a78bfa; text-decoration:underline; text-underline-offset:3px; transition:color 0.15s; }
+.article a:hover { color:#c4b5fd; }
+.article a:visited { color:#a78bfa; }
+.article a.kw { color:#c4b5fd; text-decoration:none; }
+.article blockquote { border-left:4px solid var(--accent); padding:10px 16px; background:rgba(139,124,255,0.08); margin:16px 0; color:var(--text2); font-size:15px; border-radius:0 8px 8px 0; }
+.article pre { background:var(--code-bg); color:#d5d8e0; padding:16px 18px; border-radius:10px; overflow-x:auto; -webkit-overflow-scrolling:touch; font-size:13.5px; line-height:1.7; margin:16px 0; white-space:pre; border:1px solid var(--border); }
+.article code { font-family:"JetBrains Mono",Consolas,monospace; }
+.article .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; margin:16px 0; border-radius:8px; border:1px solid var(--border); }
+.article table { width:100%; border-collapse:collapse; font-size:14px; min-width:420px; }
+.article th, .article td { border-bottom:1px solid var(--border); padding:9px 12px; text-align:left; color:var(--text); line-height:1.7; }
+.article th { background:var(--card2); color:var(--accent2); }
+.kw { color:#c4b5fd; background:var(--kw-bg); border-bottom:1px dashed var(--accent); padding:1px 4px; border-radius:4px; text-decoration:none; cursor:pointer; font-weight:500; transition:all 0.15s; }
+.kw:hover { background:var(--kw-hover); color:#fff; }
+.pager { max-width:760px; margin:0 auto; padding:0 24px 60px; display:flex; gap:12px; }
+.pager a { flex:1; display:block; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 18px; text-decoration:none; transition:0.2s; }
+.pager a:hover { border-color:var(--accent); transform:translateY(-2px); }
+.pager .dir { font-size:12px; color:var(--muted); display:block; margin-bottom:6px; }
+.pager .ptitle { font-size:15px; color:var(--text); font-weight:600; display:block; }
+.pager a.next { text-align:right; }
+.pager a:empty { display:none; }
+.scroll-top { position:fixed; right:16px; bottom:20px; width:44px; height:44px; border-radius:50%; background:var(--card2); color:var(--text); border:1px solid var(--border); box-shadow:0 3px 12px rgba(0,0,0,0.4); display:none; z-index:90; align-items:center; justify-content:center; cursor:pointer; }
+.scroll-top.show { display:flex; }
+.scroll-top .icon { margin:0; width:1.4em; height:1.4em; }
+
+.hamburger { background:none; border:none; color:var(--text); cursor:pointer; padding:8px; line-height:1; display:inline-flex; align-items:center; }
+.topbar .logo { display:flex; align-items:center; font-weight:700; font-size:15px; color:var(--text); flex-shrink:0; }
+.topbar .logo .icon { color:var(--accent); }
+.drawer { position:fixed; top:0; left:0; bottom:0; width:250px; background:var(--bg2); color:var(--text); z-index:250; transform:translateX(-100%); transition:transform 0.25s ease; overflow-y:auto; padding-top:60px; border-right:1px solid var(--border); }
+.drawer.open { transform:translateX(0); }
+.drawer nav a { display:flex; align-items:center; padding:12px 20px; color:var(--text2); text-decoration:none; font-size:15px; }
+.drawer nav a:hover, .drawer nav a:active { color:var(--text); background:var(--card2); }
+.drawer a { display:block; color:var(--text2); text-decoration:none; padding:7px 20px; font-size:13.5px; line-height:1.5; }
+.drawer a:hover { color:var(--text); background:var(--card2); }
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:240; display:none; }
+.overlay.show { display:block; }
+
+
+/* ===== MDX组件样式 ===== */
+.card-group { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin:16px 0; }
+.mg-card { display:flex; align-items:flex-start; gap:10px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; text-decoration:none; transition:0.2s; }
+.mg-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+.mg-icon { font-size:20px; flex-shrink:0; color:var(--accent); }
+.mg-card-title { font-size:14px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.mg-card-desc { font-size:12.5px; color:var(--text2); line-height:1.5; }
+.callout { border-left:4px solid var(--accent); padding:10px 16px; margin:14px 0; border-radius:0 8px 8px 0; font-size:14.5px; line-height:1.7; color:var(--text2); }
+.callout-tip { border-left-color:#4caf50; background:rgba(76,175,80,0.08); }
+.callout-note { border-left-color:#42a5f5; background:rgba(66,165,245,0.08); }
+.callout-warning { border-left-color:#ff9800; background:rgba(255,152,0,0.08); }
+.callout-info { border-left-color:#8b7cff; background:rgba(139,124,255,0.08); }
+.steps { list-style:none; counter-reset:step; margin:16px 0; padding:0; }
+.steps > li { position:relative; padding:0 0 16px 44px; margin:0; }
+.steps > li::before { counter-increment:step; content:counter(step); position:absolute; left:0; top:2px; width:28px; height:28px; border-radius:50%; background:var(--accent); color:#fff; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.step-title { font-weight:600; color:var(--text); margin-bottom:6px; font-size:15px; }
+.tabs { margin:16px 0; }
+.tab-item { background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:10px; overflow:hidden; }
+.tab-label { padding:9px 14px; font-size:13px; font-weight:600; color:var(--accent2); background:var(--card2); border-bottom:1px solid var(--border); }
+.tab-body { padding:12px 14px; }
+.acc-group { margin:16px 0; }
+.acc { background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; overflow:hidden; }
+.acc summary { padding:12px 16px; cursor:pointer; font-size:14px; font-weight:600; color:var(--text); }
+.acc summary:hover { background:var(--card2); }
+.acc[open] summary { border-bottom:1px solid var(--border); }
+.article kbd { background:var(--card2); border:1px solid var(--border); border-bottom-width:2px; border-radius:5px; padding:1px 7px; font-size:12px; font-family:inherit; color:var(--text); }
+
+
+.dot { display:inline-block; width:0.85em; height:0.85em; border-radius:50%; vertical-align:-0.1em; margin:0 2px; }
+.dot-red { background:#f03e3e; }
+.dot-yellow { background:#f59f00; }
+.dot-purple { background:#9c36b5; }
+
+@media (min-width: 1024px) { .toc-side { display:block; } .tb-toc { display:none; } }
+@media (max-width: 1023px) { .article { padding:32px 18px 60px; } .article p { font-size:16px; } }
+
+
+/* ===== 关键词弹窗 ===== */
+.kw-panel { position:fixed; left:0; top:50%; transform:translate(-110%,-50%); z-index:400; background:var(--card); border:1px solid var(--accent); border-left:none; border-radius:0 16px 16px 0; box-shadow:0 8px 40px rgba(0,0,0,0.6); transition:transform 0.35s cubic-bezier(0.22,1,0.36,1); max-height:70vh; display:flex; flex-direction:column; }
+.kw-panel.open { transform:translate(0,-50%); }
+.kw-panel .kwp-head { display:flex; align-items:center; gap:8px; padding:14px 18px 10px; border-bottom:1px solid var(--border); }
+.kw-panel .kwp-badge { background:var(--kw-bg); color:var(--accent2); font-size:12px; font-weight:700; padding:3px 10px; border-radius:10px; flex-shrink:0; }
+.kw-panel .kwp-title { font-size:15px; font-weight:600; color:var(--text); flex:1; line-height:1.4; }
+.kw-panel .kwp-close { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:0 4px; line-height:1; flex-shrink:0; }
+.kw-panel .kwp-close:hover { color:var(--text); }
+.kw-panel .kwp-body { padding:14px 18px; overflow-y:auto; flex:1; }
+.kw-panel .kwp-desc { font-size:14px; line-height:1.8; color:var(--text2); }
+.kw-panel .kwp-link { display:inline-flex; align-items:center; margin-top:12px; color:var(--accent2); text-decoration:none; font-size:13px; font-weight:600; }
+.kw-panel .kwp-link:hover { color:var(--accent); }
+.kw-panel .kwp-bar-wrap { height:4px; background:var(--card2); border-radius:0 0 16px 0; overflow:hidden; flex-shrink:0; }
+.kw-panel .kwp-bar { height:100%; width:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:0 0 16px 0; }
+/* ===== 错误汇报 ===== */
+.btn-report { display:inline-flex; align-items:center; gap:4px; background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12.5px; transition:0.15s; }
+.btn-report:hover { color:var(--text); border-color:var(--accent); background:var(--card2); }
+.rpt-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:500; display:none; align-items:center; justify-content:center; padding:20px; }
+.rpt-overlay.show { display:flex; }
+.rpt-modal { background:var(--card); border:1px solid var(--accent); border-radius:16px; width:100%; max-width:460px; box-shadow:0 20px 60px rgba(0,0,0,0.7); overflow:hidden; }
+.rpt-head { display:flex; align-items:center; gap:8px; padding:16px 20px; border-bottom:1px solid var(--border); }
+.rpt-head .rpt-title { font-size:16px; font-weight:700; color:var(--text); flex:1; }
+.rpt-close { background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1; }
+.rpt-close:hover { color:var(--text); }
+.rpt-body { padding:18px 20px; }
+.rpt-field { margin-bottom:14px; }
+.rpt-field label { display:block; font-size:13px; color:var(--text2); margin-bottom:6px; }
+.rpt-field .rpt-page { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:13px; color:var(--accent2); word-break:break-all; }
+.rpt-field input, .rpt-field textarea { width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:14px; color:var(--text); font-family:inherit; resize:vertical; }
+.rpt-field input:focus, .rpt-field textarea:focus { outline:none; border-color:var(--accent); }
+.rpt-field textarea { min-height:90px; }
+.rpt-tip { font-size:12px; color:var(--muted); margin-top:4px; }
+.rpt-submit { width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px; font-size:15px; font-weight:600; cursor:pointer; transition:0.15s; }
+.rpt-submit:hover { background:var(--accent2); }
+.rpt-submit:disabled { opacity:0.5; cursor:not-allowed; }
+.rpt-ok { text-align:center; padding:30px 20px; }
+.rpt-ok .rpt-ok-icon { font-size:42px; margin-bottom:12px; }
+.rpt-ok .rpt-ok-title { font-size:17px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.rpt-ok .rpt-ok-desc { font-size:13px; color:var(--text2); }
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar"></div>
+<header class="topbar">
+  <span class="logo"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6l0 13" /> <path d="M12 6l0 13" /> <path d="M21 6l0 13" /> </svg></span>Claude Code 知识库</span>
+  <div class="tb-title">探索 .claude 目录</div>
+  <button class="hamburger" onclick="toggleDrawer()" aria-label="菜单"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M4 6l16 0" /> <path d="M4 12l16 0" /> <path d="M4 18l16 0" /> </svg></span></button>
+</header>
+<aside class="drawer" id="drawer">
+  <nav>
+    <a href="../index.html" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l-2 0l9 -9l9 9l-2 0" /> <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /> <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /> </svg></span>返回首页</a>
+    <a href="../index.html#index" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>文档索引</a>
+    <a href="../index.html#manual" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M19 4v16h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12" /> <path d="M19 16h-12a2 2 0 0 0 -2 2" /> <path d="M9 8h6" /> </svg></span>入门手册</a>
+    <a href="../index.html#docs" onclick="closeDrawer()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>全部文档</a>
+    <a href="#" onclick="closeDrawer();openRpt()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9 9v-1a3 3 0 0 1 6 0v1" /> <path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /> <path d="M3 13l4 0" /> <path d="M17 13l4 0" /> <path d="M12 20l0 -6" /> <path d="M4 19l3.35 -2" /> <path d="M20 19l-3.35 -2" /> <path d="M4 7l3.75 2.4" /> <path d="M20 7l-3.75 2.4" /> </svg></span>文档有误？汇报</a>
+  </nav>
+  <div style="margin:14px 20px 6px;font-size:12px;color:var(--muted);letter-spacing:1px;">本文目录</div>
+  <a href="#sec-claude-directory-1" style="padding-left:0px;font-size:13px;">探索 .claude 目录</a>
+<a href="#sec-claude-directory-2" style="padding-left:14px;font-size:13.5px;">Commands</a>
+<a href="#sec-claude-directory-3" style="padding-left:14px;font-size:13.5px;">Stack</a>
+<a href="#sec-claude-directory-4" style="padding-left:14px;font-size:13.5px;">Rules</a>
+<a href="#sec-claude-directory-5" style="padding-left:0px;font-size:13px;">API credentials</a>
+<a href="#sec-claude-directory-6" style="padding-left:0px;font-size:13px;">Testing Rules</a>
+<a href="#sec-claude-directory-7" style="padding-left:0px;font-size:13px;">API Design Rules</a>
+<a href="#sec-claude-directory-8" style="padding-left:14px;font-size:13.5px;">Diff to review</a>
+<a href="#sec-claude-directory-9" style="padding-left:14px;font-size:13.5px;">Input Validation</a>
+<a href="#sec-claude-directory-10" style="padding-left:14px;font-size:13.5px;">Authentication</a>
+<a href="#sec-claude-directory-11" style="padding-left:14px;font-size:13.5px;">Patterns seen</a>
+<a href="#sec-claude-directory-12" style="padding-left:14px;font-size:13.5px;">Recurring issues</a>
+<a href="#sec-claude-directory-13" style="padding-left:14px;font-size:13.5px;">Project</a>
+<a href="#sec-claude-directory-14" style="padding-left:14px;font-size:13.5px;">Reference</a>
+<a href="#sec-claude-directory-15" style="padding-left:14px;font-size:13.5px;">Auth Token Issues</a>
+<a href="#sec-claude-directory-16" style="padding-left:14px;font-size:13.5px;">Database Connection Drops</a>
+<a href="#sec-claude-directory-17" style="padding-left:14px;font-size:13.5px;">探索目录</a>
+<a href="#sec-claude-directory-18" style="padding-left:14px;font-size:13.5px;">未显示的内容</a>
+<a href="#sec-claude-directory-19" style="padding-left:14px;font-size:13.5px;">选择正确的文件</a>
+<a href="#sec-claude-directory-20" style="padding-left:14px;font-size:13.5px;">文件参考</a>
+<a href="#sec-claude-directory-21" style="padding-left:14px;font-size:13.5px;">排查配置问题</a>
+<a href="#sec-claude-directory-22" style="padding-left:14px;font-size:13.5px;">应用数据</a>
+<a href="#sec-claude-directory-23" style="padding-left:28px;font-size:13px;">自动清理</a>
+<a href="#sec-claude-directory-24" style="padding-left:28px;font-size:13px;">保留直到您删除它们</a>
+<a href="#sec-claude-directory-25" style="padding-left:28px;font-size:13px;">纯文本存储</a>
+<a href="#sec-claude-directory-26" style="padding-left:28px;font-size:13px;">清除本地数据</a>
+<a href="#sec-claude-directory-27" style="padding-left:14px;font-size:13.5px;">相关资源</a>
+</aside>
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+
+<div class="reader">
+  <aside class="toc-side">
+    <h3>本文目录</h3>
+    <a href="#sec-claude-directory-1" style="padding-left:0px;font-size:13px;">探索 .claude 目录</a>
+<a href="#sec-claude-directory-2" style="padding-left:14px;font-size:13.5px;">Commands</a>
+<a href="#sec-claude-directory-3" style="padding-left:14px;font-size:13.5px;">Stack</a>
+<a href="#sec-claude-directory-4" style="padding-left:14px;font-size:13.5px;">Rules</a>
+<a href="#sec-claude-directory-5" style="padding-left:0px;font-size:13px;">API credentials</a>
+<a href="#sec-claude-directory-6" style="padding-left:0px;font-size:13px;">Testing Rules</a>
+<a href="#sec-claude-directory-7" style="padding-left:0px;font-size:13px;">API Design Rules</a>
+<a href="#sec-claude-directory-8" style="padding-left:14px;font-size:13.5px;">Diff to review</a>
+<a href="#sec-claude-directory-9" style="padding-left:14px;font-size:13.5px;">Input Validation</a>
+<a href="#sec-claude-directory-10" style="padding-left:14px;font-size:13.5px;">Authentication</a>
+<a href="#sec-claude-directory-11" style="padding-left:14px;font-size:13.5px;">Patterns seen</a>
+<a href="#sec-claude-directory-12" style="padding-left:14px;font-size:13.5px;">Recurring issues</a>
+<a href="#sec-claude-directory-13" style="padding-left:14px;font-size:13.5px;">Project</a>
+<a href="#sec-claude-directory-14" style="padding-left:14px;font-size:13.5px;">Reference</a>
+<a href="#sec-claude-directory-15" style="padding-left:14px;font-size:13.5px;">Auth Token Issues</a>
+<a href="#sec-claude-directory-16" style="padding-left:14px;font-size:13.5px;">Database Connection Drops</a>
+<a href="#sec-claude-directory-17" style="padding-left:14px;font-size:13.5px;">探索目录</a>
+<a href="#sec-claude-directory-18" style="padding-left:14px;font-size:13.5px;">未显示的内容</a>
+<a href="#sec-claude-directory-19" style="padding-left:14px;font-size:13.5px;">选择正确的文件</a>
+<a href="#sec-claude-directory-20" style="padding-left:14px;font-size:13.5px;">文件参考</a>
+<a href="#sec-claude-directory-21" style="padding-left:14px;font-size:13.5px;">排查配置问题</a>
+<a href="#sec-claude-directory-22" style="padding-left:14px;font-size:13.5px;">应用数据</a>
+<a href="#sec-claude-directory-23" style="padding-left:28px;font-size:13px;">自动清理</a>
+<a href="#sec-claude-directory-24" style="padding-left:28px;font-size:13px;">保留直到您删除它们</a>
+<a href="#sec-claude-directory-25" style="padding-left:28px;font-size:13px;">纯文本存储</a>
+<a href="#sec-claude-directory-26" style="padding-left:28px;font-size:13px;">清除本地数据</a>
+<a href="#sec-claude-directory-27" style="padding-left:14px;font-size:13.5px;">相关资源</a>
+  </aside>
+
+  <main class="article">
+    <blockquote>## Documentation Index</blockquote>
+<blockquote>Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt</blockquote>
+<blockquote>Use this file to discover all available pages before exploring further.</blockquote>
+
+<h2 id="sec-claude-directory-1">探索 .claude 目录</h2>
+
+<blockquote>Claude Code 读取 CLAUDE.md、settings.json、hooks、skills、commands、subagents、workflows、rules 和自动内存的位置。探索项目中的 .claude 目录和主目录中的 ~/.claude。</blockquote>
+
+<h3 id="sec-claude-directory-2">Commands</h3>
+<li>Build: \`npm run build\`</li>
+<li>Test: \`npm test\`</li>
+<li>Lint: \`npm run lint\`</li>
+
+<h3 id="sec-claude-directory-3">Stack</h3>
+<li>TypeScript with strict mode</li>
+<li>React 19, functional components only</li>
+
+<h3 id="sec-claude-directory-4">Rules</h3>
+<li>Named exports, never default exports</li>
+<li>Tests live next to source: \`foo.ts\` -&gt; \`foo.test.ts\`</li>
+<li>All API routes return \`{ data, error }\` shape`,</li>
+<p>        docsLink: &#x27;/en/memory&#x27;</p>
+<p>      }, {</p>
+<p>        id: &#x27;mcp-json&#x27;,</p>
+<p>        label: &#x27;.mcp.json&#x27;,</p>
+<p>        type: &#x27;file&#x27;,</p>
+<p>        icon: &#x27;json&#x27;,</p>
+<p>        color: &#x27;#9B7BC4&#x27;,</p>
+<p>        badge: &#x27;committed&#x27;,</p>
+<p>        oneLiner: &#x27;Project-scoped <a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a>s, shared with your team&#x27;,</p>
+<p>        when: &lt;&gt;Servers connect when the session begins. Tool schemas are deferred by default and load on demand via &lt;a href=&quot;/docs/en<a class="kw" onclick="showKw('/mcp')" title="点击查看解释">/mcp</a>#scale-with-mcp-tool-search&quot;&gt;tool search&lt;/a&gt;&lt;/&gt;,</p>
+<p>        description: &lt;&gt;Configures Model Context Protocol (<a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a>) servers that give Claude access to external tools: databases, APIs, browsers, and more. This file holds the project-scoped servers your whole team uses. Personal servers you want to keep to yourself go in &lt;code&gt;~/.claude.json&lt;/code&gt; instead.&lt;/&gt;,</p>
+<p>        tips: [&lt;&gt;Use environment variable references for secrets: &lt;code&gt;{&#x27;${NOTION_TOKEN}&#x27;}&lt;/code&gt;&lt;/&gt;, &lt;&gt;Lives at the project root, not inside &lt;code&gt;.claude/&lt;/code&gt;&lt;/&gt;, &lt;&gt;For servers only you need, run &lt;code&gt;claude mcp add --scope user&lt;/code&gt;. This writes to &lt;code&gt;~/.claude.json&lt;/code&gt; instead of &lt;code&gt;.mcp.json&lt;/code&gt;&lt;/&gt;],</p>
+<p>        exampleIntro: &lt;&gt;This example configures the Notion <a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a> so Claude can read and update pages in your workspace. The &lt;code&gt;{&#x27;${NOTION_TOKEN}&#x27;}&lt;/code&gt; reference is read from your shell environment when Claude Code starts the server, so the token never lands in the file.&lt;/&gt;,</p>
+<p>        example: `{</p>
+<p>  &quot;mcpServers&quot;: {</p>
+<p>    &quot;notion&quot;: {</p>
+<p>      &quot;command&quot;: &quot;npx&quot;,</p>
+<p>      &quot;args&quot;: [&quot;-y&quot;, &quot;@notionhq/notion-mcp-server&quot;],</p>
+<p>      &quot;env&quot;: {</p>
+<p>        &quot;NOTION_TOKEN&quot;: &quot;\${NOTION_TOKEN}&quot;</p>
+<p>      }</p>
+<p>    }</p>
+<p>  }</p>
+<p>}`,</p>
+<p>        docsLink: &#x27;/en<a class="kw" onclick="showKw('/mcp')" title="点击查看解释">/mcp</a>&#x27;</p>
+<p>      }, {</p>
+<p>        id: &#x27;worktreeinclude&#x27;,</p>
+<p>        label: &#x27;.worktreeinclude&#x27;,</p>
+<p>        type: &#x27;file&#x27;,</p>
+<p>        icon: &#x27;md&#x27;,</p>
+<p>        color: &#x27;#8FA876&#x27;,</p>
+<p>        badge: &#x27;committed&#x27;,</p>
+<p>        oneLiner: &#x27;Gitignored files to copy into new worktrees&#x27;,</p>
+<p>        when: &lt;&gt;Read when Claude creates a git worktree via &lt;code&gt;--worktree&lt;/code&gt;, the &lt;code&gt;EnterWorktree&lt;/code&gt; tool, or subagent &lt;code&gt;isolation: worktree&lt;/code&gt;&lt;/&gt;,</p>
+<p>        description: &lt;&gt;Lists gitignored files to copy from your main repository into each new worktree. Worktrees are fresh checkouts, so untracked files like &lt;code&gt;.env&lt;/code&gt; are missing by default. Patterns here use &lt;code&gt;.gitignore&lt;/code&gt; syntax. Only files that match a pattern and are also gitignored get copied, so tracked files are never duplicated.&lt;/&gt;,</p>
+<p>        tips: [&lt;&gt;Lives at the project root, not inside &lt;code&gt;.claude/&lt;/code&gt;&lt;/&gt;, &lt;&gt;Git-only: if you configure a &lt;a href=&quot;/docs/en<a class="kw" onclick="showKw('/hooks')" title="点击查看解释">/hooks</a>#worktreecreate&quot;&gt;WorktreeCreate hook&lt;/a&gt; for a different VCS, this file is not read. Copy files inside your hook script instead&lt;/&gt;, &lt;&gt;Also applies to parallel sessions in the &lt;a href=&quot;/docs/en/desktop#work-in-parallel-with-sessions&quot;&gt;desktop app&lt;/a&gt;&lt;/&gt;],</p>
+<p>        exampleIntro: &#x27;This example copies your local environment files and a secrets config into every worktree Claude creates. Comments start with # and blank lines are ignored, same as .gitignore.&#x27;,</p>
+<p>        example: `# Local environment</p>
+<p>.env</p>
+<p>.env.local</p>
+
+<h2 id="sec-claude-directory-5">API credentials</h2>
+<p>config/secrets.json`,</p>
+<p>        docsLink: &#x27;/en/worktrees#copy-gitignored-files-into-worktrees&#x27;</p>
+<p>      }, {</p>
+<p>        id: &#x27;dot-claude&#x27;,</p>
+<p>        label: &#x27;.claude/&#x27;,</p>
+<p>        type: &#x27;folder&#x27;,</p>
+<p>        icon: &#x27;folder&#x27;,</p>
+<p>        color: &#x27;var(--ce-accent)&#x27;,</p>
+<p>        oneLiner: &#x27;Project-level configuration, rules, and extensions&#x27;,</p>
+<p>        description: &#x27;Everything Claude Code reads that is specific to this project. If you use git, commit most files here so your team shares them; a few, like settings.local.json, are gitignored when Claude Code saves settings to them. Each file badge shows which.&#x27;,</p>
+<p>        children: [{</p>
+<p>          id: &#x27;settings-json&#x27;,</p>
+<p>          label: &#x27;<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>&#x27;,</p>
+<p>          type: &#x27;file&#x27;,</p>
+<p>          icon: &#x27;json&#x27;,</p>
+<p>          color: &#x27;var(--ce-text-3)&#x27;,</p>
+<p>          badge: &#x27;committed&#x27;,</p>
+<p>          oneLiner: &#x27;Permissions, hooks, and configuration&#x27;,</p>
+<p>          when: &lt;&gt;Overrides global &lt;code&gt;~/.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>&lt;/code&gt;. Local settings, <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> flags, and managed settings override this&lt;/&gt;,</p>
+<p>          description: &#x27;Settings that Claude Code applies directly. Permissions control which commands and tools Claude can use; hooks run your scripts at specific points in a session. Unlike <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>, which Claude reads as guidance, these are enforced whether Claude follows them or not.&#x27;,</p>
+<p>          contains: [&lt;&gt;&lt;a href=&quot;/docs/en<a class="kw" onclick="showKw('/permissions')" title="点击查看解释">/permissions</a>&quot;&gt;permissions&lt;/a&gt;: allow, deny, or prompt before Claude uses specific tools or commands&lt;/&gt;, &lt;&gt;&lt;a href=&quot;/docs/en<a class="kw" onclick="showKw('/hooks')" title="点击查看解释">/hooks</a>&quot;&gt;hooks&lt;/a&gt;: run your own scripts on events like before a tool call or after a file edit&lt;/&gt;, &lt;&gt;&lt;a href=&quot;/docs/en<a class="kw" onclick="showKw('/statusline')" title="点击查看解释">/statusline</a>&quot;&gt;statusLine&lt;/a&gt;: customize the line shown at the bottom while Claude works&lt;/&gt;, &lt;&gt;&lt;a href=&quot;/docs/en/settings#available-settings&quot;&gt;model&lt;/a&gt;: pick a default model for this project&lt;/&gt;, &lt;&gt;&lt;a href=&quot;/docs/en/settings#environment-variables&quot;&gt;env&lt;/a&gt;: environment variables set in every session&lt;/&gt;, &lt;&gt;&lt;a href=&quot;/docs/en/output-styles&quot;&gt;outputStyle&lt;/a&gt;: select a custom system-prompt style from output-styles/&lt;/&gt;],</p>
+<p>          tips: [&lt;&gt;Bash permission patterns support wildcards: &lt;code&gt;Bash(npm test *)&lt;/code&gt; matches any command starting with &lt;code&gt;npm test&lt;/code&gt;&lt;/&gt;, &lt;&gt;Array settings like &lt;code&gt;permissions.allow&lt;/code&gt; combine across all scopes; scalar settings like &lt;code&gt;model&lt;/code&gt; use the most specific value&lt;/&gt;],</p>
+<p>          exampleIntro: &lt;&gt;This example allows &lt;code&gt;npm test&lt;/code&gt; and &lt;code&gt;npm run&lt;/code&gt; commands without prompting, blocks &lt;code&gt;rm -rf&lt;/code&gt;, and runs Prettier on files after Claude edits or writes them.&lt;/&gt;,</p>
+<p>          example: `{</p>
+<p>  &quot;permissions&quot;: {</p>
+<p>    &quot;allow&quot;: [</p>
+<p>      &quot;Bash(npm test *)&quot;,</p>
+<p>      &quot;Bash(npm run *)&quot;</p>
+<p>    ],</p>
+<p>    &quot;deny&quot;: [</p>
+<p>      &quot;Bash(rm -rf *)&quot;</p>
+<p>    ]</p>
+<p>  },</p>
+<p>  &quot;hooks&quot;: {</p>
+<p>    &quot;PostToolUse&quot;: [{</p>
+<p>      &quot;matcher&quot;: &quot;Edit|Write&quot;,</p>
+<p>      &quot;hooks&quot;: [{</p>
+<p>        &quot;type&quot;: &quot;command&quot;,</p>
+<p>        &quot;command&quot;: &quot;jq -r &#x27;.tool_input.file_path&#x27; | xargs npx prettier --write&quot;</p>
+<p>      }]</p>
+<p>    }]</p>
+<p>  }</p>
+<p>}`,</p>
+<p>          docsLink: &#x27;/en/settings&#x27;</p>
+<p>        }, {</p>
+<p>          id: &#x27;settings-local-json&#x27;,</p>
+<p>          label: &#x27;settings.local.json&#x27;,</p>
+<p>          type: &#x27;file&#x27;,</p>
+<p>          icon: &#x27;json&#x27;,</p>
+<p>          color: &#x27;var(--ce-text-3)&#x27;,</p>
+<p>          badge: &#x27;gitignored&#x27;,</p>
+<p>          oneLiner: &#x27;Your personal settings overrides for this project&#x27;,</p>
+<p>          when: &#x27;Highest of the user-editable settings files; <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> flags and managed settings still take precedence&#x27;,</p>
+<p>          description: &#x27;Personal settings that take precedence over the project defaults. Same JSON format as <a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>, gitignored when Claude Code saves a setting to it. Use this when you need different permissions or defaults than the team config.&#x27;,</p>
+<p>          tips: [&lt;&gt;Same schema as <a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>. Array settings like &lt;code&gt;permissions.allow&lt;/code&gt; combine across scopes; scalar settings like &lt;code&gt;model&lt;/code&gt; use the local value&lt;/&gt;, &lt;&gt;When Claude Code saves a setting to this file in a repository that doesn&#x27;t already ignore it, it adds &lt;code&gt;**/.claude/settings.local.json&lt;/code&gt; to your global git excludes file: &lt;code&gt;core.excludesFile&lt;/code&gt; from your global git config when it&#x27;s set to an absolute or &lt;code&gt;~&lt;/code&gt;-prefixed path, otherwise &lt;code&gt;$XDG_CONFIG_HOME/git/ignore&lt;/code&gt;, or &lt;code&gt;~/.config/git/ignore&lt;/code&gt;. To share the ignore rule with your team, also add it to the project &lt;code&gt;.gitignore&lt;/code&gt;&lt;/&gt;],</p>
+<p>          exampleIntro: &#x27;This example adds Docker permissions on top of whatever the team <a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a> allows.&#x27;,</p>
+<p>          example: `{</p>
+<p>  &quot;permissions&quot;: {</p>
+<p>    &quot;allow&quot;: [</p>
+<p>      &quot;Bash(docker *)&quot;</p>
+<p>    ]</p>
+<p>  }</p>
+<p>}`,</p>
+<p>          docsLink: &#x27;/en/settings&#x27;</p>
+<p>        }, {</p>
+<p>          id: &#x27;rules&#x27;,</p>
+<p>          label: &#x27;rules/&#x27;,</p>
+<p>          type: &#x27;folder&#x27;,</p>
+<p>          icon: &#x27;folder&#x27;,</p>
+<p>          color: &#x27;#9B7BC4&#x27;,</p>
+<p>          oneLiner: &#x27;Topic-scoped instructions, optionally gated by file paths&#x27;,</p>
+<p>          when: &lt;&gt;Rules without &lt;code&gt;paths:&lt;/code&gt; load at session start. Rules with &lt;code&gt;paths:&lt;/code&gt; load when a matching file enters context&lt;/&gt;,</p>
+<p>          description: [&lt;&gt;Project instructions split into topic files that can load conditionally based on file paths. A rule without &lt;code&gt;paths:&lt;/code&gt; frontmatter loads at session start like <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>; a rule with &lt;code&gt;paths:&lt;/code&gt; loads only when Claude reads a matching file.&lt;/&gt;, &lt;&gt;Like <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>, rules are guidance Claude reads, not configuration Claude Code enforces. For guaranteed behavior use &lt;a href=&quot;/docs/en<a class="kw" onclick="showKw('/hooks')" title="点击查看解释">/hooks</a>&quot;&gt;hooks&lt;/a&gt; or &lt;a href=&quot;/docs/en<a class="kw" onclick="showKw('/permissions')" title="点击查看解释">/permissions</a>&quot;&gt;permissions&lt;/a&gt;.&lt;/&gt;],</p>
+<p>          tips: [&lt;&gt;Use &lt;code&gt;paths:&lt;/code&gt; frontmatter with globs to scope rules to directories or file types&lt;/&gt;, &lt;&gt;Subdirectories work: &lt;code&gt;.claude/rules/frontend/react.md&lt;/code&gt; is discovered automatically&lt;/&gt;, &#x27;When <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> approaches 200 lines, start splitting into rules&#x27;],</p>
+<p>          docsLink: &#x27;/en/memory#organize-rules-with-claude/rules/&#x27;,</p>
+<p>          children: [{</p>
+<p>            id: &#x27;rule-testing&#x27;,</p>
+<p>            label: &#x27;testing.md&#x27;,</p>
+<p>            type: &#x27;file&#x27;,</p>
+<p>            icon: &#x27;md&#x27;,</p>
+<p>            color: &#x27;#9B7BC4&#x27;,</p>
+<p>            badge: &#x27;committed&#x27;,</p>
+<p>            oneLiner: &#x27;Test conventions scoped to test files&#x27;,</p>
+<p>            when: &lt;&gt;Loaded when Claude reads a file matching the &lt;code&gt;paths:&lt;/code&gt; globs below&lt;/&gt;,</p>
+<p>            description: &lt;&gt;An example rule that only loads when Claude is working on test files. The &lt;code&gt;paths:&lt;/code&gt; globs in the frontmatter define which files trigger it; here, anything ending in .test.ts or .test.tsx. For other files, this rule is not loaded into context.&lt;/&gt;,</p>
+<p>            example: `---</p>
+<p>paths:</p>
+<p>  - &quot;**/*.test.ts&quot;</p>
+<p>  - &quot;**/*.test.tsx&quot;</p>
+<p>---</p>
+
+<h2 id="sec-claude-directory-6">Testing Rules</h2>
+
+<li>Use descriptive test names: &quot;should [expected] when [condition]&quot;</li>
+<li>Mock external dependencies, not internal modules</li>
+<li>Clean up side effects in afterEach`</li>
+<p>          }, {</p>
+<p>            id: &#x27;rule-api&#x27;,</p>
+<p>            label: &#x27;api-design.md&#x27;,</p>
+<p>            type: &#x27;file&#x27;,</p>
+<p>            icon: &#x27;md&#x27;,</p>
+<p>            color: &#x27;#9B7BC4&#x27;,</p>
+<p>            badge: &#x27;committed&#x27;,</p>
+<p>            oneLiner: &#x27;API conventions scoped to backend code&#x27;,</p>
+<p>            when: &lt;&gt;Loaded when Claude reads a file matching the &lt;code&gt;paths:&lt;/code&gt; glob below&lt;/&gt;,</p>
+<p>            description: &lt;&gt;A second example showing a rule scoped to backend code. The &lt;code&gt;paths:&lt;/code&gt; glob matches files under src/api/, so these conventions load only when Claude is editing API routes.&lt;/&gt;,</p>
+<p>            example: `---</p>
+<p>paths:</p>
+<p>  - &quot;src/api/**/*.ts&quot;</p>
+<p>---</p>
+
+<h2 id="sec-claude-directory-7">API Design Rules</h2>
+
+<li>All endpoints must validate input with Zod schemas</li>
+<li>Return shape: { data: T } | { error: string }</li>
+<li>Rate limit all public endpoints`</li>
+<p>          }]</p>
+<p>        }, {</p>
+<p>          id: &#x27;skills&#x27;,</p>
+<p>          label: &#x27;skills/&#x27;,</p>
+<p>          type: &#x27;folder&#x27;,</p>
+<p>          icon: &#x27;folder&#x27;,</p>
+<p>          color: &#x27;#D4A843&#x27;,</p>
+<p>          oneLiner: &#x27;Reusable prompts you or Claude invoke by name&#x27;,</p>
+<p>          when: &lt;&gt;Invoked with &lt;code&gt;/skill-name&lt;/code&gt; or when Claude matches the task to a skill&lt;/&gt;,</p>
+<p>          description: &lt;&gt;Each skill is a folder with a SKILL.md file plus any supporting files it needs. By default, both you and Claude can invoke a skill. Use frontmatter to control that: &lt;code&gt;disable-model-invocation: true&lt;/code&gt; for user-only workflows like &lt;code&gt;/deploy&lt;/code&gt;, or &lt;code&gt;user-invocable: false&lt;/code&gt; to hide from the &lt;code&gt;/&lt;/code&gt; menu while Claude can still invoke it.&lt;/&gt;,</p>
+<p>          tips: [&lt;&gt;<a class="kw" onclick="showKw('Skill')" title="点击查看解释">Skill</a>s accept arguments: &lt;code&gt;/deploy staging&lt;/code&gt; passes &quot;staging&quot; as &lt;code&gt;$ARGUMENTS&lt;/code&gt;. Use &lt;code&gt;$0&lt;/code&gt;, &lt;code&gt;$1&lt;/code&gt;, and so on for positional access&lt;/&gt;, &lt;&gt;The &lt;code&gt;description&lt;/code&gt; frontmatter determines when Claude auto-invokes the skill&lt;/&gt;, &#x27;Bundle reference docs alongside SKILL.md. Claude knows the skill directory path and can read supporting files when you mention them&#x27;],</p>
+<p>          docsLink: &#x27;/en/skills&#x27;,</p>
+<p>          children: [{</p>
+<p>            id: &#x27;skill-review&#x27;,</p>
+<p>            label: &#x27;security-review/&#x27;,</p>
+<p>            type: &#x27;folder&#x27;,</p>
+<p>            icon: &#x27;folder&#x27;,</p>
+<p>            color: &#x27;#D4A843&#x27;,</p>
+<p>            oneLiner: &#x27;A skill bundling SKILL.md with supporting files&#x27;,</p>
+<p>            children: [{</p>
+<p>              id: &#x27;skill-review-md&#x27;,</p>
+<p>              label: &#x27;SKILL.md&#x27;,</p>
+<p>              type: &#x27;file&#x27;,</p>
+<p>              icon: &#x27;md&#x27;,</p>
+<p>              color: &#x27;#D4A843&#x27;,</p>
+<p>              badge: &#x27;committed&#x27;,</p>
+<p>              oneLiner: &#x27;Entrypoint: trigger, invocability, instructions&#x27;,</p>
+<p>              when: &lt;&gt;User types &lt;code&gt;/security-review &amp;lt;target&amp;gt;&lt;/code&gt;; Claude cannot auto-invoke this skill&lt;/&gt;,</p>
+<p>              description: [&lt;&gt;This skill uses &lt;code&gt;disable-model-invocation: true&lt;/code&gt; so only you can trigger it; Claude never invokes it on its own.&lt;/&gt;, &lt;&gt;The &lt;code&gt;!`...`&lt;/code&gt; line runs a shell command and injects its output into the prompt. &lt;code&gt;$ARGUMENTS&lt;/code&gt; substitutes whatever you typed after the skill name. Claude sees the skill directory path, so mentioning a bundled file like checklist.md lets Claude read it.&lt;/&gt;],</p>
+<p>              example: `---</p>
+<p>description: Reviews code changes for security vulnerabilities, authentication gaps, and injection risks</p>
+<p>disable-model-invocation: true</p>
+<p>argument-hint: </p>
+
+<p>---</p>
+
+<h3 id="sec-claude-directory-8">Diff to review</h3>
+
+<p>!\`git diff $ARGUMENTS\`</p>
+
+<p>Audit the changes above for:</p>
+
+<p>1. Injection vulnerabilities (SQL, XSS, command)</p>
+<p>2. Authentication and authorization gaps</p>
+<p>3. Hardcoded secrets or credentials</p>
+
+<p>Use checklist.md in this skill directory for the full review checklist.</p>
+
+<p>Report findings with severity ratings and remediation steps.`</p>
+<p>            }, {</p>
+<p>              id: &#x27;skill-checklist&#x27;,</p>
+<p>              label: &#x27;checklist.md&#x27;,</p>
+<p>              type: &#x27;file&#x27;,</p>
+<p>              icon: &#x27;md&#x27;,</p>
+<p>              color: &#x27;#D4A843&#x27;,</p>
+<p>              badge: &#x27;committed&#x27;,</p>
+<p>              oneLiner: &#x27;Supporting file bundled with the skill&#x27;,</p>
+<p>              when: &#x27;Claude reads it on demand while running the skill&#x27;,</p>
+<p>              description: &lt;&gt;<a class="kw" onclick="showKw('Skill')" title="点击查看解释">Skill</a>s can bundle any supporting files: reference docs, templates, scripts. The skill directory path is prepended to SKILL.md, so Claude can read bundled files by name. For scripts in bash injection commands, use the &lt;code&gt;{&#x27;${CLAUDE_SKILL_DIR}&#x27;}&lt;/code&gt; placeholder.&lt;/&gt;,</p>
+<p>              example: `# Security Review Checklist</p>
+
+<h3 id="sec-claude-directory-9">Input Validation</h3>
+<li>[ ] All user input sanitized before DB queries</li>
+<li>[ ] File upload MIME types validated</li>
+<li>[ ] Path traversal prevented on file operations</li>
+
+<h3 id="sec-claude-directory-10">Authentication</h3>
+<li>[ ] JWT tokens expire after 24 hours</li>
+<li>[ ] API keys stored in environment variables</li>
+<li>[ ] Passwords hashed with bcrypt or argon2`</li>
+<p>            }]</p>
+<p>          }]</p>
+<p>        }, {</p>
+<p>          id: &#x27;commands&#x27;,</p>
+<p>          label: &#x27;commands/&#x27;,</p>
+<p>          type: &#x27;folder&#x27;,</p>
+<p>          icon: &#x27;folder&#x27;,</p>
+<p>          color: &#x27;#788C5D&#x27;,</p>
+<p>          oneLiner: &lt;&gt;Single-file prompts invoked with &lt;code&gt;/name&lt;/code&gt;&lt;/&gt;,</p>
+<p>          note: commandsNote,</p>
+<p>          when: &lt;&gt;User types &lt;code&gt;/command-name&lt;/code&gt;&lt;/&gt;,</p>
+<p>          description: &lt;&gt;A file at &lt;code&gt;commands/deploy.md&lt;/code&gt; creates &lt;code&gt;/deploy&lt;/code&gt; the same way a skill at &lt;code&gt;skills/deploy/SKILL.md&lt;/code&gt; does, and both can be auto-invoked by Claude. <a class="kw" onclick="showKw('Skill')" title="点击查看解释">Skill</a>s use a directory with SKILL.md, letting you bundle reference docs, templates, or scripts alongside the prompt.&lt;/&gt;,</p>
+<p>          tips: [&lt;&gt;Use &lt;code&gt;$ARGUMENTS&lt;/code&gt; in the file to accept parameters: &lt;code&gt;/fix-issue 123&lt;/code&gt;&lt;/&gt;, &#x27;If a skill and command share a name, the skill takes precedence&#x27;, &#x27;New commands should usually be skills instead; commands remain supported&#x27;],</p>
+<p>          docsLink: &#x27;/en/skills&#x27;,</p>
+<p>          children: [{</p>
+<p>            id: &#x27;cmd-example&#x27;,</p>
+<p>            label: &#x27;fix-issue.md&#x27;,</p>
+<p>            type: &#x27;file&#x27;,</p>
+<p>            icon: &#x27;md&#x27;,</p>
+<p>            color: &#x27;#788C5D&#x27;,</p>
+<p>            badge: &#x27;committed&#x27;,</p>
+<p>            oneLiner: &lt;&gt;Invoked as &lt;code&gt;/fix-issue &amp;lt;number&amp;gt;&lt;/code&gt;&lt;/&gt;,</p>
+<p>            note: commandsNote,</p>
+<p>            description: [&lt;&gt;An example command for fixing a GitHub issue. Type &lt;code&gt;/fix-issue 123&lt;/code&gt; and the &lt;code&gt;!`...`&lt;/code&gt; line runs &lt;code&gt;gh issue view 123&lt;/code&gt; in your shell, injecting the output into the prompt before Claude sees it.&lt;/&gt;, &lt;&gt;&lt;code&gt;$ARGUMENTS&lt;/code&gt; substitutes whatever you typed after the command name. For positional access, use &lt;code&gt;$0&lt;/code&gt; &lt;code&gt;$1&lt;/code&gt; and so on.&lt;/&gt;],</p>
+<p>            example: `---</p>
+<p>argument-hint: &lt;issue-number&gt;</p>
+<p>---</p>
+
+<p>!\`gh issue view $ARGUMENTS\`</p>
+
+<p>Investigate and fix the issue above.</p>
+
+<p>1. Trace the bug to its root cause</p>
+<p>2. Implement the fix</p>
+<p>3. Write or update tests</p>
+<p>4. Summarize what you changed and why`</p>
+<p>          }]</p>
+<p>        }, {</p>
+<p>          id: &#x27;output-styles&#x27;,</p>
+<p>          label: &#x27;output-styles/&#x27;,</p>
+<p>          type: &#x27;folder&#x27;,</p>
+<p>          icon: &#x27;folder&#x27;,</p>
+<p>          color: &#x27;#5AA7A7&#x27;,</p>
+<p>          oneLiner: &#x27;Project-scoped output styles, if your team shares any&#x27;,</p>
+<p>          when: &#x27;Applied at session start when selected via the outputStyle setting&#x27;,</p>
+<p>          description: &lt;&gt;Output styles are usually personal, so most live in &lt;code&gt;~/.claude/output-styles/&lt;/code&gt;. Put one here if your team shares a style, like a review mode everyone uses. See &lt;a href=&quot;#ce-global-output-styles&quot;&gt;the Global tab&lt;/a&gt; for the full explanation and example.&lt;/&gt;,</p>
+<p>          docsLink: &#x27;/en/output-styles&#x27;,</p>
+<p>          children: []</p>
+<p>        }, {</p>
+<p>          id: &#x27;agents&#x27;,</p>
+<p>          label: &#x27;agents/&#x27;,</p>
+<p>          type: &#x27;folder&#x27;,</p>
+<p>          icon: &#x27;folder&#x27;,</p>
+<p>          color: &#x27;#C46686&#x27;,</p>
+<p>          oneLiner: &#x27;Specialized subagents with their own context window&#x27;,</p>
+<p>          when: &#x27;Runs in its own context window when you or Claude invoke it&#x27;,</p>
+<p>          description: &#x27;Each markdown file defines a subagent with its own system prompt, tool access, and optionally its own model. <a class="kw" onclick="showKw('Subagent')" title="点击查看解释">Subagent</a>s run in a fresh context window, keeping the main conversation clean. Useful for parallel work or isolated tasks.&#x27;,</p>
+<p>          tips: [&#x27;Each agent gets a fresh context window, separate from your main session&#x27;, &lt;&gt;Restrict tool access per agent with the &lt;code&gt;tools:&lt;/code&gt; frontmatter field&lt;/&gt;, &#x27;Type @ and pick an agent from the autocomplete to delegate directly&#x27;],</p>
+<p>          docsLink: &#x27;/en/sub-agents&#x27;,</p>
+<p>          children: [{</p>
+<p>            id: &#x27;agent-reviewer&#x27;,</p>
+<p>            label: &#x27;code-reviewer.md&#x27;,</p>
+<p>            type: &#x27;file&#x27;,</p>
+<p>            icon: &#x27;md&#x27;,</p>
+<p>            color: &#x27;#C46686&#x27;,</p>
+<p>            badge: &#x27;committed&#x27;,</p>
+<p>            oneLiner: &#x27;<a class="kw" onclick="showKw('Subagent')" title="点击查看解释">Subagent</a> for isolated code review&#x27;,</p>
+<p>            when: &#x27;Claude spawns it for review tasks, or you @-mention it from the autocomplete&#x27;,</p>
+<p>            description: &lt;&gt;An example subagent restricted to read-only tools. The &lt;code&gt;description&lt;/code&gt; frontmatter tells Claude when to delegate to it automatically; &lt;code&gt;tools:&lt;/code&gt; limits it to Read, Grep, and Glob so it can inspect code but never edit. The body becomes the subagent&#x27;s system prompt.&lt;/&gt;,</p>
+<p>            example: `---</p>
+<p>name: code-reviewer</p>
+<p>description: Reviews code for correctness, security, and maintainability</p>
+<p>tools: Read, Grep, Glob</p>
+<p>---</p>
+
+<p>You are a senior code reviewer. Review for:</p>
+
+<p>1. Correctness: logic errors, edge cases, null handling</p>
+<p>2. Security: injection, auth bypass, data exposure</p>
+<p>3. Maintainability: naming, complexity, duplication</p>
+
+<p>Every finding must include a concrete fix.`</p>
+<p>          }]</p>
+<p>        }, {</p>
+<p>          id: &#x27;workflows&#x27;,</p>
+<p>          label: &#x27;workflows/&#x27;,</p>
+<p>          type: &#x27;folder&#x27;,</p>
+<p>          icon: &#x27;folder&#x27;,</p>
+<p>          color: &#x27;#C46686&#x27;,</p>
+<p>          oneLiner: &#x27;Dynamic workflow scripts that orchestrate many subagents&#x27;,</p>
+<p>          when: &#x27;Loaded at startup; each file becomes a /&lt;name&gt; command&#x27;,</p>
+<p>          description: &lt;&gt;Each &lt;code&gt;.js&lt;/code&gt; file is a &lt;a href=&quot;/docs/en/workflows&quot;&gt;dynamic workflow&lt;/a&gt;: a script the runtime executes to spawn and coordinate many subagents. <a class="kw" onclick="showKw('Workflows')" title="点击查看解释">Workflows</a> are written by Claude and saved here from &lt;code&gt;/workflows&lt;/code&gt; rather than authored from scratch.&lt;/&gt;,</p>
+<p>          tips: [&lt;&gt;Save a run from &lt;code&gt;/workflows&lt;/code&gt; with &lt;code&gt;s&lt;/code&gt; to create one of these&lt;/&gt;, &lt;&gt;A project workflow takes precedence over a personal one in &lt;code&gt;~/.claude/workflows/&lt;/code&gt; with the same name&lt;/&gt;],</p>
+<p>          docsLink: &#x27;/en/workflows&#x27;</p>
+<p>        }, {</p>
+<p>          id: &#x27;agent-memory&#x27;,</p>
+<p>          label: &#x27;agent-memory/&#x27;,</p>
+<p>          type: &#x27;folder&#x27;,</p>
+<p>          icon: &#x27;folder&#x27;,</p>
+<p>          color: &#x27;#C46686&#x27;,</p>
+<p>          badge: &#x27;committed&#x27;,</p>
+<p>          autogen: true,</p>
+<p>          oneLiner: &#x27;<a class="kw" onclick="showKw('Subagent')" title="点击查看解释">Subagent</a> persistent memory, separate from your main session <a class="kw" onclick="showKw('auto memory')" title="点击查看解释">auto memory</a>&#x27;,</p>
+<p>          when: &#x27;First 200 lines (capped at 25KB) of MEMORY.md loaded into the subagent system prompt when it runs&#x27;,</p>
+<p>          description: &lt;&gt;<a class="kw" onclick="showKw('Subagent')" title="点击查看解释">Subagent</a>s with &lt;code&gt;memory: project&lt;/code&gt; in their frontmatter get a dedicated memory directory here. This is distinct from your &lt;a href=&quot;/docs/en/memory#auto-memory&quot;&gt;main session <a class="kw" onclick="showKw('auto memory')" title="点击查看解释">auto memory</a>&lt;/a&gt; at &lt;code&gt;~/.claude/projects/&lt;/code&gt;: each subagent reads and writes its own MEMORY.md, not yours.&lt;/&gt;,</p>
+<p>          tips: [&lt;&gt;Only created for subagents that set the &lt;code&gt;memory:&lt;/code&gt; frontmatter field&lt;/&gt;, &lt;&gt;This directory holds project-scoped subagent memory, meant to be shared with your team. To keep memory out of version control use &lt;code&gt;memory: local&lt;/code&gt;, which writes to &lt;code&gt;.claude/agent-memory-local/&lt;/code&gt; instead. For cross-project memory use &lt;code&gt;memory: user&lt;/code&gt;, which writes to &lt;code&gt;~/.claude/agent-memory/&lt;/code&gt;&lt;/&gt;, &lt;&gt;The main session <a class="kw" onclick="showKw('auto memory')" title="点击查看解释">auto memory</a> is a different feature; see &lt;code&gt;~/.claude/projects/&lt;/code&gt; in the Global tab&lt;/&gt;],</p>
+<p>          docsLink: &#x27;/en/sub-agents#enable-persistent-memory&#x27;,</p>
+<p>          children: [{</p>
+<p>            id: &#x27;agent-memory-sub&#x27;,</p>
+<p>            label: &#x27;&lt;agent-name&gt;/&#x27;,</p>
+<p>            type: &#x27;folder&#x27;,</p>
+<p>            icon: &#x27;folder&#x27;,</p>
+<p>            color: &#x27;#C46686&#x27;,</p>
+<p>            autogen: true,</p>
+<p>            children: [{</p>
+<p>              id: &#x27;agent-memory-md&#x27;,</p>
+<p>              label: &#x27;MEMORY.md&#x27;,</p>
+<p>              type: &#x27;file&#x27;,</p>
+<p>              icon: &#x27;md&#x27;,</p>
+<p>              color: &#x27;#C46686&#x27;,</p>
+<p>              badge: &#x27;committed&#x27;,</p>
+<p>              autogen: true,</p>
+<p>              oneLiner: &#x27;The subagent writes and maintains this file automatically&#x27;,</p>
+<p>              when: &#x27;Loaded into the subagent system prompt when the subagent starts&#x27;,</p>
+<p>              description: &lt;&gt;Works the same as your &lt;a href=&quot;/docs/en/memory#auto-memory&quot;&gt;main <a class="kw" onclick="showKw('auto memory')" title="点击查看解释">auto memory</a>&lt;/a&gt;: the subagent creates and updates this file itself. You do not write it. The subagent reads it at the start of each task and writes back what it learns.&lt;/&gt;,</p>
+<p>              example: `# code-reviewer memory</p>
+
+<h3 id="sec-claude-directory-11">Patterns seen</h3>
+<li>Project uses custom Result&lt;T, E&gt; type, not exceptions</li>
+<li>Auth middleware expects Bearer token in Authorization header</li>
+<li>Tests use factory functions in test/factories/</li>
+
+<h3 id="sec-claude-directory-12">Recurring issues</h3>
+<li>Missing null checks on API responses (src/api/*)</li>
+<li>Unhandled promise rejections in background jobs`</li>
+<p>            }]</p>
+<p>          }]</p>
+<p>        }]</p>
+<p>      }]</p>
+<p>    },</p>
+<p>    global: {</p>
+<p>      label: &#x27;~/&#x27;,</p>
+<p>      children: [{</p>
+<p>        id: &#x27;claude-json&#x27;,</p>
+<p>        label: &#x27;.claude.json&#x27;,</p>
+<p>        type: &#x27;file&#x27;,</p>
+<p>        icon: &#x27;json&#x27;,</p>
+<p>        color: &#x27;var(--ce-text-3)&#x27;,</p>
+<p>        badge: &#x27;local&#x27;,</p>
+<p>        oneLiner: &#x27;App state and UI preferences&#x27;,</p>
+<p>        when: &lt;&gt;Read at session start for your preferences and <a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a>s. Claude Code writes back to it when you change settings in &lt;code&gt;<a class="kw" onclick="showKw('/config')" title="点击查看解释">/config</a>&lt;/code&gt; or approve trust prompts&lt;/&gt;,</p>
+<p>        description: &lt;&gt;Holds state that does not belong in <a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>: theme, <a class="kw" onclick="showKw('OAuth')" title="点击查看解释">OAuth</a> session, per-project trust decisions, your personal <a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a>s, and UI toggles. Mostly managed through &lt;code&gt;<a class="kw" onclick="showKw('/config')" title="点击查看解释">/config</a>&lt;/code&gt; rather than editing directly.&lt;/&gt;,</p>
+<p>        tips: [&lt;&gt;IDE toggles like &lt;code&gt;autoConnectIde&lt;/code&gt; and &lt;code&gt;externalEditorContext&lt;/code&gt; live here, not in <a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>&lt;/&gt;, &lt;&gt;The &lt;code&gt;projects&lt;/code&gt; key tracks per-project state like trust-dialog acceptance and last-session metrics. Permission rules you approve in-session go to &lt;code&gt;.claude/settings.local.json&lt;/code&gt; instead&lt;/&gt;, &lt;&gt;<a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a>s here are yours only: user scope applies across all projects, local scope is per-project but not committed. Team-shared servers go in &lt;code&gt;.mcp.json&lt;/code&gt; at the project root instead&lt;/&gt;],</p>
+<p>        example: `{</p>
+<p>  &quot;autoConnectIde&quot;: true,</p>
+<p>  &quot;externalEditorContext&quot;: true,</p>
+<p>  &quot;mcpServers&quot;: {</p>
+<p>    &quot;my-tools&quot;: {</p>
+<p>      &quot;command&quot;: &quot;npx&quot;,</p>
+<p>      &quot;args&quot;: [&quot;-y&quot;, &quot;@example<a class="kw" onclick="showKw('/mcp')" title="点击查看解释">/mcp</a>-server&quot;]</p>
+<p>    }</p>
+<p>  }</p>
+<p>}`,</p>
+<p>        docsLink: &#x27;/en/settings#global-config-settings&#x27;</p>
+<p>      }, {</p>
+<p>        id: &#x27;global-dot-claude&#x27;,</p>
+<p>        label: &#x27;.claude/&#x27;,</p>
+<p>        type: &#x27;folder&#x27;,</p>
+<p>        icon: &#x27;folder&#x27;,</p>
+<p>        color: &#x27;var(--ce-accent)&#x27;,</p>
+<p>        oneLiner: &#x27;Your personal configuration across all projects&#x27;,</p>
+<p>        description: &#x27;The global counterpart to your project .claude/ directory. Files here apply to every project you work in and are never committed to any repository.&#x27;,</p>
+<p>        children: [{</p>
+<p>          id: &#x27;global-claude-md&#x27;,</p>
+<p>          label: &#x27;<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>&#x27;,</p>
+<p>          type: &#x27;file&#x27;,</p>
+<p>          icon: &#x27;md&#x27;,</p>
+<p>          color: &#x27;#6A9BCC&#x27;,</p>
+<p>          badge: &#x27;local&#x27;,</p>
+<p>          oneLiner: &#x27;Personal preferences across every project&#x27;,</p>
+<p>          when: &#x27;Loaded at the start of every session, in every project&#x27;,</p>
+<p>          description: &#x27;Your global instruction file. Loaded alongside the project <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> at session start, so both are in context together. When instructions conflict, project-level instructions take priority. Keep this to preferences that apply everywhere: response style, commit format, personal conventions.&#x27;,</p>
+<p>          tips: [&#x27;Keep it short since it loads into context for every project, alongside that project\&#x27;s own <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>&#x27;, &#x27;Good for response style, commit format, and personal conventions&#x27;],</p>
+<p>          example: `# Global preferences</p>
+
+<li>Keep explanations concise</li>
+<li>Use conventional commit format</li>
+<li>Show the terminal command to verify changes</li>
+<li>Prefer composition over inheritance`,</li>
+<p>          docsLink: &#x27;/en/memory&#x27;</p>
+<p>        }, {</p>
+<p>          id: &#x27;global-settings&#x27;,</p>
+<p>          label: &#x27;<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>&#x27;,</p>
+<p>          type: &#x27;file&#x27;,</p>
+<p>          icon: &#x27;json&#x27;,</p>
+<p>          color: &#x27;var(--ce-text-3)&#x27;,</p>
+<p>          badge: &#x27;local&#x27;,</p>
+<p>          oneLiner: &#x27;Default settings for all projects&#x27;,</p>
+<p>          when: &#x27;Your defaults. Project and local <a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a> override any keys you also set there&#x27;,</p>
+<p>          description: [&lt;&gt;Same keys as project &lt;code&gt;<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>&lt;/code&gt;: permissions, hooks, model, environment variables, and the rest. Put settings here that you want in every project, like permissions you always allow, a preferred model, or a notification hook that runs regardless of which project you&#x27;re in.&lt;/&gt;, &lt;&gt;Settings follow a precedence order: project &lt;code&gt;<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>&lt;/code&gt; overrides any matching keys you set here. This is different from <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>, where global and project files are both loaded into context rather than merged key by key.&lt;/&gt;],</p>
+<p>          example: `{</p>
+<p>  &quot;permissions&quot;: {</p>
+<p>    &quot;allow&quot;: [</p>
+<p>      &quot;Bash(git log *)&quot;,</p>
+<p>      &quot;Bash(git diff *)&quot;</p>
+<p>    ]</p>
+<p>  }</p>
+<p>}`,</p>
+<p>          docsLink: &#x27;/en/settings&#x27;</p>
+<p>        }, {</p>
+<p>          id: &#x27;<a class="kw" onclick="showKw('keybindings')" title="点击查看解释">keybindings</a>&#x27;,</p>
+<p>          label: &#x27;<a class="kw" onclick="showKw('keybindings.json')" title="点击查看解释">keybindings.json</a>&#x27;,</p>
+<p>          type: &#x27;file&#x27;,</p>
+<p>          icon: &#x27;json&#x27;,</p>
+<p>          color: &#x27;var(--ce-text-3)&#x27;,</p>
+<p>          badge: &#x27;local&#x27;,</p>
+<p>          oneLiner: &#x27;Custom keyboard shortcuts&#x27;,</p>
+<p>          when: &#x27;Read at session start and hot-reloaded when you edit the file&#x27;,</p>
+<p>          description: &lt;&gt;Rebind keyboard shortcuts in the interactive <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a>. Run &lt;code&gt;<a class="kw" onclick="showKw('/keybindings')" title="点击查看解释">/keybindings</a>&lt;/code&gt; to create or open this file with a schema reference. Ctrl+C, Ctrl+D, Ctrl+M, and Caps Lock are reserved and cannot be rebound.&lt;/&gt;,</p>
+<p>          exampleIntro: &lt;&gt;This example binds &lt;code&gt;Ctrl+E&lt;/code&gt; to open your external editor and unbinds &lt;code&gt;Ctrl+U&lt;/code&gt; by setting it to &lt;code&gt;null&lt;/code&gt;. The &lt;code&gt;context&lt;/code&gt; field scopes bindings to a specific part of the <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a>, here the main chat input.&lt;/&gt;,</p>
+<p>          example: `{</p>
+<p>  &quot;$schema&quot;: &quot;https://www.schemastore.org/claude-code-<a class="kw" onclick="showKw('keybindings.json')" title="点击查看解释">keybindings.json</a>&quot;,</p>
+<p>  &quot;$docs&quot;: &quot;https://code.claude.com/docs/en<a class="kw" onclick="showKw('/keybindings')" title="点击查看解释">/keybindings</a>&quot;,</p>
+<p>  &quot;bindings&quot;: [</p>
+<p>    {</p>
+<p>      &quot;context&quot;: &quot;Chat&quot;,</p>
+<p>      &quot;bindings&quot;: {</p>
+<p>        &quot;ctrl+e&quot;: &quot;chat:externalEditor&quot;,</p>
+<p>        &quot;ctrl+u&quot;: null</p>
+<p>      }</p>
+<p>    }</p>
+<p>  ]</p>
+<p>}`,</p>
+<p>          docsLink: &#x27;/en<a class="kw" onclick="showKw('/keybindings')" title="点击查看解释">/keybindings</a>&#x27;</p>
+<p>        }, {</p>
+<p>          id: &#x27;themes&#x27;,</p>
+<p>          label: &#x27;themes/&#x27;,</p>
+<p>          type: &#x27;folder&#x27;,</p>
+<p>          icon: &#x27;folder&#x27;,</p>
+<p>          color: &#x27;#5AA7A7&#x27;,</p>
+<p>          oneLiner: &#x27;Custom color themes&#x27;,</p>
+<p>          when: &lt;&gt;Read at session start and hot-reloaded when files change. Listed in &lt;code&gt;/theme&lt;/code&gt;&lt;/&gt;,</p>
+<p>          description: &lt;&gt;Each &lt;code&gt;.json&lt;/code&gt; file defines a custom color theme: a built-in &lt;code&gt;base&lt;/code&gt; preset plus an &lt;code&gt;overrides&lt;/code&gt; map of color tokens. Create one interactively with &lt;code&gt;/theme&lt;/code&gt; or write the JSON by hand. Selecting a custom theme stores &lt;code&gt;custom:&amp;lt;slug&amp;gt;&lt;/code&gt; as your theme preference.&lt;/&gt;,</p>
+<p>          example: `{</p>
+<p>  &quot;name&quot;: &quot;Dracula&quot;,</p>
+<p>  &quot;base&quot;: &quot;dark&quot;,</p>
+<p>  &quot;overrides&quot;: {</p>
+<p>    &quot;claude&quot;: &quot;#bd93f9&quot;,</p>
+<p>    &quot;error&quot;: &quot;#ff5555&quot;,</p>
+<p>    &quot;success&quot;: &quot;#50fa7b&quot;</p>
+<p>  }</p>
+<p>}`,</p>
+<p>          docsLink: &#x27;/en/terminal-config#create-a-custom-theme&#x27;,</p>
+<p>          children: []</p>
+<p>        }, {</p>
+<p>          id: &#x27;global-projects&#x27;,</p>
+<p>          label: &#x27;projects/&#x27;,</p>
+<p>          type: &#x27;folder&#x27;,</p>
+<p>          icon: &#x27;folder&#x27;,</p>
+<p>          color: &#x27;#E8A45C&#x27;,</p>
+<p>          autogen: true,</p>
+<p>          oneLiner: &quot;Auto memory: Claude&#x27;s notes to itself, per project&quot;,</p>
+<p>          when: &#x27;MEMORY.md loaded at session start; topic files read on demand&#x27;,</p>
+<p>          description: &#x27;Auto memory lets Claude accumulate knowledge across sessions without you writing anything. Claude saves notes as it works: build commands, debugging insights, architecture notes. Each project gets its own memory directory keyed by the repository path.&#x27;,</p>
+<p>          tips: [&lt;&gt;On by default. Toggle with &lt;code&gt;/memory&lt;/code&gt; or &lt;code&gt;auto<a class="kw" onclick="showKw('Memory')" title="点击查看解释">Memory</a>Enabled&lt;/code&gt; in settings&lt;/&gt;, &#x27;MEMORY.md is the index loaded each session. The first 200 lines, or 25KB, whichever comes first, are read&#x27;, &#x27;Topic files like debugging.md are read on demand, not at startup&#x27;, &#x27;These are plain markdown. Edit or delete them anytime&#x27;],</p>
+<p>          docsLink: &#x27;/en/memory#auto-memory&#x27;,</p>
+<p>          children: [{</p>
+<p>            id: &#x27;memory-dir&#x27;,</p>
+<p>            label: &#x27;</p>
+<p>/memory/&#x27;,</p>
+<p>            type: &#x27;folder&#x27;,</p>
+<p>            icon: &#x27;folder&#x27;,</p>
+<p>            color: &#x27;#E8A45C&#x27;,</p>
+<p>            autogen: true,</p>
+<p>            oneLiner: &quot;Claude&#x27;s accumulated knowledge for one project&quot;,</p>
+<p>            children: [{</p>
+<p>              id: &#x27;memory-md&#x27;,</p>
+<p>              label: &#x27;MEMORY.md&#x27;,</p>
+<p>              type: &#x27;file&#x27;,</p>
+<p>              icon: &#x27;md&#x27;,</p>
+<p>              color: &#x27;#E8A45C&#x27;,</p>
+<p>              badge: &#x27;local&#x27;,</p>
+<p>              autogen: true,</p>
+<p>              oneLiner: &#x27;Claude writes and maintains this file automatically&#x27;,</p>
+<p>              when: &#x27;First 200 lines (capped at 25KB) loaded at session start&#x27;,</p>
+<p>              description: &#x27;Claude creates and updates this file as it works; you do not write it yourself. It acts as an index that Claude reads at the start of every session, pointing to topic files for detail. You can edit or delete it, but Claude will keep updating it.&#x27;,</p>
+<p>              example: `# <a class="kw" onclick="showKw('Memory')" title="点击查看解释">Memory</a> Index</p>
+
+<h3 id="sec-claude-directory-13">Project</h3>
+<li><a class="kw" onclick="showKw('build-and-test.md')" title="点击查看解释">build-and-test.md</a>: npm run build (~45s), Vitest, dev server on 3001</li>
+<li><a class="kw" onclick="showKw('architecture.md')" title="点击查看解释">architecture.md</a>: API client singleton, refresh-token auth</li>
+
+<h3 id="sec-claude-directory-14">Reference</h3>
+<li><a class="kw" onclick="showKw('debugging.md')" title="点击查看解释">debugging.md</a>: auth token rotation and DB connection troubleshooting`,</li>
+<p>              docsLink: &#x27;/en/memory&#x27;</p>
+<p>            }, {</p>
+<p>              id: &#x27;memory-topic&#x27;,</p>
+<p>              label: &#x27;debugging.md&#x27;,</p>
+<p>              type: &#x27;file&#x27;,</p>
+<p>              icon: &#x27;md&#x27;,</p>
+<p>              color: &#x27;#E8A45C&#x27;,</p>
+<p>              badge: &#x27;local&#x27;,</p>
+<p>              autogen: true,</p>
+<p>              oneLiner: &#x27;Topic notes Claude writes when MEMORY.md gets long&#x27;,</p>
+<p>              when: &#x27;Claude reads this when a related task comes up&#x27;,</p>
+<p>              description: &#x27;An example of a topic file Claude creates when MEMORY.md grows too long. Claude picks the filename based on what it splits out: debugging.md, architecture.md, build-commands.md, or similar. You never create these yourself. Claude reads a topic file back only when the current task relates to it.&#x27;,</p>
+<p>              example: `---</p>
+<p>name: Debugging patterns</p>
+<p>description: Auth token rotation and database connection troubleshooting for this project</p>
+<p>type: reference</p>
+<p>---</p>
+
+<h3 id="sec-claude-directory-15">Auth Token Issues</h3>
+<li>Refresh token rotation: old token invalidated immediately</li>
+<li>If 401 after refresh: check clock skew between client and server</li>
+
+<h3 id="sec-claude-directory-16">Database Connection Drops</h3>
+<li>Connection pool: max 10 in dev, 50 in prod</li>
+<li>Always check \`docker compose ps\` first`</li>
+<p>            }]</p>
+<p>          }]</p>
+<p>        }, {</p>
+<p>          id: &#x27;global-rules&#x27;,</p>
+<p>          label: &#x27;rules/&#x27;,</p>
+<p>          type: &#x27;folder&#x27;,</p>
+<p>          icon: &#x27;folder&#x27;,</p>
+<p>          color: &#x27;#9B7BC4&#x27;,</p>
+<p>          oneLiner: &#x27;User-level rules that apply to every project&#x27;,</p>
+<p>          when: &lt;&gt;Rules without &lt;code&gt;paths:&lt;/code&gt; load at session start. Rules with &lt;code&gt;paths:&lt;/code&gt; load when a matching file enters context&lt;/&gt;,</p>
+<p>          description: &#x27;Same as project .claude/rules/ but applies everywhere. Use this for conventions you want across all your work, like personal code style or commit message format.&#x27;,</p>
+<p>          docsLink: &#x27;/en/memory#organize-rules-with-claude/rules/&#x27;,</p>
+<p>          children: []</p>
+<p>        }, {</p>
+<p>          id: &#x27;global-skills&#x27;,</p>
+<p>          label: &#x27;skills/&#x27;,</p>
+<p>          type: &#x27;folder&#x27;,</p>
+<p>          icon: &#x27;folder&#x27;,</p>
+<p>          color: &#x27;#D4A843&#x27;,</p>
+<p>          oneLiner: &#x27;Personal skills available in every project&#x27;,</p>
+<p>          when: &lt;&gt;Invoked with &lt;code&gt;/skill-name&lt;/code&gt; in any project&lt;/&gt;,</p>
+<p>          description: &#x27;<a class="kw" onclick="showKw('Skill')" title="点击查看解释">Skill</a>s you built for yourself that work everywhere. Same structure as project skills: each is a folder with SKILL.md, scoped to your user account instead of a single project.&#x27;,</p>
+<p>          docsLink: &#x27;/en/skills&#x27;,</p>
+<p>          children: []</p>
+<p>        }, {</p>
+<p>          id: &#x27;global-commands&#x27;,</p>
+<p>          label: &#x27;commands/&#x27;,</p>
+<p>          type: &#x27;folder&#x27;,</p>
+<p>          icon: &#x27;folder&#x27;,</p>
+<p>          color: &#x27;#788C5D&#x27;,</p>
+<p>          oneLiner: &#x27;Personal single-file commands available in every project&#x27;,</p>
+<p>          note: commandsNote,</p>
+<p>          when: &lt;&gt;User types &lt;code&gt;/command-name&lt;/code&gt; in any project&lt;/&gt;,</p>
+<p>          description: &#x27;Same as project commands/ but scoped to your user account. Each markdown file becomes a command available everywhere.&#x27;,</p>
+<p>          docsLink: &#x27;/en/skills&#x27;,</p>
+<p>          children: []</p>
+<p>        }, {</p>
+<p>          id: &#x27;global-output-styles&#x27;,</p>
+<p>          label: &#x27;output-styles/&#x27;,</p>
+<p>          type: &#x27;folder&#x27;,</p>
+<p>          icon: &#x27;folder&#x27;,</p>
+<p>          color: &#x27;#5AA7A7&#x27;,</p>
+<p>          oneLiner: &#x27;Custom system-prompt sections that adjust how Claude works&#x27;,</p>
+<p>          when: &#x27;Applied at session start when selected via the outputStyle setting&#x27;,</p>
+<p>          description: [&lt;&gt;Each markdown file defines an output style: a section appended to the system prompt that, by default, also drops the built-in software-engineering task instructions. Use this to adapt Claude Code for uses beyond coding, or to add teaching or review modes.&lt;/&gt;, &lt;&gt;Select a built-in or custom style with &lt;code&gt;<a class="kw" onclick="showKw('/config')" title="点击查看解释">/config</a>&lt;/code&gt; or the &lt;code&gt;outputStyle&lt;/code&gt; key in settings. Styles here are available in every project; project-level styles with the same name take precedence.&lt;/&gt;],</p>
+<p>          tips: [&#x27;Built-in styles Explanatory and Learning are included with Claude Code; custom styles go here&#x27;, &lt;&gt;Set &lt;code&gt;keep-coding-instructions: true&lt;/code&gt; in frontmatter to keep the default task instructions alongside your additions&lt;/&gt;, &#x27;Changes take effect on the next session since the system prompt is fixed at startup for caching&#x27;],</p>
+<p>          docsLink: &#x27;/en/output-styles&#x27;,</p>
+<p>          children: [{</p>
+<p>            id: &#x27;output-style-example&#x27;,</p>
+<p>            label: &#x27;teaching.md&#x27;,</p>
+<p>            type: &#x27;file&#x27;,</p>
+<p>            icon: &#x27;md&#x27;,</p>
+<p>            color: &#x27;#5AA7A7&#x27;,</p>
+<p>            badge: &#x27;local&#x27;,</p>
+<p>            oneLiner: &#x27;Example style that adds explanations and leaves small changes for you&#x27;,</p>
+<p>            when: &lt;&gt;Active when &lt;code&gt;outputStyle&lt;/code&gt; in settings is set to &lt;code&gt;teaching&lt;/code&gt;&lt;/&gt;,</p>
+<p>            description: &lt;&gt;This style appends instructions to the system prompt: Claude adds a &quot;Why this approach&quot; note after each task and leaves TODO(human) markers for changes under 10 lines instead of writing them itself. Select it by setting &lt;code&gt;outputStyle&lt;/code&gt; to the filename without .md, or to the &lt;code&gt;name&lt;/code&gt; field if you set one in frontmatter.&lt;/&gt;,</p>
+<p>            example: `---</p>
+<p>description: Explains reasoning and asks you to implement small pieces</p>
+<p>keep-coding-instructions: true</p>
+<p>---</p>
+
+<p>After completing each task, add a brief &quot;Why this approach&quot; note</p>
+<p>explaining the key design decision.</p>
+
+<p>When a change is under 10 lines, ask the user to implement it</p>
+<p>themselves by leaving a TODO(human) marker instead of writing it.`</p>
+<p>          }]</p>
+<p>        }, {</p>
+<p>          id: &#x27;global-agents&#x27;,</p>
+<p>          label: &#x27;agents/&#x27;,</p>
+<p>          type: &#x27;folder&#x27;,</p>
+<p>          icon: &#x27;folder&#x27;,</p>
+<p>          color: &#x27;#C46686&#x27;,</p>
+<p>          oneLiner: &#x27;Personal subagents available in every project&#x27;,</p>
+<p>          when: &#x27;Claude delegates or you @-mention in any project&#x27;,</p>
+<p>          description: &#x27;<a class="kw" onclick="showKw('Subagent')" title="点击查看解释">Subagent</a>s defined here are available across all your projects. Same format as project agents.&#x27;,</p>
+<p>          docsLink: &#x27;/en/sub-agents&#x27;,</p>
+<p>          children: []</p>
+<p>        }, {</p>
+<p>          id: &#x27;global-workflows&#x27;,</p>
+<p>          label: &#x27;workflows/&#x27;,</p>
+<p>          type: &#x27;folder&#x27;,</p>
+<p>          icon: &#x27;folder&#x27;,</p>
+<p>          color: &#x27;#C46686&#x27;,</p>
+<p>          oneLiner: &#x27;Personal dynamic workflows available in every project&#x27;,</p>
+<p>          when: &#x27;Loaded at startup; each file becomes a /&lt;name&gt; command&#x27;,</p>
+<p>          description: &lt;&gt;Workflow scripts saved here are available across all your projects. A project workflow with the same name in &lt;code&gt;.claude/workflows/&lt;/code&gt; takes precedence.&lt;/&gt;,</p>
+<p>          docsLink: &#x27;/en/workflows&#x27;,</p>
+<p>          children: []</p>
+<p>        }, {</p>
+<p>          id: &#x27;global-agent-memory&#x27;,</p>
+<p>          label: &#x27;agent-memory/&#x27;,</p>
+<p>          type: &#x27;folder&#x27;,</p>
+<p>          icon: &#x27;folder&#x27;,</p>
+<p>          color: &#x27;#C46686&#x27;,</p>
+<p>          autogen: true,</p>
+<p>          oneLiner: &lt;&gt;Persistent memory for subagents with &lt;code&gt;memory: user&lt;/code&gt;&lt;/&gt;,</p>
+<p>          when: &#x27;Loaded into the subagent system prompt when the subagent starts&#x27;,</p>
+<p>          description: &lt;&gt;<a class="kw" onclick="showKw('Subagent')" title="点击查看解释">Subagent</a>s with &lt;code&gt;memory: user&lt;/code&gt; in their frontmatter store knowledge here that persists across all projects. For project-scoped subagent memory, see &lt;code&gt;.claude/agent-memory/&lt;/code&gt; instead.&lt;/&gt;,</p>
+<p>          docsLink: &#x27;/en/sub-agents#enable-persistent-memory&#x27;,</p>
+<p>          children: []</p>
+<p>        }]</p>
+<p>      }]</p>
+<p>    }</p>
+<p>  }), []);</p>
+<p>  const BADGE_STYLES = useMemo(() =&gt; ({</p>
+<p>    committed: {</p>
+<p>      bg: &#x27;rgba(85,138,66,0.08)&#x27;,</p>
+<p>      color: &#x27;var(--ce-badge-committed)&#x27;,</p>
+<p>      border: &#x27;rgba(85,138,66,0.15)&#x27;,</p>
+<p>      label: &#x27;committed&#x27;</p>
+<p>    },</p>
+<p>    gitignored: {</p>
+<p>      bg: &#x27;rgba(217,119,87,0.06)&#x27;,</p>
+<p>      color: &#x27;var(--ce-badge-gitignored)&#x27;,</p>
+<p>      border: &#x27;rgba(217,119,87,0.15)&#x27;,</p>
+<p>      label: &#x27;gitignored&#x27;</p>
+<p>    },</p>
+<p>    local: {</p>
+<p>      bg: &#x27;rgba(115,114,108,0.06)&#x27;,</p>
+<p>      color: &#x27;var(--ce-badge-local)&#x27;,</p>
+<p>      border: &#x27;rgba(115,114,108,0.12)&#x27;,</p>
+<p>      label: &#x27;local only&#x27;</p>
+<p>    },</p>
+<p>    autogen: {</p>
+<p>      bg: &#x27;rgba(232,164,92,0.1)&#x27;,</p>
+<p>      color: &#x27;var(--ce-badge-autogen)&#x27;,</p>
+<p>      border: &#x27;rgba(232,164,92,0.2)&#x27;,</p>
+<p>      label: &#x27;Claude writes&#x27;</p>
+<p>    }</p>
+<p>  }), []);</p>
+<p>  const allNodes = useMemo(() =&gt; {</p>
+<p>    const flatten = (nodes, acc, path, parentId) =&gt; {</p>
+<p>      for (const node of nodes) {</p>
+<p>        const nextPath = [...path, node.label];</p>
+<p>        acc[node.id] = {</p>
+<p>          ...node,</p>
+<p>          path: nextPath,</p>
+<p>          parentId</p>
+<p>        };</p>
+<p>        if (node.children) flatten(node.children, acc, nextPath, node.id);</p>
+<p>      }</p>
+<p>      return acc;</p>
+<p>    };</p>
+<p>    const project = flatten(FILE_TREE.project.children, {}, [FILE_TREE.project.label]);</p>
+<p>    const global = flatten(FILE_TREE.global.children, {}, [FILE_TREE.global.label]);</p>
+<p>    for (const id in project) project[id].root = &#x27;project&#x27;;</p>
+<p>    for (const id in global) global[id].root = &#x27;global&#x27;;</p>
+<p>    return {</p>
+<p>      ...project,</p>
+<p>      ...global</p>
+<p>    };</p>
+<p>  }, [FILE_TREE]);</p>
+<p>  const allFolderIds = useMemo(() =&gt; Object.keys(allNodes).filter(id =&gt; allNodes[id].type === &#x27;folder&#x27;), [allNodes]);</p>
+<p>  const DEFAULT_EXPANDED = [&#x27;dot-claude&#x27;, &#x27;rules&#x27;, &#x27;skills&#x27;, &#x27;skill-review&#x27;, &#x27;commands&#x27;, &#x27;agents&#x27;, &#x27;agent-memory&#x27;, &#x27;agent-memory-sub&#x27;, &#x27;global-dot-claude&#x27;, &#x27;global-output-styles&#x27;, &#x27;global-projects&#x27;, &#x27;memory-dir&#x27;];</p>
+<p>  const [mounted, setMounted] = useState(false);</p>
+<p>  const [activeRoot, setActiveRoot] = useState(&#x27;project&#x27;);</p>
+<p>  const [selectedId, setSelectedId] = useState(&#x27;claude-md&#x27;);</p>
+<p>  const [expandedFolders, setExpandedFolders] = useState(() =&gt; new Set(DEFAULT_EXPANDED));</p>
+<p>  const [forceMobile, setForceMobile] = useState(false);</p>
+<p>  const [copiedId, setCopiedId] = useState(null);</p>
+<p>  const [isFullscreen, setIsFullscreen] = useState(false);</p>
+<p>  const copyTimeoutRef = useRef(null);</p>
+<p>  const rootRef = useRef(null);</p>
+<p>  useEffect(() =&gt; {</p>
+<p>    setMounted(true);</p>
+<p>    const applyHash = scroll =&gt; {</p>
+<p>      const hash = window.location.hash.slice(1);</p>
+<p>      if (!hash.startsWith(&#x27;ce-&#x27;)) return;</p>
+<p>      const id = hash.slice(3);</p>
+<p>      const node = allNodes[id];</p>
+<p>      if (!node) return;</p>
+<p>      setActiveRoot(node.root);</p>
+<p>      setSelectedId(id);</p>
+<p>      setExpandedFolders(new Set(allFolderIds));</p>
+<p>      if (scroll &amp;&amp; rootRef.current) rootRef.current.scrollIntoView({</p>
+<p>        behavior: &#x27;smooth&#x27;,</p>
+<p>        block: &#x27;start&#x27;</p>
+<p>      });</p>
+<p>    };</p>
+<p>    applyHash(false);</p>
+<p>    const onHashChange = () =&gt; applyHash(true);</p>
+<p>    const onFsChange = () =&gt; setIsFullscreen(!!document.fullscreenElement);</p>
+<p>    window.addEventListener(&#x27;hashchange&#x27;, onHashChange);</p>
+<p>    document.addEventListener(&#x27;fullscreenchange&#x27;, onFsChange);</p>
+<p>    return () =&gt; {</p>
+<p>      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);</p>
+<p>      window.removeEventListener(&#x27;hashchange&#x27;, onHashChange);</p>
+<p>      document.removeEventListener(&#x27;fullscreenchange&#x27;, onFsChange);</p>
+<p>    };</p>
+<p>  }, []);</p>
+<p>  useEffect(() =&gt; {</p>
+<p>    if (!mounted || !rootRef.current) return;</p>
+<p>    const hash = window.location.hash.slice(1);</p>
+<p>    if (hash.startsWith(&#x27;ce-&#x27;) &amp;&amp; allNodes[hash.slice(3)]) {</p>
+<p>      rootRef.current.scrollIntoView({</p>
+<p>        behavior: &#x27;smooth&#x27;,</p>
+<p>        block: &#x27;start&#x27;</p>
+<p>      });</p>
+<p>    }</p>
+<p>  }, [mounted]);</p>
+<p>  if (!mounted) return null;</p>
+<p>  const selected = allNodes[selectedId];</p>
+<p>  const tree = FILE_TREE[activeRoot];</p>
+<p>  const isCopied = copiedId === selected.id;</p>
+<p>  const toggleFolder = id =&gt; {</p>
+<p>    const next = new Set(expandedFolders);</p>
+<p>    next.has(id) ? next.delete(id) : next.add(id);</p>
+<p>    setExpandedFolders(next);</p>
+<p>  };</p>
+<p>  const switchRoot = root =&gt; {</p>
+<p>    if (root === activeRoot) return;</p>
+<p>    setActiveRoot(root);</p>
+<p>    const firstId = FILE_TREE[root].children[0].id;</p>
+<p>    setSelectedId(firstId);</p>
+<p>    try {</p>
+<p>      history.replaceState(null, &#x27;&#x27;, &#x27;#ce-&#x27; + firstId);</p>
+<p>    } catch (e) {}</p>
+<p>  };</p>
+<p>  const toggleFullscreen = () =&gt; {</p>
+<p>    if (!rootRef.current) return;</p>
+<p>    if (document.fullscreenElement) document.exitFullscreen(); else rootRef.current.requestFullscreen().catch(() =&gt; {});</p>
+<p>  };</p>
+<p>  const selectNode = n =&gt; {</p>
+<p>    setSelectedId(n.id);</p>
+<p>    if (n.type === &#x27;folder&#x27; &amp;&amp; !expandedFolders.has(n.id)) toggleFolder(n.id);</p>
+<p>    try {</p>
+<p>      history.replaceState(null, &#x27;&#x27;, &#x27;#ce-&#x27; + n.id);</p>
+<p>    } catch (e) {}</p>
+<p>  };</p>
+<p>  const iconBtn = {</p>
+<p>    width: 28,</p>
+<p>    flexShrink: 0,</p>
+<p>    borderRadius: &#x27;6px&#x27;,</p>
+<p>    border: &#x27;none&#x27;,</p>
+<p>    cursor: &#x27;pointer&#x27;,</p>
+<p>    background: &#x27;transparent&#x27;,</p>
+<p>    color: &#x27;var(--ce-text-4)&#x27;,</p>
+<p>    display: &#x27;flex&#x27;,</p>
+<p>    alignItems: &#x27;center&#x27;,</p>
+<p>    justifyContent: &#x27;center&#x27;</p>
+<p>  };</p>
+<p>  const visibleFolderIds = allFolderIds.filter(id =&gt; allNodes[id].root === activeRoot);</p>
+<p>  const allExpanded = visibleFolderIds.every(id =&gt; expandedFolders.has(id));</p>
+<p>  const toggleAllFolders = () =&gt; {</p>
+<p>    const next = new Set(expandedFolders);</p>
+<p>    visibleFolderIds.forEach(id =&gt; allExpanded ? next.delete(id) : next.add(id));</p>
+<p>    setExpandedFolders(next);</p>
+<p>  };</p>
+<p>  const onTreeKeyDown = e =&gt; {</p>
+<p>    if (![&#x27;ArrowDown&#x27;, &#x27;ArrowUp&#x27;, &#x27;ArrowRight&#x27;, &#x27;ArrowLeft&#x27;].includes(e.key)) return;</p>
+<p>    const visible = [];</p>
+<p>    const walk = nodes =&gt; {</p>
+<p>      for (const n of nodes) {</p>
+<p>        visible.push(n.id);</p>
+<p>        if (n.children &amp;&amp; expandedFolders.has(n.id)) walk(n.children);</p>
+<p>      }</p>
+<p>    };</p>
+<p>    walk(tree.children);</p>
+<p>    const i = visible.indexOf(selectedId);</p>
+<p>    if (i === -1) return;</p>
+<p>    e.preventDefault();</p>
+<p>    if (e.key === &#x27;ArrowDown&#x27; &amp;&amp; i &lt; visible.length - 1) selectNode(allNodes[visible[i + 1]]); else if (e.key === &#x27;ArrowUp&#x27; &amp;&amp; i &gt; 0) selectNode(allNodes[visible[i - 1]]); else if (e.key === &#x27;ArrowRight&#x27; &amp;&amp; selected.type === &#x27;folder&#x27;) {</p>
+<p>      if (!expandedFolders.has(selectedId)) toggleFolder(selectedId); else if (selected.children &amp;&amp; selected.children.length) selectNode(allNodes[selected.children[0].id]);</p>
+<p>    } else if (e.key === &#x27;ArrowLeft&#x27;) {</p>
+<p>      if (selected.type === &#x27;folder&#x27; &amp;&amp; expandedFolders.has(selectedId)) toggleFolder(selectedId); else if (selected.parentId) selectNode(allNodes[selected.parentId]);</p>
+<p>    }</p>
+<p>  };</p>
+<p>  const copyExample = (id, text) =&gt; {</p>
+<p>    const done = () =&gt; {</p>
+<p>      setCopiedId(id);</p>
+<p>      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);</p>
+<p>      copyTimeoutRef.current = setTimeout(() =&gt; setCopiedId(null), 2000);</p>
+<p>    };</p>
+<p>    const fallback = () =&gt; {</p>
+<p>      const ta = document.createElement(&#x27;textarea&#x27;);</p>
+<p>      ta.value = text;</p>
+<p>      ta.style.position = &#x27;fixed&#x27;;</p>
+<p>      ta.style.opacity = &#x27;0&#x27;;</p>
+<p>      document.body.appendChild(ta);</p>
+<p>      ta.select();</p>
+<p>      try {</p>
+<p>        if (document.execCommand(&#x27;copy&#x27;)) done();</p>
+<p>      } catch (e) {}</p>
+<p>      document.body.removeChild(ta);</p>
+<p>    };</p>
+<p>    if (navigator.clipboard) {</p>
+<p>      navigator.clipboard.writeText(text).then(done, fallback);</p>
+<p>    } else {</p>
+<p>      fallback();</p>
+<p>    }</p>
+<p>  };</p>
+<p>  const renderIcon = (icon, color, size) =&gt; {</p>
+<p>    const sz = size || 14;</p>
+<p>    if (icon === &#x27;folder&#x27;) {</p>
+<p>      return &lt;svg width={sz} height={sz} viewBox=&quot;0 0 14 14&quot; fill=&quot;none&quot;&gt;</p>
+<p>          </p>
+
+<p>        &lt;/svg&gt;;</p>
+<p>    }</p>
+<p>    if (icon === &#x27;json&#x27;) {</p>
+<p>      return &lt;svg width={sz} height={sz} viewBox=&quot;0 0 14 14&quot; fill=&quot;none&quot;&gt;</p>
+<p>          &lt;rect x=&quot;2&quot; y=&quot;1.5&quot; width=&quot;10&quot; height=&quot;11&quot; rx=&quot;1.5&quot; fill={color} fillOpacity=&quot;0.15&quot; stroke={color} strokeWidth=&quot;1&quot; /&gt;</p>
+<p>          &lt;text x=&quot;7&quot; y=&quot;9&quot; fontSize=&quot;6&quot; fontFamily=&quot;monospace&quot; fill={color} textAnchor=&quot;middle&quot; fontWeight=&quot;700&quot;&gt;{&#x27;{}&#x27;}&lt;/text&gt;</p>
+<p>        &lt;/svg&gt;;</p>
+<p>    }</p>
+<p>    return &lt;svg width={sz} height={sz} viewBox=&quot;0 0 14 14&quot; fill=&quot;none&quot;&gt;</p>
+<p>        &lt;rect x=&quot;2&quot; y=&quot;1.5&quot; width=&quot;10&quot; height=&quot;11&quot; rx=&quot;1.5&quot; fill={color} fillOpacity=&quot;0.15&quot; stroke={color} strokeWidth=&quot;1&quot; /&gt;</p>
+<p>        </p>
+
+<p>        </p>
+
+<p>        </p>
+
+<p>      &lt;/svg&gt;;</p>
+<p>  };</p>
+<p>  const renderNode = (node, depth) =&gt; {</p>
+<p>    const isFolder = node.type === &#x27;folder&#x27;;</p>
+<p>    const isExpanded = expandedFolders.has(node.id);</p>
+<p>    const isSelected = selectedId === node.id;</p>
+<p>    return </p>
+
+<p>        &lt;button role=&quot;treeitem&quot; tabIndex={-1} onClick={() =&gt; selectNode(node)} aria-selected={isSelected} aria-expanded={isFolder ? isExpanded : undefined} style={{</p>
+<p>      display: &#x27;flex&#x27;,</p>
+<p>      alignItems: &#x27;center&#x27;,</p>
+<p>      gap: &#x27;5px&#x27;,</p>
+<p>      width: &#x27;100%&#x27;,</p>
+<p>      padding: `4px 8px 4px ${8 + depth * 16}px`,</p>
+<p>      background: isSelected ? &#x27;var(--ce-accent-bg)&#x27; : &#x27;transparent&#x27;,</p>
+<p>      borderTop: &#x27;none&#x27;,</p>
+<p>      borderRight: &#x27;none&#x27;,</p>
+<p>      borderBottom: &#x27;none&#x27;,</p>
+<p>      borderLeft: isSelected ? &#x27;2px solid var(--ce-accent)&#x27; : &#x27;2px solid transparent&#x27;,</p>
+<p>      outline: &#x27;none&#x27;,</p>
+<p>      cursor: &#x27;pointer&#x27;,</p>
+<p>      textAlign: &#x27;left&#x27;,</p>
+<p>      fontFamily: &#x27;var(--ce-mono)&#x27;,</p>
+<p>      fontSize: &#x27;13.5px&#x27;,</p>
+<p>      color: isSelected ? &#x27;var(--ce-accent)&#x27; : &#x27;var(--ce-text-2)&#x27;,</p>
+<p>      fontWeight: isSelected ? 550 : 400,</p>
+<p>      transition: &#x27;all 0.1s&#x27;</p>
+<p>    }}&gt;</p>
+<p>          {isFolder ? </p>
+<p> {</p>
+<p>      e.stopPropagation();</p>
+<p>      toggleFolder(node.id);</p>
+<p>    }} style={{</p>
+<p>      fontSize: &#x27;14px&#x27;,</p>
+<p>      color: &#x27;var(--ce-text-4)&#x27;,</p>
+<p>      width: &#x27;20px&#x27;,</p>
+<p>      height: &#x27;20px&#x27;,</p>
+<p>      display: &#x27;inline-flex&#x27;,</p>
+<p>      alignItems: &#x27;center&#x27;,</p>
+<p>      justifyContent: &#x27;center&#x27;,</p>
+<p>      cursor: &#x27;pointer&#x27;,</p>
+<p>      borderRadius: &#x27;4px&#x27;,</p>
+<p>      marginLeft: &#x27;-6px&#x27;,</p>
+<p>      flexShrink: 0</p>
+<p>    }} onMouseEnter={e =&gt; {</p>
+<p>      e.currentTarget.style.background = &#x27;var(--ce-arrow-hover)&#x27;;</p>
+<p>      e.currentTarget.style.color = &#x27;var(--ce-text-2)&#x27;;</p>
+<p>    }} onMouseLeave={e =&gt; {</p>
+<p>      e.currentTarget.style.background = &#x27;transparent&#x27;;</p>
+<p>      e.currentTarget.style.color = &#x27;var(--ce-text-4)&#x27;;</p>
+<p>    }}&gt;{isExpanded ? &#x27;▾&#x27; : &#x27;▸&#x27;}</p>
+<p> : </p>
+<p>}</p>
+<p>          {renderIcon(node.icon, node.color)}</p>
+<p>          </p>
+<p>{node.label}</p>
+
+<p>          {node.badge &amp;&amp; BADGE_STYLES[node.badge] &amp;&amp; </p>
+<p>}</p>
+<p>        &lt;/button&gt;</p>
+<p>        {isFolder &amp;&amp; isExpanded &amp;&amp; node.children &amp;&amp; </p>
+<p>{node.children.map(child =&gt; renderNode(child, depth + 1))}</p>
+<p>}</p>
+<p>      </p>
+<p>;</p>
+<p>  };</p>
+<p>  return &lt;&gt;</p>
+<p>    &lt;style&gt;{`</p>
+<p>      .ce-root {</p>
+<p>        --ce-mono: var(--font-mono, ui-monospace, monospace);</p>
+<p>        --ce-accent: #D97757;</p>
+<p>        --ce-accent-bg: rgba(217,119,87,0.06);</p>
+<p>        --ce-accent-border: rgba(217,119,87,0.12);</p>
+<p>        --ce-bg: #fff;</p>
+<p>        --ce-surface: #FAFAF7;</p>
+<p>        --ce-surface-hover: #F0EEE6;</p>
+<p>        --ce-border: #E8E6DC;</p>
+<p>        --ce-border-subtle: #F0EEE6;</p>
+<p>        --ce-text: #141413;</p>
+<p>        --ce-text-2: #5E5D59;</p>
+<p>        --ce-text-3: #73726C;</p>
+<p>        --ce-text-4: #9C9A92;</p>
+<p>        --ce-text-5: #B8B6AE;</p>
+<p>        --ce-sep: #D1CFC5;</p>
+<p>        --ce-code-header: #F5F4ED;</p>
+<p>        --ce-code-bg: #1A1918;</p>
+<p>        --ce-arrow-hover: rgba(0,0,0,0.08);</p>
+<p>        --ce-badge-committed: #3d6b2e;</p>
+<p>        --ce-badge-gitignored: #b85c3a;</p>
+<p>        --ce-badge-local: #5e5d59;</p>
+<p>        --ce-badge-autogen: #b07520;</p>
+<p>        --ce-when-text: #4a7fb5;</p>
+<p>      }</p>
+<p>      .dark .ce-root {</p>
+<p>        --ce-bg: #1a1918;</p>
+<p>        --ce-surface: #232221;</p>
+<p>        --ce-surface-hover: #2e2d2b;</p>
+<p>        --ce-border: #3a3936;</p>
+<p>        --ce-border-subtle: #2e2d2b;</p>
+<p>        --ce-text: #e8e6dc;</p>
+<p>        --ce-text-2: #c4c2b8;</p>
+<p>        --ce-text-3: #9c9a92;</p>
+<p>        --ce-text-4: #73726c;</p>
+<p>        --ce-text-5: #5e5d59;</p>
+<p>        --ce-sep: #4a4946;</p>
+<p>        --ce-code-header: #2e2d2b;</p>
+<p>        --ce-code-bg: #0d0d0c;</p>
+<p>        --ce-arrow-hover: rgba(255,255,255,0.08);</p>
+<p>        --ce-badge-committed: #6fa85c;</p>
+<p>        --ce-badge-gitignored: #e08a60;</p>
+<p>        --ce-badge-local: #9c9a92;</p>
+<p>        --ce-badge-autogen: #e8a45c;</p>
+<p>        --ce-when-text: #8bb4e0;</p>
+<p>      }</p>
+<p>      .ce-mobile-fallback { display: none; border: 1px solid rgba(0,0,0,0.1); background: rgba(0,0,0,0.03); }</p>
+<p>      .dark .ce-mobile-fallback { border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.04); }</p>
+<p>      @media (max-width: 700px) {</p>
+<p>        .ce-root:not(.ce-force) { display: none !important; }</p>
+<p>        .ce-mobile-fallback { display: block; }</p>
+<p>      }</p>
+<p>    `}&lt;/style&gt;</p>
+<p>    {!forceMobile &amp;&amp; </p>
+
+<p>      The interactive explorer works best on a larger screen. See the &lt;a href=&quot;#file-reference&quot; style={{</p>
+<p>    color: &#x27;#D97757&#x27;</p>
+<p>  }}&gt;file reference table&lt;/a&gt; below, or &lt;button onClick={() =&gt; setForceMobile(true)} style={{</p>
+<p>    border: &#x27;none&#x27;,</p>
+<p>    background: &#x27;none&#x27;,</p>
+<p>    padding: 0,</p>
+<p>    color: &#x27;#D97757&#x27;,</p>
+<p>    textDecoration: &#x27;underline&#x27;,</p>
+<p>    cursor: &#x27;pointer&#x27;,</p>
+<p>    font: &#x27;inherit&#x27;</p>
+<p>  }}&gt;show the explorer anyway&lt;/button&gt;.</p>
+<p>    </p>
+<p>}</p>
+<p>    </p>
+
+<p>      {}</p>
+<p>      </p>
+
+<p>        </p>
+
+<p>          {[&#x27;project&#x27;, &#x27;global&#x27;].map(root =&gt; &lt;button key={root} onClick={() =&gt; switchRoot(root)} style={{</p>
+<p>    flex: 1,</p>
+<p>    padding: &#x27;6px 0&#x27;,</p>
+<p>    borderRadius: &#x27;6px&#x27;,</p>
+<p>    border: &#x27;none&#x27;,</p>
+<p>    cursor: &#x27;pointer&#x27;,</p>
+<p>    fontFamily: &#x27;var(--ce-mono)&#x27;,</p>
+<p>    fontSize: &#x27;11.5px&#x27;,</p>
+<p>    background: activeRoot === root ? &#x27;var(--ce-accent-bg)&#x27; : &#x27;transparent&#x27;,</p>
+<p>    color: activeRoot === root ? &#x27;var(--ce-accent)&#x27; : &#x27;var(--ce-text-4)&#x27;,</p>
+<p>    fontWeight: activeRoot === root ? 600 : 430</p>
+<p>  }}&gt;</p>
+<p>              {root === &#x27;project&#x27; ? &#x27;Project&#x27; : &#x27;Global (~/)&#x27;}</p>
+<p>            &lt;/button&gt;)}</p>
+<p>          &lt;button onClick={toggleAllFolders} title={allExpanded ? &#x27;Collapse all&#x27; : &#x27;Expand all&#x27;} style={{</p>
+<p>    ...iconBtn,</p>
+<p>    fontSize: 11</p>
+<p>  }}&gt;</p>
+<p>            {allExpanded ? &#x27;⊟&#x27; : &#x27;⊞&#x27;}</p>
+<p>          &lt;/button&gt;</p>
+<p>          &lt;button onClick={toggleFullscreen} title={isFullscreen ? &#x27;Exit fullscreen&#x27; : &#x27;Fullscreen&#x27;} style={{</p>
+<p>    ...iconBtn,</p>
+<p>    fontSize: 13</p>
+<p>  }}&gt;</p>
+<p>            {isFullscreen ? &#x27;<span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M4 12v-6a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v6" /> <path d="M10 18h-7" /> <path d="M21 18h-7" /> <path d="M6 15l-3 3l3 3" /> <path d="M18 15l3 3l-3 3" /> </svg></span>&#x27; : &#x27;<span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M4 8v-2a2 2 0 0 1 2 -2h2" /> <path d="M4 16v2a2 2 0 0 0 2 2h2" /> <path d="M16 4h2a2 2 0 0 1 2 2v2" /> <path d="M16 20h2a2 2 0 0 0 2 -2v-2" /> </svg></span>&#x27;}</p>
+<p>          &lt;/button&gt;</p>
+<p>        </p>
+
+<p>        </p>
+
+<p>          {tree.children.map(node =&gt; renderNode(node, 0))}</p>
+<p>        </p>
+
+<p>      </p>
+
+<p>      {}</p>
+<p>      </p>
+
+<p>            </p>
+<p>{selected.label} selected</p>
+
+<p>            {}</p>
+<p>            </p>
+
+<p>              {selected.path.map((seg, i) =&gt; </p>
+
+<p>                  </p>
+<p>{seg.replace(/\/$/, &#x27;&#x27;)}</p>
+
+<p>                  {i &lt; selected.path.length - 1 &amp;&amp; </p>
+<p> / </p>
+<p>}</p>
+<p>                </p>
+<p>)}</p>
+<p>            </p>
+
+<p>            {}</p>
+<p>            </p>
+
+<p>              </p>
+<p>{renderIcon(selected.icon, selected.color, 24)}</p>
+
+<p>              </p>
+
+<p>                </p>
+<p>{selected.label}</p>
+
+<p>                {selected.oneLiner &amp;&amp; </p>
+<p>{selected.oneLiner}</p>
+<p>}</p>
+<p>              </p>
+
+<p>              </p>
+
+<p>                {[selected.autogen &amp;&amp; &#x27;autogen&#x27;, selected.badge].filter(Boolean).map(k =&gt; {</p>
+<p>    const s = BADGE_STYLES[k];</p>
+<p>    if (!s) return null;</p>
+<p>    return </p>
+<p>{s.label}</p>
+<p>;</p>
+<p>  })}</p>
+<p>              </p>
+
+<p>            </p>
+
+<p>            {}</p>
+<p>            {selected.note &amp;&amp; </p>
+
+<p>                {selected.note}</p>
+<p>              </p>
+<p>}</p>
+
+<p>            {}</p>
+<p>            {selected.when &amp;&amp; </p>
+
+<p>                </p>
+<p>When it loads</p>
+
+<p>                </p>
+<p>{selected.when}</p>
+
+<p>              </p>
+<p>}</p>
+
+<p>            {}</p>
+<p>            {selected.description &amp;&amp; </p>
+
+<p>                {Array.isArray(selected.description) ? selected.description.map((para, i) =&gt; </p>
+<p>{para}</p>
+<p>) : selected.description}</p>
+<p>              </p>
+<p>}</p>
+
+<p>            {}</p>
+<p>            {selected.contains &amp;&amp; selected.contains.length &gt; 0 &amp;&amp; </p>
+
+<p>                </p>
+<p>Common keys</p>
+
+<p>                {selected.contains.map((item, i) =&gt; </p>
+
+<p>                    </p>
+<p>●</p>
+
+<p>                    </p>
+<p>{item}</p>
+
+<p>                  </p>
+<p>)}</p>
+<p>              </p>
+<p>}</p>
+
+<p>            {}</p>
+<p>            {selected.tips &amp;&amp; selected.tips.length &gt; 0 &amp;&amp; </p>
+
+<p>                </p>
+<p>Tips</p>
+
+<p>                {selected.tips.map((tip, i) =&gt; </p>
+
+<p>                    </p>
+<p>●</p>
+
+<p>                    </p>
+<p>{tip}</p>
+
+<p>                  </p>
+<p>)}</p>
+<p>              </p>
+<p>}</p>
+
+<p>            {}</p>
+<p>            {selected.example &amp;&amp; </p>
+
+<p>                {selected.exampleIntro &amp;&amp; </p>
+
+<p>                    {selected.exampleIntro}</p>
+<p>                  </p>
+<p>}</p>
+<p>                </p>
+
+<p>                  </p>
+<p>{selected.label}</p>
+
+<p>                  &lt;button onClick={() =&gt; copyExample(selected.id, selected.example)} style={{</p>
+<p>    padding: &#x27;3px 8px&#x27;,</p>
+<p>    borderRadius: &#x27;4px&#x27;,</p>
+<p>    fontSize: &#x27;11px&#x27;,</p>
+<p>    fontWeight: 600,</p>
+<p>    cursor: &#x27;pointer&#x27;,</p>
+<p>    transition: &#x27;all 0.15s&#x27;,</p>
+<p>    background: isCopied ? &#x27;rgba(85,138,66,0.08)&#x27; : &#x27;var(--ce-code-header)&#x27;,</p>
+<p>    border: isCopied ? &#x27;0.5px solid rgba(85,138,66,0.2)&#x27; : &#x27;0.5px solid var(--ce-border)&#x27;,</p>
+<p>    color: isCopied ? &#x27;#558A42&#x27; : &#x27;var(--ce-text-3)&#x27;</p>
+<p>  }}&gt;</p>
+<p>                    {isCopied ? &#x27;<span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span> Copied&#x27; : &#x27;Copy&#x27;}</p>
+<p>                  &lt;/button&gt;</p>
+<p>                </p>
+
+<p>                </p>
+<p>{selected.example}</p>
+
+<p>              </p>
+<p>}</p>
+
+<p>            {}</p>
+<p>            {selected.docsLink &amp;&amp; &lt;a href={selected.docsLink} style={{</p>
+<p>    display: &#x27;inline-flex&#x27;,</p>
+<p>    padding: &#x27;5px 12px&#x27;,</p>
+<p>    borderRadius: &#x27;6px&#x27;,</p>
+<p>    background: &#x27;var(--ce-accent-bg)&#x27;,</p>
+<p>    border: &#x27;1px solid var(--ce-accent-border)&#x27;,</p>
+<p>    color: &#x27;var(--ce-accent)&#x27;,</p>
+<p>    fontSize: &#x27;12px&#x27;,</p>
+<p>    fontWeight: 600,</p>
+<p>    textDecoration: &#x27;none&#x27;</p>
+<p>  }}&gt;Full docs →&lt;/a&gt;}</p>
+
+<p>            {}</p>
+<p>            {selected.children &amp;&amp; selected.children.length &gt; 0 &amp;&amp; </p>
+
+<p>                </p>
+<p>Contents</p>
+
+<p>                </p>
+
+<p>                  {selected.children.map(child =&gt; &lt;button key={child.id} onClick={() =&gt; selectNode(child)} style={{</p>
+<p>    display: &#x27;flex&#x27;,</p>
+<p>    alignItems: &#x27;center&#x27;,</p>
+<p>    gap: &#x27;8px&#x27;,</p>
+<p>    padding: &#x27;6px 8px&#x27;,</p>
+<p>    width: &#x27;100%&#x27;,</p>
+<p>    background: &#x27;var(--ce-surface)&#x27;,</p>
+<p>    borderRadius: &#x27;6px&#x27;,</p>
+<p>    border: &#x27;none&#x27;,</p>
+<p>    cursor: &#x27;pointer&#x27;,</p>
+<p>    textAlign: &#x27;left&#x27;,</p>
+<p>    transition: &#x27;background 0.1s&#x27;</p>
+<p>  }} onMouseEnter={e =&gt; e.currentTarget.style.background = &#x27;var(--ce-surface-hover)&#x27;} onMouseLeave={e =&gt; e.currentTarget.style.background = &#x27;var(--ce-surface)&#x27;}&gt;</p>
+<p>                      {renderIcon(child.icon, child.color, 13)}</p>
+<p>                      </p>
+<p>{child.label}</p>
+
+<p>                      {child.oneLiner &amp;&amp; </p>
+<p>{child.oneLiner}</p>
+<p>}</p>
+<p>                    &lt;/button&gt;)}</p>
+<p>                </p>
+
+<p>              </p>
+<p>}</p>
+<p>      </p>
+
+<p>    </p>
+
+<p>    &lt;/&gt;;</p>
+<p>};</p>
+
+<p>Claude Code 从您的项目目录和主目录中的 `~/.claude` 读取指令、<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>、skills、subagents 和内存。将项目文件提交到 git 以与您的团队共享；`~/.claude` 中的文件是个人配置，适用于您的所有项目。</p>
+
+<p>在 Windows 上，`~/.claude` 解析为 `%USERPROFILE%\.claude`。如果您<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>了 <a class="kw" onclick="showKw('CLAUDE_CONFIG_DIR')" title="点击查看解释">CLAUDE_CONFIG_DIR</a>，此页面上的每个 `~/.claude` 路径都将位于该目录下。</p>
+
+<p>大多数用户只编辑 `<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>` 和 `<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>`。目录的其余部分是可选的：根据需要添加 skills、rules 或 subagents。</p>
+
+<h3 id="sec-claude-directory-17">探索目录</h3>
+
+<p>单击树中的文件以查看每个文件的作用、何时加载以及示例。</p>
+
+<p>&lt;ClaudeExplorer /&gt;</p>
+
+<h3 id="sec-claude-directory-18">未显示的内容</h3>
+
+<p>浏览器涵盖您创作和编辑的文件。一些相关文件位于其他位置：</p>
+
+<div class='table-wrap'><table>
+<tr><th>文件</th><th>位置</th><th>用途</th></tr>
+<tr><td>`managed-<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>`</td><td>系统级别，因操作系统而异</td><td>企业强制执行的<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>，您无法覆盖。请参阅<a class="kw" onclick="showKw('服务器管理的设置')" title="点击查看解释">服务器管理的设置</a>。</td></tr>
+<tr><td>`CLAUDE.local.md`</td><td>项目根目录</td><td>您对此项目的私人偏好，与 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 一起加载。手动创建它并将其添加到 `.gitignore`。</td></tr>
+<tr><td>已安装的 plugins</td><td>`~/.claude<a class="kw" onclick="showKw('/plugin')" title="点击查看解释">/plugin</a>s`</td><td>克隆的<a class="kw" onclick="showKw('市场')" title="点击查看解释">市场</a>、已安装的 plugin 版本和每个 plugin 的数据，由 `claude plugin` 命令管理。孤立版本在 plugin 更新或卸载后 7 天被删除。请参阅 <a class="kw" onclick="showKw('plugin 缓存')" title="点击查看解释">plugin 缓存</a>。</td></tr>
+</table></div>
+
+<p>`~/.claude` 还保存 Claude Code 在您工作时写入的数据：记录、提示历史、文件快照、缓存和日志。请参阅下面的<a class="kw" onclick="showKw('应用数据')" title="点击查看解释">应用数据</a>。</p>
+
+<h3 id="sec-claude-directory-19">选择正确的文件</h3>
+
+<p>不同类型的自定义位于不同的文件中。使用此表找到更改应该放在哪里。</p>
+
+<div class='table-wrap'><table>
+<tr><th>您想要</th><th>编辑</th><th>范围</th><th>参考</th></tr>
+<tr><td>为 Claude 提供项目上下文和约定</td><td>`<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>`</td><td>项目或全局</td><td><a class="kw" onclick="showKw('Memory')" title="点击查看解释">Memory</a></td></tr>
+<tr><td>允许或阻止特定工具调用</td><td>`<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` `permissions` 或 `hooks`</td><td>项目或全局</td><td><a class="kw" onclick="showKw('Permissions')" title="点击查看解释">Permissions</a>、<a class="kw" onclick="showKw('Hooks')" title="点击查看解释">Hooks</a></td></tr>
+<tr><td>在工具调用前后运行脚本</td><td>`<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` `hooks`</td><td>项目或全局</td><td><a class="kw" onclick="showKw('Hooks')" title="点击查看解释">Hooks</a></td></tr>
+<tr><td>为<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a><a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a><a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a></td><td>`<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` `env`</td><td>项目或全局</td><td><a class="kw" onclick="showKw('Settings')" title="点击查看解释">Settings</a></td></tr>
+<tr><td>将个人覆盖保留在 git 之外</td><td>`settings.local.json`</td><td>仅项目</td><td><a class="kw" onclick="showKw('Settings scopes')" title="点击查看解释">Settings scopes</a></td></tr>
+<tr><td>添加使用 `/name` 调用的提示或功能</td><td>`skills/&lt;name&gt;/SKILL.md`</td><td>项目或全局</td><td><a class="kw" onclick="showKw('Skills')" title="点击查看解释">Skills</a></td></tr>
+<tr><td>定义具有自己工具的专门 subagent</td><td>`agents/*.md`</td><td>项目或全局</td><td><a class="kw" onclick="showKw('Subagents')" title="点击查看解释">Subagents</a></td></tr>
+<tr><td>通过脚本编排许多 subagent</td><td>`workflows/*.js`</td><td>项目或全局</td><td><a class="kw" onclick="showKw('Dynamic workflows')" title="点击查看解释">Dynamic workflows</a></td></tr>
+<tr><td>通过 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 连接外部工具</td><td>`.mcp.json`</td><td>仅项目</td><td><a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a></td></tr>
+<tr><td>更改 Claude 格式化响应的方式</td><td>`output-styles/*.md`</td><td>项目或全局</td><td><a class="kw" onclick="showKw('Output styles')" title="点击查看解释">Output styles</a></td></tr>
+</table></div>
+
+<h3 id="sec-claude-directory-20">文件参考</h3>
+
+<p>此表列出浏览器涵盖的每个文件。项目范围的文件位于您的仓库中的 `.claude/` 下（或 `<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>`、`.mcp.json` 和 `.worktreeinclude` 的根目录）。全局范围的文件位于 `~/.claude/` 中，适用于所有项目。</p>
+
+<div class="callout callout-note">
+<p>  有几件事可以覆盖您在这些文件中放入的内容：</p>
+
+<p>  * 您的组织部署的<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>优先于所有内容</p>
+<p>  * <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 标志（如 `--permission-mode` 或 `--settings`）在该<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中覆盖 `<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>`</p>
+<p>  * 某些<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>优先于其等效<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>，但这会有所不同：检查<a class="kw" onclick="showKw('环境变量参考')" title="点击查看解释">环境变量参考</a>以了解每个变量</p>
+
+<p>  请参阅<a class="kw" onclick="showKw('设置优先级')" title="点击查看解释">设置优先级</a>以了解完整顺序。</p>
+</div>
+
+<p>单击文件名以在上面的浏览器中打开该节点。</p>
+
+<div class='table-wrap'><table>
+<tr><th>文件</th><th>范围</th><th>提交</th><th>作用</th><th>参考</th></tr>
+<tr><td><a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a></td><td>项目和全局</td><td><span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span></td><td>每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>加载的指令</td><td><a class="kw" onclick="showKw('内存')" title="点击查看解释">内存</a></td></tr>
+<tr><td><a class="kw" onclick="showKw('rules/.md')" title="点击查看解释">rules/.md</a></td><td>项目和全局</td><td><span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span></td><td>主题范围的指令，可选择路径门控</td><td><a class="kw" onclick="showKw('Rules')" title="点击查看解释">Rules</a></td></tr>
+<tr><td><a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a></td><td>项目和全局</td><td><span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span></td><td><a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>、hooks、<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>、模型默认值</td><td><a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a></td></tr>
+<tr><td><a class="kw" onclick="showKw('settings.local.json')" title="点击查看解释">settings.local.json</a></td><td>仅项目</td><td></td><td>您的个人覆盖，自动 gitignored</td><td><a class="kw" onclick="showKw('设置范围')" title="点击查看解释">设置范围</a></td></tr>
+<tr><td><a class="kw" onclick="showKw('.mcp.json')" title="点击查看解释">.mcp.json</a></td><td>仅项目</td><td><span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span></td><td>团队共享的 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 服务器</td><td><a class="kw" onclick="showKw('MCP 范围')" title="点击查看解释">MCP 范围</a></td></tr>
+<tr><td><a class="kw" onclick="showKw('.worktreeinclude')" title="点击查看解释">.worktreeinclude</a></td><td>仅项目</td><td><span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span></td><td>Gitignored 文件以复制到新的 worktrees</td><td><a class="kw" onclick="showKw('Worktrees')" title="点击查看解释">Worktrees</a></td></tr>
+<tr><td><a class="kw" onclick="showKw('skills/&lt;name&gt;/SKILL.md')" title="点击查看解释">skills/&lt;name&gt;/SKILL.md</a></td><td>项目和全局</td><td><span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span></td><td>可重用的提示，使用 `/name` 调用或自动调用</td><td><a class="kw" onclick="showKw('Skills')" title="点击查看解释">Skills</a></td></tr>
+<tr><td><a class="kw" onclick="showKw('commands/.md')" title="点击查看解释">commands/.md</a></td><td>项目和全局</td><td><span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span></td><td>单文件提示；与 skills 相同的机制</td><td><a class="kw" onclick="showKw('Skills')" title="点击查看解释">Skills</a></td></tr>
+<tr><td><a class="kw" onclick="showKw('output-styles/.md')" title="点击查看解释">output-styles/.md</a></td><td>项目和全局</td><td><span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span></td><td>自定义系统提示部分</td><td><a class="kw" onclick="showKw('输出样式')" title="点击查看解释">输出样式</a></td></tr>
+<tr><td><a class="kw" onclick="showKw('agents/.md')" title="点击查看解释">agents/.md</a></td><td>项目和全局</td><td><span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span></td><td><a class="kw" onclick="showKw('Subagent')" title="点击查看解释">Subagent</a> 定义及其自己的提示和工具</td><td><a class="kw" onclick="showKw('Subagents')" title="点击查看解释">Subagents</a></td></tr>
+<tr><td><a class="kw" onclick="showKw('workflows/.js')" title="点击查看解释">workflows/.js</a></td><td>项目和全局</td><td><span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span></td><td>由 Claude 编写并从 `/workflows` 保存的动态<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>脚本；每个文件都成为一个 `/&lt;name&gt;` 命令</td><td><a class="kw" onclick="showKw('动态工作流')" title="点击查看解释">动态工作流</a></td></tr>
+<tr><td><a class="kw" onclick="showKw('agent-memory/&lt;name&gt;/')" title="点击查看解释">agent-memory/&lt;name&gt;/</a></td><td>项目和全局</td><td><span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span></td><td><a class="kw" onclick="showKw('Subagent')" title="点击查看解释">Subagent</a>s 的持久内存</td><td><a class="kw" onclick="showKw('持久内存')" title="点击查看解释">持久内存</a></td></tr>
+<tr><td><a class="kw" onclick="showKw('~/.claude.json')" title="点击查看解释">~/.claude.json</a></td><td>仅全局</td><td></td><td>应用状态、<a class="kw" onclick="showKw('OAuth')" title="点击查看解释">OAuth</a>、UI 切换、个人 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 服务器</td><td><a class="kw" onclick="showKw('全局配置')" title="点击查看解释">全局配置</a></td></tr>
+<p>/memory/`](#ce-global-projects) | 仅全局   |    | 自动内存：Claude 在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>间对自己的笔记                                       | <a class="kw" onclick="showKw('自动内存')" title="点击查看解释">自动内存</a>                                  |</p>
+<tr><td><a class="kw" onclick="showKw('keybindings.json')" title="点击查看解释">keybindings.json</a></td><td>仅全局</td><td></td><td>自定义<a class="kw" onclick="showKw('快捷键')" title="点击查看解释">快捷键</a></td><td><a class="kw" onclick="showKw('快捷键')" title="点击查看解释">快捷键</a></td></tr>
+<tr><td><a class="kw" onclick="showKw('themes/.json')" title="点击查看解释">themes/.json</a></td><td>仅全局</td><td></td><td>自定义颜色主题</td><td><a class="kw" onclick="showKw('自定义主题')" title="点击查看解释">自定义主题</a></td></tr>
+</table></div>
+
+<h3 id="sec-claude-directory-21">排查配置问题</h3>
+
+<p>如果<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>、hook 或文件未生效，请参阅<a class="kw" onclick="showKw('调试您的配置')" title="点击查看解释">调试您的配置</a>以获取检查命令和症状优先查找表。</p>
+
+<h3 id="sec-claude-directory-22">应用数据</h3>
+
+<p>除了您创作的配置外，`~/.claude` 还保存 Claude Code 在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>期间写入的数据。这些文件是纯文本。通过工具传递的任何内容都会在磁盘上的记录中：文件内容、命令输出、粘贴的文本。</p>
+
+<h4 id="sec-claude-directory-23">自动清理</h4>
+
+<p>下面路径中的文件在启动时被删除，一旦它们的年龄超过 <a class="kw" onclick="showKw('cleanupPeriodDays')" title="点击查看解释">cleanupPeriodDays</a>。默认值为 30 天。</p>
+
+<div class='table-wrap'><table>
+<tr><th>`~/.claude/` 下的路径</th><th>内容</th></tr>
+<p>/&lt;session&gt;.jsonl`         | 完整的对话记录：每条消息、工具调用和工具结果                                                                                                        |</p>
+<p>/&lt;session&gt;/subagents/`    | <a class="kw" onclick="showKw('Subagent')" title="点击查看解释">Subagent</a> 对话记录，当父<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>记录过期时被删除                                                                               |</p>
+<p>/&lt;session&gt;/tool-results/` | 大型工具输出溢出到单独的文件                                                                                                                |</p>
+<tr><td>`file-history/&lt;session&gt;/`</td><td>Claude 更改的文件的编辑前快照，用于 <a class="kw" onclick="showKw('checkpoint 恢复')" title="点击查看解释">checkpoint 恢复</a>。保存最近 100 个 checkpoint 的快照；没有保留 checkpoint 引用的快照文件被删除，除了每个文件的第一个快照</td></tr>
+<tr><td>`plans/`</td><td>在 <a class="kw" onclick="showKw('Plan Mode')" title="点击查看解释">Plan Mode</a> 期间写入的计划文件</td></tr>
+<tr><td>`debug/`</td><td>每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的调试日志，仅在您使用 `--debug` 启动或运行 `/debug` 时写入</td></tr>
+<tr><td>`paste-cache/`、`image-cache/`</td><td>大型粘贴和附加图像的内容</td></tr>
+<tr><td>`session-env/`</td><td>每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的环境元数据</td></tr>
+<tr><td>`tasks/`</td><td>由 Task 工具写入的每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的任务列表</td></tr>
+<tr><td>`shell-snapshots/`</td><td>在启动时捕获的别名、函数和 shell 选项，由 <a class="kw" onclick="showKw('Bash 工具')" title="点击查看解释">Bash 工具</a> 应用于每个命令。在正常退出时删除。扫描清理任何在崩溃后留下的内容。</td></tr>
+<tr><td>`backups/`</td><td>在配置迁移前获取的 `~/.claude.json` 的时间戳副本</td></tr>
+<tr><td>`feedback-bundles/`</td><td>由 `/feedback` 在第三方提供商上或当未配置 Anthropic 凭证时写入的编辑后的记录存档，用于发送到您的 Anthropic 账户团队</td></tr>
+<tr><td>`todos/`、`statsig/`、`logs/`</td><td>来自旧版本的旧版目录。不再写入。扫描删除其内容，然后删除空目录。</td></tr>
+</table></div>
+
+<h4 id="sec-claude-directory-24">保留直到您删除它们</h4>
+
+<p>以下路径不受自动清理覆盖，并无限期保留。</p>
+
+<div class='table-wrap'><table>
+<tr><th>`~/.claude/` 下的路径</th><th>内容</th></tr>
+<tr><td>`history.jsonl`</td><td>您输入的每个提示，带有时间戳和项目路径。用于向上箭头回忆。</td></tr>
+<tr><td>`stats-cache.json`</td><td>由 `/usage` 显示的聚合令牌和成本计数</td></tr>
+<tr><td>`remote-<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>`</td><td><a class="kw" onclick="showKw('服务器管理的设置')" title="点击查看解释">服务器管理的设置</a>的缓存副本，用于您的组织。仅在您的组织配置了这些<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>时才存在。在每次启动时刷新。</td></tr>
+</table></div>
+
+<p>其他小缓存和锁定文件根据您使用的功能而出现，可以安全删除。</p>
+
+<h4 id="sec-claude-directory-25">纯文本存储</h4>
+
+<p>记录和历史在静止时未加密。操作系统文件<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>是唯一的保护。如果工具读取 `.env` 文件或命令打印凭证，该值将写入 `projects/</p>
+<p>/&lt;session&gt;.jsonl`。要减少暴露：</p>
+
+<p>* 降低 `cleanupPeriodDays` 以缩短记录的保留时间</p>
+<p>* <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> <a class="kw" onclick="showKw('CLAUDE_CODE_SKIP_PROMPT_HISTORY')" title="点击查看解释">CLAUDE_CODE_SKIP_PROMPT_HISTORY</a> <a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>以跳过在任何模式下写入记录和提示历史。在非<a class="kw" onclick="showKw('交互模式')" title="点击查看解释">交互模式</a>下，您可以改为在 `-p` 旁边传递 `--no-session-persistence`，或在 <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> SDK 中<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> `persist<a class="kw" onclick="showKw('Session')" title="点击查看解释">Session</a>: false`。</p>
+<p>* 使用 <a class="kw" onclick="showKw('权限规则')" title="点击查看解释">权限规则</a> 拒绝读取凭证文件</p>
+
+<h4 id="sec-claude-directory-26">清除本地数据</h4>
+
+<p>运行 `claude project purge` 以删除 Claude Code 为一个项目保存的状态。该命令需要 Claude Code v2.1.124 或更高版本。它删除：</p>
+
+<p>* `projects/` 下的记录和自动内存</p>
+<p>* 每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的 `tasks/`、`debug/` 和 `file-history/` 条目</p>
+<p>* `history.jsonl` 中的匹配提示行</p>
+<p>* `~/.claude.json` 中的项目条目</p>
+
+<p>该命令打印完整的删除计划，并在删除任何内容之前要求确认。</p>
+
+<p>预览计划而不删除任何内容：</p>
+
+<pre><code>
+claude project purge ~/work/my-repo --dry-run
+</code></pre>
+
+<p>通过单个确认提示删除：</p>
+
+<pre><code>
+claude project purge ~/work/my-repo
+</code></pre>
+
+<p>省略路径以从交互式列表中选择项目。</p>
+
+<p>跳过确认提示以在脚本中使用：</p>
+
+<pre><code>
+claude project purge ~/work/my-repo --yes
+</code></pre>
+
+<p>传递 `--all` 而不是路径以一次清除所有项目的状态，这会直接删除 `history.jsonl` 而不是过滤它。传递 `-i` 以逐项逐步执行删除计划。</p>
+
+<p>该命令不理会 `shell-snapshots/` 和 `backups/`，因为这些不是项目范围的，并在计划输出中警告它们。如果没有状态与给定路径匹配，它以状态 1 退出。</p>
+
+<p>您也可以手动删除上面的任何应用数据路径。新<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>不受影响。下表显示您对过去<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>失去的内容。</p>
+
+<div class='table-wrap'><table>
+<tr><th>删除</th><th>您失去</th></tr>
+<tr><td>`~/.claude/projects/`</td><td>恢复、继续和倒回过去的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a></td></tr>
+<tr><td>`~/.claude/history.jsonl`</td><td>向上箭头提示回忆</td></tr>
+<tr><td>`~/.claude/file-history/`</td><td>过去<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的 checkpoint 恢复</td></tr>
+<tr><td>`~/.claude/stats-cache.json`</td><td>由 `/usage` 显示的历史总计</td></tr>
+<tr><td>`~/.claude/remote-<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>`</td><td>无。在下次启动时重新获取。</td></tr>
+<tr><td>`~/.claude/debug/`、`~/.claude/plans/`、`~/.claude/paste-cache/`、`~/.claude/image-cache/`、`~/.claude/session-env/`、`~/.claude/tasks/`、`~/.claude/shell-snapshots/`、`~/.claude/backups/`</td><td>没有面向用户的内容</td></tr>
+<tr><td>`~/.claude/todos/`、`~/.claude/statsig/`、`~/.claude/logs/`</td><td>无。旧版目录不由当前版本写入。</td></tr>
+</table></div>
+
+<p>不要删除 `~/.claude.json`、`~/.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 或 `~/.claude<a class="kw" onclick="showKw('/plugin')" title="点击查看解释">/plugin</a>s/`：这些保存您的身份验证、偏好和已安装的 plugins。</p>
+
+<h3 id="sec-claude-directory-27">相关资源</h3>
+
+<p>* <a class="kw" onclick="showKw('管理 Claude 的内存')" title="点击查看解释">管理 Claude 的内存</a>：编写和组织 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>、rules 和自动内存</p>
+<p>* <a class="kw" onclick="showKw('配置设置')" title="点击查看解释">配置设置</a>：<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a><a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>、hooks、<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>和模型默认值</p>
+<p>* <a class="kw" onclick="showKw('创建 skills')" title="点击查看解释">创建 skills</a>：构建可重用的提示和<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a></p>
+<p>* <a class="kw" onclick="showKw('配置 subagents')" title="点击查看解释">配置 subagents</a>：定义具有自己上下文的专门代理</p>
+
+  </main>
+</div>
+
+<nav class="pager">
+  <a href="claude-code-on-the-web.html"><span class="dir">← 上一篇</span><span class="ptitle">在网络上使用 Claude Code</span></a>
+  <a class="next" href="cli-reference.html"><span class="dir">下一篇 →</span><span class="ptitle">CLI 参考</span></a>
+</nav>
+
+<button class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="返回顶部"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 5l0 14" /> <path d="M18 11l-6 -6" /> <path d="M6 11l6 -6" /> </svg></span></button>
+
+<!-- 关键词解释弹窗 -->
+<div class="kw-panel" id="kwPanel">
+  <div class="kwp-head">
+    <span class="kwp-badge" id="kwpBadge"></span>
+    <span class="kwp-title" id="kwpTitle"></span>
+    <button class="kwp-close" onclick="hideKw()">×</button>
+  </div>
+  <div class="kwp-body">
+    <div class="kwp-desc" id="kwpDesc"></div>
+    <a class="kwp-link" id="kwpLink" target="_blank">阅读完整文档<span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l14 0" /> <path d="M13 18l6 -6" /> <path d="M13 6l6 6" /> </svg></span></a>
+  </div>
+  <div class="kwp-bar-wrap"><div class="kwp-bar" id="kwBar"></div></div>
+</div>
+
+<script>
+function toggleDrawer() {
+  document.getElementById('drawer').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+window.addEventListener('scroll', function() {
+  var st = document.getElementById('scrollTop');
+  st.classList.toggle('show', window.scrollY > 400);
+  var h = document.documentElement.scrollHeight - window.innerHeight;
+  var pct = h > 0 ? (window.scrollY / h * 100) : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+});
+
+// ===== 关键词弹窗逻辑 =====
+const KW_DATA = {"Marketplace": {"doc": "plugin-marketplaces", "title": "创建和分发 plugin marketplace", "desc": "**plugin marketplace** 是一个目录，让你能够将 plugins 分发给他人。Marketplace 提供集中式发现、版本跟踪、自动更新以及对多种源类型（包括 git 存储库和本地路径）的支持。本指南展示了如何创建自己的 marketplace，与你的团队或社区共享 plugins。"}, "市场": {"doc": "plugin-marketplaces", "title": "创建和分发 plugin marketplace", "desc": "**plugin marketplace** 是一个目录，让你能够将 plugins 分发给他人。Marketplace 提供集中式发现、版本跟踪、自动更新以及对多种源类型（包括 git 存储库和本地路径）的支持。本指南展示了如何创建自己的 marketplace，与你的团队或社区共享 plugins。"}, "Plugin": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "插件": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "Skill": {"doc": "skills", "title": "使用 skills 扩展 Claude", "desc": "Skills 扩展了 Claude 能做的事情。创建一个 `SKILL.md` 文件，其中包含说明，Claude 会将其添加到其工具包中。Claude 在相关时使用 skills，或者你可以使用 `/skill-name` 直接调用一个。"}, "技能": {"doc": "skills", "title": "使用 skills 扩展 Claude", "desc": "Skills 扩展了 Claude 能做的事情。创建一个 `SKILL.md` 文件，其中包含说明，Claude 会将其添加到其工具包中。Claude 在相关时使用 skills，或者你可以使用 `/skill-name` 直接调用一个。"}, "Agent": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "Subagent": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "子代理": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "Hook": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "钩子": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "MCP": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "CLI": {"doc": "cli-reference", "title": "CLI 参考", "desc": "CLI 命令"}, "斜杠命令": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "快捷键": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "keybindings": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "权限模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Permission Mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "上下文窗口": {"doc": "context-window", "title": "探索上下文窗口", "desc": "了解 Claude Code 的上下文窗口如何工作：上下文包含哪些内容、如何高效利用、以及自动压缩等机制。"}, "Context Window": {"doc": "context-window", "title": "探索上下文窗口", "desc": "了解 Claude Code 的上下文窗口如何工作：上下文包含哪些内容、如何高效利用、以及自动压缩等机制。"}, "设置": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "环境变量": {"doc": "env-vars", "title": "环境变量", "desc": "环境变量可以控制 Claude Code 的行为，例如模型选择、身份验证、请求路由和功能切换。许多相同的行为也可以通过设置文件字段、CLI 标志或会话内命令（如 `/model`）进行配置。"}, "Environment Variables": {"doc": "env-vars", "title": "环境变量", "desc": "环境变量可以控制 Claude Code 的行为，例如模型选择、身份验证、请求路由和功能切换。许多相同的行为也可以通过设置文件字段、CLI 标志或会话内命令（如 `/model`）进行配置。"}, "记忆": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "Memory": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "会话": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "Session": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "状态栏": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "Statusline": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "CLAUDE.md": {"doc": "claude-directory", "title": "探索 .claude 目录", "desc": "Claude Code 在项目根目录读取的指令文件，每次会话都会加载，用来定义项目约定、常用命令和架构上下文。"}, ".claude 目录": {"doc": "claude-directory", "title": "探索 .claude 目录", "desc": "Claude Code 读取 CLAUDE.md、settings.json、hooks、skills、commands、subagents 等配置的目录结构。"}, "keybindings.json": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "settings.json": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "Prompt caching": {"doc": "prompt-caching", "title": "Claude Code 如何使用 prompt caching", "desc": "Prompt caching 使 Claude Code 更快、更经济高效。没有缓存，API 会在每个回合重新处理您的完整历史记录。有了缓存，它会重用已经处理过的内容，只对更改的部分进行新工作。"}, "提示词缓存": {"doc": "prompt-caching", "title": "Claude Code 如何使用 prompt caching", "desc": "Prompt caching 使 Claude Code 更快、更经济高效。没有缓存，API 会在每个回合重新处理您的完整历史记录。有了缓存，它会重用已经处理过的内容，只对更改的部分进行新工作。"}, "提示词库": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类（理解、计划、原型、构建等），帮助快速上手常见任务。"}, "Prompt library": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类（理解、计划、原型、构建等），帮助快速上手常见任务。"}, "提示词": {"doc": "prompt-library", "title": "提示词库", "desc": "精选的提示词集合，按场景分类，帮助快速上手 Claude Code 常见任务。"}, "auto memory": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "自动记忆": {"doc": "memory", "title": "Claude 如何记住你的项目", "desc": "每个 Claude Code 会话都从一个全新的上下文窗口开始。两种机制可以跨会话传递知识："}, "后台会话": {"doc": "agent-view", "title": "使用 agent view 管理多个代理", "desc": "Agent view 通过 `claude agents` 打开，是所有后台会话的一个屏幕：什么正在运行、什么需要你的输入、什么已完成。调度新会话，一目了然地查看它们的状态而不是滚动浏览记录，只在需要时才介入。每个后台会话都是一个完整的 Claude Code 对话，在没有终端连接的情况下继续运行，所以你可以随时打开它、回复并离开。"}, "代理视图": {"doc": "agent-view", "title": "使用 agent view 管理多个代理", "desc": "Agent view 通过 `claude agents` 打开，是所有后台会话的一个屏幕：什么正在运行、什么需要你的输入、什么已完成。调度新会话，一目了然地查看它们的状态而不是滚动浏览记录，只在需要时才介入。每个后台会话都是一个完整的 Claude Code 对话，在没有终端连接的情况下继续运行，所以你可以随时打开它、回复并离开。"}, "远程控制": {"doc": "remote-control", "title": "使用 Remote Control 从任何设备继续本地会话", "desc": "Remote Control 处于研究预览阶段，在所有计划中都可用。在 Team 和 Enterprise 上，在所有者在 Claude Code 管理员设置中启用 Remote Control 切换之前，它默认处于关闭状态。"}, "Remote Control": {"doc": "remote-control", "title": "使用 Remote Control 从任何设备继续本地会话", "desc": "Remote Control 处于研究预览阶段，在所有计划中都可用。在 Team 和 Enterprise 上，在所有者在 Claude Code 管理员设置中启用 Remote Control 切换之前，它默认处于关闭状态。"}, "计划任务": {"doc": "scheduled-tasks", "title": "按计划运行提示词", "desc": "计划任务让 Claude 按间隔自动重新运行提示词。使用它们来轮询部署、监督 PR、检查长时间运行的构建，或在会话中稍后提醒自己做某事。要对事件进行实时反应而不是轮询，请参阅 Channels：您的 CI 可以直接将失败推送到会话中。要保持会话工作转向转向直到满足条件而不是按间隔，请参阅 `/goal`。"}, "定期任务": {"doc": "desktop-scheduled-tasks", "title": "在 Claude Code Desktop 中安排定期任务", "desc": "定期任务在您选择的时间和频率自动启动新会话。使用它们进行定期工作，如日常代码审查、依赖项更新检查或从您的日历和收件箱中提取信息的早晨简报。"}, "例程": {"doc": "routines", "title": "使用例程自动化工作", "desc": "Routines 处于研究预览阶段。行为、限制和 API 表面可能会改变。"}, "Routines": {"doc": "routines", "title": "使用例程自动化工作", "desc": "Routines 处于研究预览阶段。行为、限制和 API 表面可能会改变。"}, "代码审查": {"doc": "code-review", "title": "Code Review", "desc": "Code Review 处于研究预览阶段，仅适用于 Team 和 Enterprise 订阅。对于启用了 Zero Data Retention 的组织，此功能不可用。"}, "Code Review": {"doc": "code-review", "title": "Code Review", "desc": "Code Review 处于研究预览阶段，仅适用于 Team 和 Enterprise 订阅。对于启用了 Zero Data Retention 的组织，此功能不可用。"}, "检查点": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "Checkpointing": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "工作流": {"doc": "workflows", "title": "使用动态工作流大规模编排子代理", "desc": "动态工作流需要 Claude Code v2.1.154 或更高版本，在所有付费计划上可用，具有 Anthropic API 访问权限，以及在 Amazon Bedrock、Google Cloud 的 Agent Platform 和 Microsoft Foundry 上可用。在 Pro 上，从 `/config` 中的\"Dynamic workflows\"行启用它们。"}, "Workflows": {"doc": "workflows", "title": "使用动态工作流大规模编排子代理", "desc": "动态工作流需要 Claude Code v2.1.154 或更高版本，在所有付费计划上可用，具有 Anthropic API 访问权限，以及在 Amazon Bedrock、Google Cloud 的 Agent Platform 和 Microsoft Foundry 上可用。在 Pro 上，从 `/config` 中的\"Dynamic workflows\"行启用它们。"}, "最佳实践": {"doc": "best-practices", "title": "Claude Code 最佳实践", "desc": "Claude Code 是一个代理式编码环境。与等待回答问题的聊天机器人不同，Claude Code 可以读取你的文件、运行命令、进行更改，并在你观看、重定向或完全离开的情况下自主解决问题。"}, "Best Practices": {"doc": "best-practices", "title": "Claude Code 最佳实践", "desc": "Claude Code 是一个代理式编码环境。与等待回答问题的聊天机器人不同，Claude Code 可以读取你的文件、运行命令、进行更改，并在你观看、重定向或完全离开的情况下自主解决问题。"}, "交互模式": {"doc": "interactive-mode", "title": "交互模式", "desc": "键盘快捷键"}, "交互式模式": {"doc": "interactive-mode", "title": "交互模式", "desc": "键盘快捷键"}, "常见工作流": {"doc": "common-workflows", "title": "常见工作流程", "desc": "本页收集了日常开发的简短工作流程。有关提示和上下文管理的更高级指导，请参阅最佳实践。"}, "JetBrains": {"doc": "jetbrains", "title": "JetBrains IDEs", "desc": "Claude Code 通过专用插件与 JetBrains IDE 集成，提供交互式差异查看、选择上下文共享等功能。"}, "VS Code": {"doc": "vs-code", "title": "在 VS Code 中使用 Claude Code", "desc": "VS Code 扩展为 Claude Code 提供了原生图形界面，直接集成到您的 IDE 中。这是在 VS Code 中使用 Claude Code 的推荐方式。"}, "GitHub Actions": {"doc": "github-actions", "title": "Claude Code GitHub Actions", "desc": "Claude Code GitHub Actions 为您的 GitHub 工作流带来了 AI 驱动的自动化。只需在任何 PR 或 issue 中简单地提及 `@claude`，Claude 就可以分析您的代码、创建拉取请求、实现功能和修复错误 - 所有这些都遵循您项目的标准。如需在每个 PR 上自动发布评论而无需触发器，请参阅 GitHub Code Review。"}, "GitLab CI": {"doc": "gitlab-ci-cd", "title": "Claude Code GitLab CI/CD", "desc": "Claude Code for GitLab CI/CD 目前处于测试阶段。随着我们完善体验，功能和特性可能会发生变化。"}, "桌面应用": {"doc": "desktop", "title": "Desktop application", "desc": "Claude Desktop 应用有三个选项卡：Chat 用于对话，Cowork 用于 Dispatch 和更长的代理工作，Code 用于软件开发。本页是 Code 选项卡的参考。"}, "计划模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Plan mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "自动模式": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "auto mode": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "Accept Edits": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "bypassPermissions": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "权限": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "/plugin": {"doc": "plugins", "title": "创建插件", "desc": "Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。"}, "/mcp": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "/hooks": {"doc": "hooks", "title": "Hooks 参考", "desc": "有关包含示例的快速入门指南，请参阅使用 hooks 自动化工作流。"}, "/agents": {"doc": "sub-agents", "title": "创建自定义 subagents", "desc": "Subagents 是处理特定类型任务的专门 AI 助手。当一个辅助任务会用搜索结果、日志或文件内容充斥您的主对话，而您不会再次引用这些内容时，请使用一个 subagent：该 subagent 在自己的上下文中完成这项工作，仅返回摘要。当您不断生成相同类型的工作者并使用相同的指令时，定义一个自定义 subagent。"}, "/clear": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/compact": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/config": {"doc": "settings", "title": "Claude Code 设置", "desc": "Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `key=value` 来更改单个选项而无需打开界面，例如 `/config verbose=true`。"}, "/resume": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/continue": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/fork": {"doc": "sessions", "title": "管理会话", "desc": "会话是与项目目录关联的已保存对话。Claude Code 在您工作时将其本地存储，因此您可以从中断处恢复、分支以尝试不同的方法，或在任务之间切换。"}, "/checkpoint": {"doc": "checkpointing", "title": "Checkpointing", "desc": "Claude Code 自动跟踪 Claude 在工作时所做的文件编辑，允许您快速撤销更改并回溯到之前的状态，以防任何事情出现偏差。"}, "/cost": {"doc": "commands", "title": "命令", "desc": "命令在会话内控制 Claude Code。它们提供了一种快速的方式来切换模型、管理权限、清除上下文、运行工作流等。"}, "/permissions": {"doc": "permission-modes", "title": "选择权限模式", "desc": "当 Claude 想要编辑文件、运行 shell 命令或发起网络请求时，它会暂停并要求您批准该操作。权限模式控制暂停发生的频率。您选择的模式决定了会话的流程：Manual 模式让您逐个审查每个操作，而更宽松的模式让 Claude 能够进行更长时间的不间断工作，并在完成后报告结果。对于敏感工作选择更多的监督，或在您信任工作方向时选择更少的中断。"}, "/statusline": {"doc": "statusline", "title": "自定义你的状态行", "desc": "状态行是 Claude Code 底部的可自定义栏，可以运行你配置的任何 shell 脚本。它通过 stdin 接收 JSON 会话数据，并显示你的脚本打印的任何内容，为你提供一个持久的、一目了然的上下文使用情况、成本、git 状态或任何其他你想跟踪的内容的视图。"}, "/keybindings": {"doc": "keybindings", "title": "自定义快捷键", "desc": "Claude Code 支持可自定义的快捷键。运行 `/keybindings` 来创建或打开位于 `~/.claude/keybindings.json` 的配置文件。"}, "术语表": {"doc": "glossary", "title": "术语表", "desc": "本术语表定义了 Claude Code 术语。每个条目都链接到深入讨论该概念的页面。对于模型级概念（如 tokens、temperature 和 RAG），请参阅平台术语表。"}, "OAuth": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "MCP server": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "MCP Server": {"doc": "mcp", "title": "通过 MCP 将 Claude Code 连接到工具", "desc": "Claude Code 可以通过 Model Context Protocol (MCP)（一个用于 AI 工具集成的开源标准）连接到数百个外部工具和数据源。MCP 服务器为 Claude Code 提供对您的工具、数据库和 API 的访问权限。"}, "组织设置": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "托管设置": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "服务器托管": {"doc": "admin-setup", "title": "为您的组织设置 Claude Code", "desc": "Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。"}, "快速开始": {"doc": "quickstart", "title": "快速开始", "desc": "本快速开始指南将在几分钟内让您使用 AI 驱动的编码辅助。完成本指南后，您将了解如何使用 Claude Code 完成常见的开发任务。"}, "故障排除": {"doc": "troubleshooting", "title": "故障排除", "desc": "本页涵盖 Claude Code 运行后的性能、稳定性和搜索问题。对于其他问题，请从与您遇到的问题相匹配的页面开始："}, "Troubleshooting": {"doc": "troubleshooting", "title": "故障排除", "desc": "本页涵盖 Claude Code 运行后的性能、稳定性和搜索问题。对于其他问题，请从与您遇到的问题相匹配的页面开始："}, "完整文档": {"doc": "overview", "title": "概述", "desc": "Claude Code 是一个由 AI 驱动的编码助手，可帮助你构建功能、修复错误和自动化开发任务。它理解你的整个代码库，可以跨多个文件和工具工作以完成任务。"}, "概述": {"doc": "overview", "title": "概述", "desc": "Claude Code 是一个由 AI 驱动的编码助手，可帮助你构建功能、修复错误和自动化开发任务。它理解你的整个代码库，可以跨多个文件和工具工作以完成任务。"}};
+  const KW_EXTRA = {"skills": {"doc": "skills", "title": "Skills 技能", "desc": "Claude Code 技能扩展。SKILL.md 提供操作说明，Claude 按需调用完成任务。"}, "Skills": {"doc": "skills", "title": "Skills 技能", "desc": "Claude Code 技能扩展。SKILL.md 提供操作说明，Claude 按需调用完成任务。"}, "skill": {"doc": "skills", "title": "Skill 技能", "desc": "单个技能定义，包含 SKILL.md 说明文件，供 Claude 按需调用。"}, "Hooks": {"doc": "hooks", "title": "Hooks 钩子", "desc": "生命周期钩子。在 Claude Code 操作前后自动运行脚本，如格式化、lint。"}, "hooks": {"doc": "hooks", "title": "Hooks 钩子", "desc": "生命周期钩子。在 Claude Code 操作前后自动运行脚本，如格式化、lint。"}, "hook": {"doc": "hooks", "title": "Hook 钩子", "desc": "单个钩子，监听事件并在操作前后执行命令。"}, "hook 事件": {"doc": "hooks", "title": "Hook 事件", "desc": "钩子可监听的事件，如 PreToolUse、SessionStart 等。"}, "Subagents": {"doc": "sub-agents", "title": "Subagents 子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行，只返回摘要。"}, "subagents": {"doc": "sub-agents", "title": "子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行。"}, "subagent": {"doc": "sub-agents", "title": "子代理", "desc": "处理特定类型任务的专门 AI 助手，独立上下文运行。"}, "agent team": {"doc": "agents", "title": "Agent team 代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "agent teams": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "Agent teams": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "代理团队": {"doc": "agents", "title": "代理团队", "desc": "多个代理协作组成的团队，协同完成复杂任务。"}, "Plugins": {"doc": "plugins", "title": "Plugins 插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包，可共享给团队。"}, "plugins": {"doc": "plugins", "title": "插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包。"}, "plugin": {"doc": "plugins", "title": "插件", "desc": "打包 skills、agents、hooks、MCP 服务器的扩展包。"}, "MCP servers": {"doc": "mcp", "title": "MCP 服务器", "desc": "通过 Model Context Protocol 连接外部工具与数据源的服务器。"}, "MCP 服务器": {"doc": "mcp", "title": "MCP 服务器", "desc": "通过 Model Context Protocol 连接外部工具与数据源的服务器。"}, "Amazon Bedrock": {"doc": "third-party-integrations", "title": "Amazon Bedrock", "desc": "AWS 托管 AI 平台，可运行 Claude 模型并接入 Claude Code。"}, "Microsoft Foundry": {"doc": "third-party-integrations", "title": "Microsoft Foundry", "desc": "微软云 AI 平台，提供模型托管服务，支持 Claude Code 接入。"}, "Claude apps gateway": {"doc": "desktop", "title": "Claude apps gateway", "desc": "Anthropic 官方网关，管理桌面端与网络服务的连接。"}, "Agent SDK": {"doc": "agent-sdk_overview", "title": "Claude Agent SDK", "desc": "官方工具包，用于以编程方式构建和集成 Claude Code 代理。"}, "动态工作流": {"doc": "workflows", "title": "动态工作流", "desc": "通过 JSON/JS 定义步骤，让 Claude 编排子代理执行复杂任务。"}, "LLM 网关": {"doc": "third-party-integrations", "title": "LLM 网关", "desc": "大模型网关，统一路由、代理和管控 LLM API 请求的中间层。"}, "自动内存": {"doc": "memory", "title": "自动内存", "desc": "自动将重要信息写入记忆文档，跨会话保持上下文连续。"}, "Slack": {"doc": "slack", "title": "Slack", "desc": "协作平台。可通过 Claude Code 集成在 Slack 中运行 AI 代理。"}, "Dispatch": {"doc": "desktop", "title": "Dispatch", "desc": "桌面应用功能，将任务分派给代理在后台执行。"}, "Desktop": {"doc": "desktop", "title": "桌面应用", "desc": "Claude Code 桌面应用，提供 Chat、Cowork、Code 图形界面。"}, "Channels": {"doc": "channels", "title": "Channels 频道", "desc": "将 Claude Code 会话接入 Telegram、Discord 等平台的插件系统。"}, "Sandboxing": {"doc": "settings", "title": "沙箱", "desc": "限制 Bash 工具访问范围的安全隔离机制。"}, "沙箱": {"doc": "settings", "title": "沙箱", "desc": "限制工具文件系统访问的安全隔离环境。"}, "非交互模式": {"doc": "cli-reference", "title": "非交互模式", "desc": "通过 -p 参数在脚本中无交互运行 Claude Code，适合自动化。"}, "快速模式": {"doc": "settings", "title": "快速模式", "desc": "提高速率限制的付费模式，响应速度更快。"}, "Plan Mode": {"doc": "permission-modes", "title": "计划模式", "desc": "只分析不执行，先产出修改方案供确认再动手。"}, "Auto mode": {"doc": "permission-modes", "title": "自动模式", "desc": "自动批准低风险操作，减少交互打断，提升效率。"}, "状态行": {"doc": "statusline", "title": "状态行", "desc": "可自定义的底部状态栏，显示上下文、成本等信息。"}, "工具搜索": {"doc": "mcp", "title": "MCP 工具搜索", "desc": "让 Claude 按需搜索并发现更多 MCP 工具，扩展能力。"}, "扩展思考": {"doc": "common-workflows", "title": "扩展思考", "desc": "让 Claude 回答前进行更深入的多步推理，提升复杂问题准确率。"}, "计算机使用": {"doc": "computer-use", "title": "计算机使用", "desc": "让 Claude 控制屏幕、操作应用的实验性功能。"}, "云会话": {"doc": "claude-code-on-the-web", "title": "云会话", "desc": "在 Anthropic 云端运行的 Claude Code 会话。"}, "第三方提供商": {"doc": "third-party-integrations", "title": "第三方提供商", "desc": "通过兼容 API 使用非 Anthropic 模型的服务商。"}, "身份验证": {"doc": "settings", "title": "身份验证", "desc": "Claude Code 登录与凭证验证机制。"}, "网络配置": {"doc": "settings", "title": "网络配置", "desc": "Claude Code 访问网络端点与代理的设置。"}, "语音听写": {"doc": "desktop", "title": "语音听写", "desc": "通过语音转文字向 Claude 下达指令。"}, "权限规则": {"doc": "permission-modes", "title": "权限规则", "desc": "定义允许、询问、拒绝操作的规则。"}, "输出样式": {"doc": "settings", "title": "输出样式", "desc": "自定义 Claude 回复格式的样式文件。"}, "工作量级别": {"doc": "settings", "title": "工作量级别", "desc": "控制模型推理深度的设置。"}, "努力级别": {"doc": "settings", "title": "努力级别", "desc": "控制模型推理深度的设置。"}, "Worktrees": {"doc": "common-workflows", "title": "Git worktree", "desc": "Git 并行工作树，支持多会话同时开发互不干扰。"}, "git worktree": {"doc": "common-workflows", "title": "Git worktree", "desc": "Git 并行工作树，支持多会话同时开发互不干扰。"}, "后台代理": {"doc": "agent-view", "title": "后台代理", "desc": "在后台运行、无需终端连接的 Claude Code 会话。"}, "自动修复": {"doc": "github-actions", "title": "自动修复", "desc": "Claude 自动修复 PR 或代码问题并提交。"}, "顾问工具": {"doc": "code-review", "title": "顾问工具", "desc": "提供代码审查建议的辅助工具。"}, "SSH": {"doc": "remote-control", "title": "SSH", "desc": "安全外壳协议，用于远程连接与加密通信。"}, "连接器": {"doc": "channels", "title": "连接器", "desc": "Claude 连接外部工具和数据源的官方集成。"}, "Artifact": {"doc": "desktop", "title": "Artifact 工件", "desc": "Claude 生成的可共享成果物。"}, "管理会话": {"doc": "sessions", "title": "会话管理", "desc": "保存、恢复、分叉 Claude Code 对话。"}, "命令参考": {"doc": "commands", "title": "命令参考", "desc": "Claude Code 斜杠命令的说明文档。"}, "插件参考": {"doc": "plugins-reference", "title": "插件参考", "desc": "插件组件与配置的参考文档。"}, "自适应推理": {"doc": "settings", "title": "自适应推理", "desc": "根据任务难度动态调整模型推理强度。"}, "环境缓存": {"doc": "settings", "title": "环境缓存", "desc": "缓存已验证的脚本环境，加快工具执行。"}, "扩展上下文": {"doc": "context-window", "title": "扩展上下文", "desc": "增大上下文窗口容量，处理更长内容。"}, "内置命令": {"doc": "commands", "title": "内置命令", "desc": "Claude Code 自带的斜杠命令。"}, "权限设置": {"doc": "permission-modes", "title": "权限设置", "desc": "控制 Claude 操作权限的配置。"}, "环境": {"doc": "env-vars", "title": "环境", "desc": "影响 Claude Code 运行的系统环境配置。"}, "Chrome": {"doc": "chrome", "title": "Chrome 扩展", "desc": "Claude in Chrome 浏览器扩展，在网页中调用 Claude。"}, "iOS": {"doc": "desktop", "title": "iOS 应用", "desc": "Claude 移动端应用，支持远程控制与推送。"}, "Android": {"doc": "desktop", "title": "Android 应用", "desc": "Claude 移动端应用，支持远程控制与推送。"}, "网页": {"doc": "claude-code-on-the-web", "title": "Claude Code 网页版", "desc": "在浏览器中使用的 Claude Code，无需安装 CLI，登录即用。"}, "GitLab": {"doc": "gitlab-ci-cd", "title": "GitLab", "desc": "代码托管平台。可通过 GitLab CI/CD 集成 Claude Code 实现自动化。"}, "CI/CD": {"doc": "github-actions", "title": "CI/CD", "desc": "持续集成/持续交付，自动化完成构建、测试和部署的流水线。"}, "终端 CLI": {"doc": "cli-reference", "title": "终端 CLI", "desc": "命令行界面工具，在终端中直接运行 Claude Code 管理项目。"}, "终端指南": {"doc": "overview", "title": "终端指南", "desc": "终端基础使用入门，介绍如何用命令行操作 Claude Code。"}, "Claude Console": {"doc": "overview", "title": "Anthropic 控制台", "desc": "Anthropic 官方控制台，管理 API 密钥、查看用量和账单。"}, "Claude 订阅": {"doc": "overview", "title": "Claude 订阅", "desc": "Claude 付费套餐（Pro/Max/Team/Enterprise），解锁全部功能。"}, "支持的云提供商": {"doc": "third-party-integrations", "title": "支持的云提供商", "desc": "Amazon Bedrock、Google Cloud 等可托管并运行 Claude 模型的云平台。"}, "凭证管理": {"doc": "settings", "title": "凭证管理", "desc": "管理 API 密钥、登录凭证和身份验证的机制。"}, "Git for Windows": {"doc": "settings", "title": "Git for Windows", "desc": "Windows 版 Git，安装后 Claude Code 可使用 Bash 工具。"}, "Discord": {"doc": "channels", "title": "Discord", "desc": "社区平台。可通过 Channels 插件在 Discord 中使用 Claude Code。"}, "所有界面": {"doc": "overview", "title": "所有界面", "desc": "Claude Code 的多种使用方式：终端、IDE、桌面应用、网页等。"}, "Amazon Bedrock、Google Cloud 的 Agent Platform 或 Microsoft Foundry": {"doc": "third-party-integrations", "title": "三大云平台", "desc": "AWS、谷歌云、微软云三大平台，均可托管 Claude 模型接入 Claude Code。"}, "Claude Pro、Max、Team 或 Enterprise": {"doc": "overview", "title": "Claude 订阅套餐", "desc": "Claude 的付费订阅层级，提供不同额度的模型访问与功能。"}, "Troubleshoot installation": {"doc": "troubleshoot-install", "title": "安装故障排除", "desc": "安装 Claude Code 出错时的排查指南与替代安装方法。"}, "终端": {"doc": "cli-reference", "title": "终端", "desc": "命令行环境，Claude Code 的主要使用场景。"}, "GitHub Actions": {"doc": "github-actions", "title": "GitHub Actions", "desc": "GitHub 的 CI/CD 自动化平台，可集成 Claude Code 自动审查和修复。"}, "JetBrains IDE": {"doc": "jetbrains", "title": "JetBrains IDE", "desc": "JetBrains 系列 IDE（IDEA、PyCharm 等）的 Claude Code 插件。"}, "apt, dnf, or apk": {"doc": "setup", "title": "Linux 包管理器", "desc": "Linux 包管理器：apt 用于 Debian/Ubuntu，dnf 用于 Fedora。"}, "CLI 参考": {"doc": "cli-reference", "title": "CLI 参考", "desc": "Claude Code 命令行参考，列出全部命令、参数与用法。"}};
+let kwTimer = null;
+function showKw(kw) {
+  const d = KW_DATA[kw] || KW_EXTRA[kw];
+  if (!d) {
+    document.getElementById('kwpBadge').textContent = kw;
+    document.getElementById('kwpTitle').textContent = kw;
+    document.getElementById('kwpDesc').textContent = '暂无该词条详细解释，可前往官方文档查阅。';
+    document.getElementById('kwpLink').style.display = 'none';
+    const panel = document.getElementById('kwPanel');
+    panel.style.width = '320px';
+    panel.classList.add('open');
+    const bar = document.getElementById('kwBar');
+    bar.style.transition = 'none';
+    bar.style.width = '100%';
+    void bar.offsetWidth;
+    bar.style.transition = 'width 4s linear';
+    bar.style.width = '0%';
+    clearTimeout(kwTimer);
+    kwTimer = setTimeout(hideKw, 4000);
+    return;
+  }
+  document.getElementById('kwpBadge').textContent = kw;
+  document.getElementById('kwpTitle').textContent = d.title;
+  document.getElementById('kwpDesc').textContent = d.desc;
+  var _kwpPfx = location.pathname.indexOf('/doc/') !== -1 || location.pathname.endsWith('/doc/') ? '' : 'doc/';
+  document.getElementById('kwpLink').style.display = '';
+  document.getElementById('kwpLink').href = _kwpPfx + d.doc + '.html';
+  // 弹窗宽度随内容自适应（280-480px）
+  const panel = document.getElementById('kwPanel');
+  const estW = Math.min(480, Math.max(300, 280 + d.desc.length * 0.5));
+  panel.style.width = estW + 'px';
+  // 进度条时长按文本长度：每55字1秒，限4-14秒
+  const dur = Math.min(14, Math.max(4, Math.round(d.desc.length / 55)));
+  panel.classList.add('open');
+  // 重置进度条动画
+  const bar = document.getElementById('kwBar');
+  bar.style.transition = 'none';
+  bar.style.width = '100%';
+  void bar.offsetWidth;
+  bar.style.transition = 'width ' + dur + 's linear';
+  bar.style.width = '0%';
+  clearTimeout(kwTimer);
+  kwTimer = setTimeout(hideKw, dur * 1000);
+}
+function hideKw() {
+  document.getElementById('kwPanel').classList.remove('open');
+  clearTimeout(kwTimer);
+}
+
+// ===== 错误汇报 =====
+function openRpt() {
+  var page = location.pathname.split('/').pop() || 'index.html';
+  document.getElementById('rptPage').textContent = page;
+  document.getElementById('rptDesc').value = '';
+  document.getElementById('rptContact').value = '';
+  document.getElementById('rptForm').style.display = '';
+  document.getElementById('rptOk').style.display = 'none';
+  document.getElementById('rptOverlay').classList.add('show');
+}
+function closeRpt() {
+  document.getElementById('rptOverlay').classList.remove('show');
+}
+function submitRpt() {
+  var desc = document.getElementById('rptDesc').value.trim();
+  if (!desc) { document.getElementById('rptDesc').focus(); return; }
+  var btn = document.getElementById('rptBtn');
+  btn.disabled = true; btn.textContent = '提交中...';
+  var payload = {
+    page: document.getElementById('rptPage').textContent,
+    desc: desc,
+    contact: document.getElementById('rptContact').value.trim(),
+    time: new Date().toLocaleString('zh-CN', {hour12:false}),
+    user_agent: navigator.userAgent
+  };
+  fetch('/api/report', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  }).then(function(r){ return r.json(); }).then(function(d) {
+    btn.disabled = false; btn.textContent = '提交汇报';
+    document.getElementById('rptForm').style.display = 'none';
+    document.getElementById('rptOk').style.display = 'block';
+    setTimeout(closeRpt, 1800);
+  }).catch(function(e) {
+    btn.disabled = false; btn.textContent = '提交汇报';
+    alert('汇报失败，请重试：' + e);
+  });
+}
+</script>
+<!-- 错误汇报弹窗 -->
+<div class="rpt-overlay" id="rptOverlay" onclick="if(event.target===this)closeRpt()">
+  <div class="rpt-modal">
+    <div class="rpt-head">
+      <span class="rpt-title"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9 9v-1a3 3 0 0 1 6 0v1" /> <path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /> <path d="M3 13l4 0" /> <path d="M17 13l4 0" /> <path d="M12 20l0 -6" /> <path d="M4 19l3.35 -2" /> <path d="M20 19l-3.35 -2" /> <path d="M4 7l3.75 2.4" /> <path d="M20 7l-3.75 2.4" /> </svg></span> 文档有误？向服务器汇报！</span>
+      <button class="rpt-close" onclick="closeRpt()">×</button>
+    </div>
+    <div class="rpt-body" id="rptForm">
+      <div class="rpt-field">
+        <label>问题页面</label>
+        <div class="rpt-page" id="rptPage"></div>
+      </div>
+      <div class="rpt-field">
+        <label>问题描述</label>
+        <textarea id="rptDesc" placeholder="请描述你发现的问题：哪个词错了？哪里跳转不对？内容过时了？"></textarea>
+      </div>
+      <div class="rpt-field">
+        <label>联系方式（选填）</label>
+        <input id="rptContact" type="text" placeholder="QQ号 / 邮箱等，方便反馈处理结果">
+      </div>
+      <div class="rpt-tip">提交后内容会发送到服务器 reports/ 目录，管理员会尽快处理喵~</div>
+      <button class="rpt-submit" id="rptBtn" onclick="submitRpt()">提交汇报</button>
+    </div>
+    <div class="rpt-ok" id="rptOk" style="display:none;">
+      <div class="rpt-ok-icon"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span></div>
+      <div class="rpt-ok-title">汇报成功！</div>
+      <div class="rpt-ok-desc">感谢主人的反馈，问题已记录到服务器</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
