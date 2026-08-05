@@ -105,7 +105,7 @@ def _call_llm(user_msg, history=None):
     body = json.dumps({
         "model": DEEPSEEK_MODEL,
         "messages": messages,
-        "max_tokens": 2000,
+        "max_tokens": 4096,
         "temperature": 0.7
     }).encode("utf-8")
     req = urllib.request.Request(DEEPSEEK_URL, data=body, headers={
