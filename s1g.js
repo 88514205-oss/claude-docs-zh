@@ -371,8 +371,11 @@
       body: JSON.stringify(body)
     })
       .then(function (r) { return r.json(); })
-      .then(function (d) { cb(null, d.reply || d.error || "喵……没有收到回复"); })
-      .catch(function (err) { cb(err); });
+      .then(function (d) {
+        if (d.error) { cb(null, "喵～LLM错误，你可以再发一遍或者联系管理员"); }
+        else { cb(null, d.reply || "喵……没有收到回复"); }
+      })
+      .catch(function (err) { cb("喵～LLM错误，你可以再发一遍或者联系管理员"); });
   }
   function sendChat(text) {
     if (!text.trim()) return;
@@ -381,7 +384,7 @@
     setThinking(true);
     sendToAPI("/api/s1g/chat", { text: text, history: history.slice(-8) }, function (err, reply) {
       setThinking(false);
-      if (err) { addMsg("bot", "喵呜……连接失败：" + err.message); return; }
+      if (err) { addMsg("bot", err); return; }
       typewriteMsg(reply);
       history.push({ role: "assistant", content: reply });
     });
@@ -474,7 +477,7 @@
     setThinking(true);
     sendToAPI("/api/s1g/ask", { text: text }, function (err, reply) {
       setThinking(false);
-      if (err) { addMsg("bot", "喵呜……连接失败：" + err.message); return; }
+      if (err) { addMsg("bot", err); return; }
       typewriteMsg(reply);
     });
   }

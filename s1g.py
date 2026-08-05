@@ -75,7 +75,10 @@ def ask(selected_text, user_question=""):
     user_msg += f"\n检索到的相关文档：\n{context}"
 
     # 5. 调用 LLM
-    return _call_llm(user_msg)
+    reply = _call_llm(user_msg)
+    if reply is None:
+        return {"error": "LLM_ERROR"}
+    return reply
 
 def chat(user_message, history=None):
     """普通聊天（带历史）"""
@@ -88,7 +91,10 @@ def chat(user_message, history=None):
     user_msg = user_message
     if context:
         user_msg = f"用户问题：{user_message}\n\n相关文档参考：\n{context}"
-    return _call_llm(user_msg, history)
+    reply = _call_llm(user_msg, history)
+    if reply is None:
+        return {"error": "LLM_ERROR"}
+    return reply
 
 def _call_llm(user_msg, history=None):
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
@@ -110,7 +116,8 @@ def _call_llm(user_msg, history=None):
             data = json.loads(resp.read().decode("utf-8"))
             return data["choices"][0]["message"]["content"].strip()
     except Exception as e:
-        return f"喵呜……S1g 连接模型失败啦：{e}"
+        print(f"[S1g] LLM调用失败: {e}")
+        return None
 
 if __name__ == "__main__":
     # 测试

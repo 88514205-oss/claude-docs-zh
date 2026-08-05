@@ -61,15 +61,19 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 data = json.loads(raw.decode("utf-8"))
                 text = data.get("text", "")
                 reply = s1g.ask(text)
+                if isinstance(reply, dict):
+                    reply = {"error": "LLM错误，你可以再发一遍或者联系管理员"}
+                else:
+                    reply = {"reply": reply}
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.end_headers()
-                self.wfile.write(json.dumps({"reply": reply}, ensure_ascii=False).encode("utf-8"))
+                self.wfile.write(json.dumps(reply, ensure_ascii=False).encode("utf-8"))
             except Exception as e:
                 self.send_response(500)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.end_headers()
-                self.wfile.write(json.dumps({"error": str(e)}, ensure_ascii=False).encode("utf-8"))
+                self.wfile.write(json.dumps({"error": "LLM错误，你可以再发一遍或者联系管理员"}, ensure_ascii=False).encode("utf-8"))
         elif self.path == "/api/s1g/chat":
             try:
                 length = int(self.headers.get("Content-Length", 0))
@@ -78,15 +82,19 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 text = data.get("text", "")
                 history = data.get("history", [])
                 reply = s1g.chat(text, history)
+                if isinstance(reply, dict):
+                    reply = {"error": "LLM错误，你可以再发一遍或者联系管理员"}
+                else:
+                    reply = {"reply": reply}
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.end_headers()
-                self.wfile.write(json.dumps({"reply": reply}, ensure_ascii=False).encode("utf-8"))
+                self.wfile.write(json.dumps(reply, ensure_ascii=False).encode("utf-8"))
             except Exception as e:
                 self.send_response(500)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.end_headers()
-                self.wfile.write(json.dumps({"error": str(e)}, ensure_ascii=False).encode("utf-8"))
+                self.wfile.write(json.dumps({"error": "LLM错误，你可以再发一遍或者联系管理员"}, ensure_ascii=False).encode("utf-8"))
         else:
             self.send_response(404)
             self.end_headers()
