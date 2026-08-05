@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 并行运行代理
 
 > 比较 Claude Code 同时处理多个任务的方式：子代理、代理视图、代理团队和动态工作流。

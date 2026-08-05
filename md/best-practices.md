@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # Claude Code 最佳实践
 
 > 从配置环境到跨并行会话扩展，充分利用 Claude Code 的提示和模式。

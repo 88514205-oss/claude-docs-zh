@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # Agent SDK 概览
 
 > 使用 Claude Code 作为库构建生产级 AI 代理

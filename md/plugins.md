@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 创建插件
 
 > 创建自定义插件以使用 skills、agents、hooks 和 MCP servers 扩展 Claude Code。

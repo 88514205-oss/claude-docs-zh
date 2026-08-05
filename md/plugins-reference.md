@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # Plugins 参考
 
 > Claude Code 插件系统的完整技术参考，包括架构、CLI 命令和组件规范。

@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 连接到 MCP 服务器
 
 > 将 MCP 服务器添加到 Claude Code，验证连接，并在磁盘上找到配置。

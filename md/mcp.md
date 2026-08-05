@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 通过 MCP 将 Claude Code 连接到工具
 
 > 了解如何使用 Model Context Protocol 将 Claude Code 连接到您的工具。

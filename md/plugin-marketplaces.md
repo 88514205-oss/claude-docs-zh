@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 创建和分发 plugin marketplace
 
 > 构建和托管 plugin marketplace，以在团队和社区中分发 Claude Code 扩展。

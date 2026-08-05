@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 在网络上使用 Claude Code
 
 > 配置云环境、设置脚本、网络访问和 Docker，在 Anthropic 的沙箱中运行。使用 `--cloud` 和 `--teleport` 在网络和终端之间移动会话。

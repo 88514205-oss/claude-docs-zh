@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 最新动态
 
 > Claude Code 功能的每周摘要，包含代码片段、演示和背景信息，说明为什么这些功能很重要。

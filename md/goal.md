@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 让 Claude 朝着目标工作
 
 > 使用 /goal 设置完成条件，Claude 会在多个回合中持续工作，直到条件满足。

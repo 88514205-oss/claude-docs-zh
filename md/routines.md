@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 使用例程自动化工作
 
 > 让 Claude Code 自动运行。定义在计划上运行、通过 API 调用触发或对来自 Anthropic 管理的云基础设施的 GitHub 事件做出反应的例程。

@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 企业部署概览
 
 > 了解 Claude Code 如何与各种第三方服务和基础设施集成，以满足企业部署需求。

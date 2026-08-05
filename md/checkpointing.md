@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # Checkpointing
 
 > 跟踪、回溯和总结 Claude 的编辑和对话以管理会话状态。

@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 开始使用桌面应用
 
 > 在桌面上安装 Claude Code 并开始您的第一个编码会话

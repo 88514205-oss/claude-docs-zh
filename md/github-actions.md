@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # Claude Code GitHub Actions
 
 > 了解如何将 Claude Code 集成到您的开发工作流中，使用 Claude Code GitHub Actions

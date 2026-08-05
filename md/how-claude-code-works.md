@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # Claude Code 如何工作
 
 > 了解代理循环、内置工具以及 Claude Code 如何与您的项目交互。

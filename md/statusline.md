@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 自定义你的状态行
 
 > 配置自定义状态栏以监控 Claude Code 中的上下文窗口使用情况、成本和 git 状态

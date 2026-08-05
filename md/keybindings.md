@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 自定义快捷键
 
 > 使用快捷键配置文件在 Claude Code 中自定义快捷键。

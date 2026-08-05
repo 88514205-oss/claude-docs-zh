@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 配置权限
 
 > 通过细粒度权限规则、模式和托管策略来控制 Claude Code 可以访问和执行的操作。

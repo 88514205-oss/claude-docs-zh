@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # CLI 参考
 
 > Claude Code 命令行界面的完整参考，包括命令和标志。

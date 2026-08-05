@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 排查安装和登录问题
 
 > 修复安装或登录 Claude Code 时出现的命令未找到、PATH、权限、网络和身份验证错误。

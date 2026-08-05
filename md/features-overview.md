@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 扩展 Claude Code
 
 > 了解何时使用 CLAUDE.md、Skills、subagents、hooks、MCP 和 plugins。

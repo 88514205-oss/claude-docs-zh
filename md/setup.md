@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 高级设置
 
 > Claude Code 的系统要求、特定平台安装、版本管理和卸载。

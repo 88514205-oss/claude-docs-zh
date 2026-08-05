@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 选择权限模式
 
 > 控制 Claude 在编辑文件或运行命令前是否需要征求您的同意。在 CLI 中使用 Shift+Tab 循环切换模式，或在 VS Code、Desktop 和 claude.ai 中使用模式选择器。

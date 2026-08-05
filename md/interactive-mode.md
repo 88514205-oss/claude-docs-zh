@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 交互模式
 
 > Claude Code 会话中键盘快捷键、输入模式和交互功能的完整参考。

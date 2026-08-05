@@ -1,7 +1,3 @@
-> ## Documentation Index
-> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
-> Use this file to discover all available pages before exploring further.
-
 # 通过市场发现和安装预构建插件
 
 > 从市场发现和安装插件，以使用新 skills、agents 和功能扩展 Claude Code。
