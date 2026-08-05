@@ -176,6 +176,11 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
   </nav>
   <div style="margin:14px 20px 6px;font-size:12px;color:var(--muted);letter-spacing:1px;">本文目录</div>
   <a href="#sec-context-window-1" style="padding-left:0px;font-size:13px;">探索上下文窗口</a>
+<a href="#sec-context-window-2" style="padding-left:14px;font-size:13.5px;">时间线显示的内容</a>
+<a href="#sec-context-window-3" style="padding-left:14px;font-size:13.5px;">压缩后保留的内容</a>
+<a href="#sec-context-window-4" style="padding-left:14px;font-size:13.5px;">当您的上下文填满时</a>
+<a href="#sec-context-window-5" style="padding-left:14px;font-size:13.5px;">检查您自己的会话</a>
+<a href="#sec-context-window-6" style="padding-left:14px;font-size:13.5px;">相关资源</a>
 </aside>
 <div class="overlay" id="overlay" onclick="closeDrawer()"></div>
 
@@ -183,12 +188,74 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
   <aside class="toc-side">
     <h3>本文目录</h3>
     <a href="#sec-context-window-1" style="padding-left:0px;font-size:13px;">探索上下文窗口</a>
+<a href="#sec-context-window-2" style="padding-left:14px;font-size:13.5px;">时间线显示的内容</a>
+<a href="#sec-context-window-3" style="padding-left:14px;font-size:13.5px;">压缩后保留的内容</a>
+<a href="#sec-context-window-4" style="padding-left:14px;font-size:13.5px;">当您的上下文填满时</a>
+<a href="#sec-context-window-5" style="padding-left:14px;font-size:13.5px;">检查您自己的会话</a>
+<a href="#sec-context-window-6" style="padding-left:14px;font-size:13.5px;">相关资源</a>
   </aside>
 
   <main class="article">
     <h2 id="sec-context-window-1">探索上下文窗口</h2>
 
 <blockquote>Claude Code 上下文窗口在会话期间如何填充的交互式模拟。查看自动加载的内容、每个文件读取的成本以及规则和 hooks 何时触发。</blockquote>
+
+<p>Claude Code 的<a class="kw" onclick="showKw('上下文窗口')" title="点击查看解释">上下文窗口</a>包含 Claude 在您的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中了解的所有内容：您的指令、它读取的文件、它自己的响应以及从不在您的终端中出现的内容。下面的时间线展示了从启动到压缩的完整<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>：在您输入之前加载的内容、每个文件读取、规则和 hook 在 Claude 工作时添加的内容，以及<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>如何将大型读取保留在您的上下文之外。有关相同内容的列表形式，请参阅<a class="kw" onclick="showKw('书面分解')" title="点击查看解释">书面分解</a>。</p>
+
+<h3 id="sec-context-window-2">时间线显示的内容</h3>
+
+<p>该<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>通过具有代表性的令牌计数演示了一个现实的流程：</p>
+
+<p>* **在您输入任何内容之前**：<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>、自动内存、<a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 工具名称和<a class="kw" onclick="showKw('技能')" title="点击查看解释">技能</a>描述都加载到上下文中。您自己的<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>可能会在此处添加更多内容，例如<a class="kw" onclick="showKw('输出样式')" title="点击查看解释">输出样式</a>或来自 <a class="kw" onclick="showKw('--append-system-prompt')" title="点击查看解释">--append-system-prompt</a> 的文本，两者都以相同的方式进入系统提示。</p>
+<p>* **当 Claude 工作时**：每个文件读取都会添加到上下文中，<a class="kw" onclick="showKw('路径范围的规则')" title="点击查看解释">路径范围的规则</a>会自动与匹配的文件一起加载，并且<a class="kw" onclick="showKw('PostToolUse hook')" title="点击查看解释">PostToolUse hook</a>在每次编辑后触发。</p>
+<p>* **后续提示**：<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>在其自己的单独<a class="kw" onclick="showKw('上下文窗口')" title="点击查看解释">上下文窗口</a>中处理研究，因此大文件读取不会进入您的窗口。只有摘要和一个小的元数据预告片返回。</p>
+<p>* **最后**：`<a class="kw" onclick="showKw('/compact')" title="点击查看解释">/compact</a>` 用结构化摘要替换对话。大多数启动内容会自动重新加载；下表显示了每个机制会发生什么。</p>
+
+<h3 id="sec-context-window-3">压缩后保留的内容</h3>
+
+<p>当长<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>压缩时，Claude Code 会总结对话历史以适应<a class="kw" onclick="showKw('上下文窗口')" title="点击查看解释">上下文窗口</a>。从 v2.1.198 开始，总结请求继承您<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的<a class="kw" onclick="showKw('扩展思考')" title="点击查看解释">扩展思考</a>配置，因此当您的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>启用思考时，它会在启用思考的情况下进行推理，否则保持关闭。思考仅影响摘要的生成方式；您的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a><a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>之后保持不变。您的指令会发生什么取决于它们的加载方式：</p>
+
+<div class='table-wrap'><table>
+<tr><th>机制</th><th>压缩后</th></tr>
+<tr><td>系统提示和输出样式</td><td>不变；不是消息历史的一部分</td></tr>
+<tr><td>项目根目录 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 和无范围规则</td><td>从磁盘重新注入</td></tr>
+<tr><td>自动内存</td><td>从磁盘重新注入</td></tr>
+<tr><td>带有 `paths:` frontmatter 的规则</td><td>丢失，直到再次读取匹配的文件</td></tr>
+<tr><td>子目录中的嵌套 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a></td><td>丢失，直到再次读取该子目录中的文件</td></tr>
+<tr><td>调用的<a class="kw" onclick="showKw('技能')" title="点击查看解释">技能</a>主体</td><td>重新注入，每个<a class="kw" onclick="showKw('技能')" title="点击查看解释">技能</a>上限为 5,000 个令牌，总计 25,000 个令牌；最旧的首先删除</td></tr>
+<tr><td><a class="kw" onclick="showKw('Hook')" title="点击查看解释">Hook</a>s</td><td>不适用；hooks 作为代码运行，不是上下文</td></tr>
+</table></div>
+
+<p>路径范围的规则和嵌套的 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 文件在读取其触发文件时加载到消息历史中，因此压缩会将它们与其他所有内容一起总结。下次 Claude 读取匹配的文件时，它们会重新加载。如果规则必须在压缩过程中保持不变，请删除 `paths:` frontmatter 或将其移动到项目根目录 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>。</p>
+
+<p><a class="kw" onclick="showKw('技能')" title="点击查看解释">技能</a>主体在压缩后重新注入，但大型<a class="kw" onclick="showKw('技能')" title="点击查看解释">技能</a>会被截断以适应每个<a class="kw" onclick="showKw('技能')" title="点击查看解释">技能</a>的上限，一旦超过总预算，最旧的调用<a class="kw" onclick="showKw('技能')" title="点击查看解释">技能</a>就会被删除。截断保留文件的开头，因此请将最重要的指令放在 `SKILL.md` 的顶部附近。</p>
+
+<h3 id="sec-context-window-4">当您的上下文填满时</h3>
+
+<p>Claude Code 在您接近限制时自动压缩，因此完整的<a class="kw" onclick="showKw('上下文窗口')" title="点击查看解释">上下文窗口</a>不会结束您的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。自动传递的工作方式与时间线中的 `<a class="kw" onclick="showKw('/compact')" title="点击查看解释">/compact</a>` 步骤相同。有关它保留的内容，请参阅<a class="kw" onclick="showKw('当上下文填满时')" title="点击查看解释">当上下文填满时</a>。</p>
+
+<p>您也可以在自动传递运行之前采取行动：</p>
+
+<p>* **带有焦点的压缩**：在开始长时间的新任务之前，运行带有指令的 `<a class="kw" onclick="showKw('/compact')" title="点击查看解释">/compact</a>`，例如 `<a class="kw" onclick="showKw('/compact')" title="点击查看解释">/compact</a> focus on the auth bug fix`。摘要保留您选择的内容，而不是自动传递猜测的重要内容。</p>
+<p>* **在任务之间清除**：切换到不相关的工作时运行 `<a class="kw" onclick="showKw('/clear')" title="点击查看解释">/clear</a>`。旧对话会挤出您接下来需要的文件，并在每条消息上花费令牌。</p>
+<p>* **委托大型读取**：将研究发送给<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>，以便文件内容保留在其<a class="kw" onclick="showKw('上下文窗口')" title="点击查看解释">上下文窗口</a>中，而不是您的。</p>
+
+<p>如果您需要更大的窗口而不是更小的对话，Fable 5、Sonnet 5、Opus 4.6 及更高版本以及 Sonnet 4.6 支持 100 万令牌的<a class="kw" onclick="showKw('上下文窗口')" title="点击查看解释">上下文窗口</a>。有关按计划的可用性以及如何选择 `[1m]` 模型变体，请参阅<a class="kw" onclick="showKw('扩展上下文')" title="点击查看解释">扩展上下文</a>。Sonnet 5 以 1M 运行，无需选择 `[1m]` 变体；有关其自动压缩阈值和 LLM 网关异常，请参阅<a class="kw" onclick="showKw('Sonnet 5 上下文窗口')" title="点击查看解释">Sonnet 5 上下文窗口</a>。压缩在更大的限制下以相同的方式工作。</p>
+
+<h3 id="sec-context-window-5">检查您自己的会话</h3>
+
+<p>该可视化使用代表性数字。要在任何时刻查看您的实际上下文使用情况，请运行 `/context` 以获取按类别的实时分解和优化建议。运行 `/memory` 以检查在启动时加载了哪些 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 和自动内存文件。</p>
+
+<h3 id="sec-context-window-6">相关资源</h3>
+
+<p>有关时间线中显示的功能的更深入覆盖，请参阅这些页面：</p>
+
+<p>* <a class="kw" onclick="showKw('扩展 Claude Code')" title="点击查看解释">扩展 Claude Code</a>：何时使用 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 与<a class="kw" onclick="showKw('技能')" title="点击查看解释">技能</a>与规则与 hooks 与 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a></p>
+<p>* <a class="kw" onclick="showKw('存储指令和内存')" title="点击查看解释">存储指令和内存</a>：<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 层次结构和自动内存</p>
+<p>* <a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>：将研究委托给单独的<a class="kw" onclick="showKw('上下文窗口')" title="点击查看解释">上下文窗口</a></p>
+<p>* <a class="kw" onclick="showKw('最佳实践')" title="点击查看解释">最佳实践</a>：将上下文作为您的主要约束来管理</p>
+<p>* <a class="kw" onclick="showKw('提示缓存')" title="点击查看解释">提示缓存</a>：哪些操作会使缓存的前缀失效</p>
+<p>* <a class="kw" onclick="showKw('减少令牌使用')" title="点击查看解释">减少令牌使用</a>：保持上下文使用低的策略</p>
 
   </main>
 </div>

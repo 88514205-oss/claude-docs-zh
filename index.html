@@ -342,6 +342,82 @@ li { margin-left:22px; line-height:1.8; font-size:15px; color:var(--text); }
 .clog-desc { color:var(--text2); line-height:1.6; }
 .dot { display:inline-block; width:0.85em; height:0.85em; border-radius:50%; vertical-align:-0.1em; margin:0 2px; }
 .dot-red { background:#f03e3e; } .dot-yellow { background:#f59f00; } .dot-purple { background:#9c36b5; }
+
+
+/* ===== 错误汇报 ===== */
+.btn-report { display:inline-flex; align-items:center; gap:4px; background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12.5px; transition:0.15s; }
+.btn-report:hover { color:var(--text); border-color:var(--accent); background:var(--card2); }
+.rpt-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:500; display:none; align-items:center; justify-content:center; padding:20px; }
+.rpt-overlay.show { display:flex; }
+.rpt-modal { background:var(--card); border:1px solid var(--accent); border-radius:16px; width:100%; max-width:460px; box-shadow:0 20px 60px rgba(0,0,0,0.7); overflow:hidden; }
+.rpt-head { display:flex; align-items:center; gap:8px; padding:16px 20px; border-bottom:1px solid var(--border); }
+.rpt-head .rpt-title { font-size:16px; font-weight:700; color:var(--text); flex:1; }
+.rpt-close { background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1; }
+.rpt-close:hover { color:var(--text); }
+.rpt-body { padding:18px 20px; }
+.rpt-field { margin-bottom:14px; }
+.rpt-field label { display:block; font-size:13px; color:var(--text2); margin-bottom:6px; }
+.rpt-field .rpt-page { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:13px; color:var(--accent2); word-break:break-all; }
+.rpt-field input, .rpt-field textarea { width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:14px; color:var(--text); font-family:inherit; resize:vertical; }
+.rpt-field input:focus, .rpt-field textarea:focus { outline:none; border-color:var(--accent); }
+.rpt-field textarea { min-height:90px; }
+.rpt-tip { font-size:12px; color:var(--muted); margin-top:4px; }
+.rpt-submit { width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px; font-size:15px; font-weight:600; cursor:pointer; transition:0.15s; }
+.rpt-submit:hover { background:var(--accent2); }
+.rpt-submit:disabled { opacity:0.5; cursor:not-allowed; }
+.rpt-ok { text-align:center; padding:30px 20px; }
+.rpt-ok .rpt-ok-icon { font-size:42px; margin-bottom:12px; }
+.rpt-ok .rpt-ok-title { font-size:17px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.rpt-ok .rpt-ok-desc { font-size:13px; color:var(--text2); }
+
+
+
+.clog-list { margin-top:10px; }
+.clog-item { display:flex; align-items:baseline; gap:12px; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13.5px; }
+.clog-item:last-child { border-bottom:none; }
+.clog-ver { color:var(--accent); font-weight:700; flex-shrink:0; font-size:12px; background:var(--kw-bg); padding:2px 8px; border-radius:8px; }
+.clog-date { color:var(--muted); flex-shrink:0; font-size:12px; }
+.clog-desc { color:var(--text2); line-height:1.6; }
+.dot { display:inline-block; width:0.85em; height:0.85em; border-radius:50%; vertical-align:-0.1em; margin:0 2px; }
+.dot-red { background:#f03e3e; } .dot-yellow { background:#f59f00; } .dot-purple { background:#9c36b5; }
+
+
+/* ===== 错误汇报 ===== */
+.btn-report { display:inline-flex; align-items:center; gap:4px; background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12.5px; transition:0.15s; }
+.btn-report:hover { color:var(--text); border-color:var(--accent); background:var(--card2); }
+.rpt-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:500; display:none; align-items:center; justify-content:center; padding:20px; }
+.rpt-overlay.show { display:flex; }
+.rpt-modal { background:var(--card); border:1px solid var(--accent); border-radius:16px; width:100%; max-width:460px; box-shadow:0 20px 60px rgba(0,0,0,0.7); overflow:hidden; }
+.rpt-head { display:flex; align-items:center; gap:8px; padding:16px 20px; border-bottom:1px solid var(--border); }
+.rpt-head .rpt-title { font-size:16px; font-weight:700; color:var(--text); flex:1; }
+.rpt-close { background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1; }
+.rpt-close:hover { color:var(--text); }
+.rpt-body { padding:18px 20px; }
+.rpt-field { margin-bottom:14px; }
+.rpt-field label { display:block; font-size:13px; color:var(--text2); margin-bottom:6px; }
+.rpt-field .rpt-page { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:13px; color:var(--accent2); word-break:break-all; }
+.rpt-field input, .rpt-field textarea { width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:14px; color:var(--text); font-family:inherit; resize:vertical; }
+.rpt-field input:focus, .rpt-field textarea:focus { outline:none; border-color:var(--accent); }
+.rpt-field textarea { min-height:90px; }
+.rpt-tip { font-size:12px; color:var(--muted); margin-top:4px; }
+.rpt-submit { width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px; font-size:15px; font-weight:600; cursor:pointer; transition:0.15s; }
+.rpt-submit:hover { background:var(--accent2); }
+.rpt-submit:disabled { opacity:0.5; cursor:not-allowed; }
+.rpt-ok { text-align:center; padding:30px 20px; }
+.rpt-ok .rpt-ok-icon { font-size:42px; margin-bottom:12px; }
+.rpt-ok .rpt-ok-title { font-size:17px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.rpt-ok .rpt-ok-desc { font-size:13px; color:var(--text2); }
+
+
+
+.clog-list { margin-top:10px; }
+.clog-item { display:flex; align-items:baseline; gap:12px; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13.5px; }
+.clog-item:last-child { border-bottom:none; }
+.clog-ver { color:var(--accent); font-weight:700; flex-shrink:0; font-size:12px; background:var(--kw-bg); padding:2px 8px; border-radius:8px; }
+.clog-date { color:var(--muted); flex-shrink:0; font-size:12px; }
+.clog-desc { color:var(--text2); line-height:1.6; }
+.dot { display:inline-block; width:0.85em; height:0.85em; border-radius:50%; vertical-align:-0.1em; margin:0 2px; }
+.dot-red { background:#f03e3e; } .dot-yellow { background:#f59f00; } .dot-purple { background:#9c36b5; }
 </style>
 </head>
 <body>
@@ -372,7 +448,7 @@ li { margin-left:22px; line-height:1.8; font-size:15px; color:var(--text); }
   </aside>
   <main class="main">
     <h1>Claude Code 知识库</h1>
-    <p class="subtitle">官方中文文档（65 篇） + 入门手册 · 更新于 2026-08-05 14:48 · 本地离线可用 · <span style="color:var(--accent2)">紫色虚线词 = 98个专业词汇可点击解释</span></p>
+    <p class="subtitle">官方中文文档（65 篇） + 入门手册 · 更新于 2026-08-05 20:02 · 本地离线可用 · <span style="color:var(--accent2)">紫色虚线词 = 98个专业词汇可点击解释</span></p>
 
     <div class="card" id="index">
       <h2><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>文档索引</h2>
@@ -798,7 +874,7 @@ claude --plugin-dir ./my-first-plugin
         <div class="doc-card" onclick="location.href='doc/admin-setup.html'">
   <div class="doc-header">
     <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>为您的组织设置 Claude Code</span>
-    <span class="doc-size">26KB</span>
+    <span class="doc-size">25KB</span>
   </div>
   <div class="doc-desc">Claude Code 通过托管设置强制执行组织策略，这些设置优先于本地开发人员配置。您可以从 Claude 管理控制台、移动设备管理 (MDM) 系统或磁盘上的文件传递这些设置。这些设置控制 Claude 可以访问的工具、命令、服务器和网络目标。</div>
   <div class="doc-file">admin-setup.md</div>
@@ -878,7 +954,7 @@ claude --plugin-dir ./my-first-plugin
 <div class="doc-card" onclick="location.href='doc/claude-directory.html'">
   <div class="doc-header">
     <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>探索 .claude 目录</span>
-    <span class="doc-size">82KB</span>
+    <span class="doc-size">81KB</span>
   </div>
   <div class="doc-desc">const A = useMemo(() =&gt; ({href, children}) =&gt; &lt;a href={href} style={{</div>
   <div class="doc-file">claude-directory.md</div>
@@ -918,7 +994,7 @@ claude --plugin-dir ./my-first-plugin
 <div class="doc-card" onclick="location.href='doc/computer-use.html'">
   <div class="doc-header">
     <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>让 Claude 从 CLI 使用您的计算机</span>
-    <span class="doc-size">13KB</span>
+    <span class="doc-size">12KB</span>
   </div>
   <div class="doc-desc">Computer use 是 macOS 上的研究预览版，需要 Pro 或 Max 计划。它在 Team 或 Enterprise 计划上不可用。它需要交互式会话，因此在使用 `-p` 标志的非交互式模式下不可用。</div>
   <div class="doc-file">computer-use.md</div>
@@ -926,7 +1002,7 @@ claude --plugin-dir ./my-first-plugin
 <div class="doc-card" onclick="location.href='doc/context-window.html'">
   <div class="doc-header">
     <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>探索上下文窗口</span>
-    <span class="doc-size">57KB</span>
+    <span class="doc-size">56KB</span>
   </div>
   <div class="doc-desc">const MAX = 200000;</div>
   <div class="doc-file">context-window.md</div>
@@ -958,7 +1034,7 @@ claude --plugin-dir ./my-first-plugin
 <div class="doc-card" onclick="location.href='doc/discover-plugins.html'">
   <div class="doc-header">
     <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>通过市场发现和安装预构建插件</span>
-    <span class="doc-size">26KB</span>
+    <span class="doc-size">25KB</span>
   </div>
   <div class="doc-desc">插件通过 skills、agents、hooks 和 MCP servers 扩展 Claude Code。插件市场是帮助您发现和安装这些扩展的目录，无需自己构建。</div>
   <div class="doc-file">discover-plugins.md</div>
@@ -990,7 +1066,7 @@ claude --plugin-dir ./my-first-plugin
 <div class="doc-card" onclick="location.href='doc/gitlab-ci-cd.html'">
   <div class="doc-header">
     <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>Claude Code GitLab CI/CD</span>
-    <span class="doc-size">19KB</span>
+    <span class="doc-size">18KB</span>
   </div>
   <div class="doc-desc">Claude Code for GitLab CI/CD 目前处于测试阶段。随着我们完善体验，功能和特性可能会发生变化。</div>
   <div class="doc-file">gitlab-ci-cd.md</div>
@@ -1030,7 +1106,7 @@ claude --plugin-dir ./my-first-plugin
 <div class="doc-card" onclick="location.href='doc/how-claude-code-works.html'">
   <div class="doc-header">
     <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>Claude Code 如何工作</span>
-    <span class="doc-size">19KB</span>
+    <span class="doc-size">18KB</span>
   </div>
   <div class="doc-desc">Claude Code 是一个在您的终端中运行的代理助手。虽然它在编码方面表现出色，但它可以帮助您完成从命令行可以做的任何事情：编写文档、运行构建、搜索文件、研究主题等。</div>
   <div class="doc-file">how-claude-code-works.md</div>
@@ -1062,7 +1138,7 @@ claude --plugin-dir ./my-first-plugin
 <div class="doc-card" onclick="location.href='doc/legal-and-compliance.html'">
   <div class="doc-header">
     <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>法律和合规</span>
-    <span class="doc-size">4KB</span>
+    <span class="doc-size">3KB</span>
   </div>
   <div class="doc-desc">法律协议</div>
   <div class="doc-file">legal-and-compliance.md</div>
@@ -1142,7 +1218,7 @@ claude --plugin-dir ./my-first-plugin
 <div class="doc-card" onclick="location.href='doc/plugins.html'">
   <div class="doc-header">
     <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>创建插件</span>
-    <span class="doc-size">25KB</span>
+    <span class="doc-size">24KB</span>
   </div>
   <div class="doc-desc">Plugins 让你能够使用自定义功能扩展 Claude Code，这些功能可以在项目和团队中共享。本指南涵盖如何使用 skills、agents、hooks 和 MCP servers 创建自己的插件。</div>
   <div class="doc-file">plugins.md</div>
@@ -1206,7 +1282,7 @@ claude --plugin-dir ./my-first-plugin
 <div class="doc-card" onclick="location.href='doc/settings.html'">
   <div class="doc-header">
     <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>Claude Code 设置</span>
-    <span class="doc-size">194KB</span>
+    <span class="doc-size">193KB</span>
   </div>
   <div class="doc-desc">Claude Code 提供多种设置来配置其行为以满足您的需求。您可以通过运行 `/config` 命令来配置 Claude Code，这会打开一个选项卡式设置界面，您可以在其中查看状态信息并修改配置选项。从 v2.1.181 开始，您可以通过向 `/config` 传递 `ke</div>
   <div class="doc-file">settings.md</div>
@@ -1310,7 +1386,7 @@ claude --plugin-dir ./my-first-plugin
 <div class="doc-card" onclick="location.href='doc/zero-data-retention.html'">
   <div class="doc-header">
     <span class="doc-title"><span class="doc-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 9l1 0" /> <path d="M9 13l6 0" /> <path d="M9 17l6 0" /> </svg></span>零数据保留</span>
-    <span class="doc-size">7KB</span>
+    <span class="doc-size">6KB</span>
   </div>
   <div class="doc-desc">零数据保留 (ZDR) 在通过 Claude for Enterprise 使用 Claude Code 时可用。启用 ZDR 后，Claude Code 会话期间生成的提示和模型响应会实时处理，在返回响应后不会由 Anthropic 存储，除非需要遵守法律或防止滥用。</div>
   <div class="doc-file">zero-data-retention.md</div>

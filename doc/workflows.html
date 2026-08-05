@@ -194,6 +194,14 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
 <a href="#sec-workflows-17" style="padding-left:28px;font-size:13px;">跨许多来源研究一个主题</a>
 <a href="#sec-workflows-18" style="padding-left:28px;font-size:13px;">查找问题直到列表停止增长</a>
 <a href="#sec-workflows-19" style="padding-left:28px;font-size:13px;">保存的脚本看起来像什么</a>
+<a href="#sec-workflows-20" style="padding-left:14px;font-size:13.5px;">工作流如何运行</a>
+<a href="#sec-workflows-21" style="padding-left:28px;font-size:13px;">行为和限制</a>
+<a href="#sec-workflows-22" style="padding-left:14px;font-size:13.5px;">管理运行</a>
+<a href="#sec-workflows-23" style="padding-left:28px;font-size:13px;">暂停后恢复</a>
+<a href="#sec-workflows-24" style="padding-left:28px;font-size:13px;">成本</a>
+<a href="#sec-workflows-25" style="padding-left:28px;font-size:13px;">设置大小指南</a>
+<a href="#sec-workflows-26" style="padding-left:28px;font-size:13px;">关闭工作流</a>
+<a href="#sec-workflows-27" style="padding-left:14px;font-size:13.5px;">相关资源</a>
 </aside>
 <div class="overlay" id="overlay" onclick="closeDrawer()"></div>
 
@@ -219,6 +227,14 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
 <a href="#sec-workflows-17" style="padding-left:28px;font-size:13px;">跨许多来源研究一个主题</a>
 <a href="#sec-workflows-18" style="padding-left:28px;font-size:13px;">查找问题直到列表停止增长</a>
 <a href="#sec-workflows-19" style="padding-left:28px;font-size:13px;">保存的脚本看起来像什么</a>
+<a href="#sec-workflows-20" style="padding-left:14px;font-size:13.5px;">工作流如何运行</a>
+<a href="#sec-workflows-21" style="padding-left:28px;font-size:13px;">行为和限制</a>
+<a href="#sec-workflows-22" style="padding-left:14px;font-size:13.5px;">管理运行</a>
+<a href="#sec-workflows-23" style="padding-left:28px;font-size:13px;">暂停后恢复</a>
+<a href="#sec-workflows-24" style="padding-left:28px;font-size:13px;">成本</a>
+<a href="#sec-workflows-25" style="padding-left:28px;font-size:13px;">设置大小指南</a>
+<a href="#sec-workflows-26" style="padding-left:28px;font-size:13px;">关闭工作流</a>
+<a href="#sec-workflows-27" style="padding-left:14px;font-size:13.5px;">相关资源</a>
   </aside>
 
   <main class="article">
@@ -473,7 +489,104 @@ ultracode: audit every API endpoint under src/routes/ for missing auth checks
 <p>当您<a class="kw" onclick="showKw('保存工作流')" title="点击查看解释">保存工作流</a>时，`.claude/workflows/` 中的文件包含一个 `meta` 块，后跟编排<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>的脚本体。您通常不需要编辑它，但这是一个小的形状，所以您可以识别 Claude 生成的内容：</p>
 
 <pre><code>
+
+const found = await agent(&#x27;List every .ts file under src/routes/.&#x27;, {
+  schema: { type: &#x27;object&#x27;, required: [&#x27;files&#x27;], properties: { files: { type: &#x27;array&#x27;, items: { type: &#x27;string&#x27; } } } },
+})
+
+const audits = await pipeline(found.files, file =&gt;
+  agent(`Audit ${file} for missing authentication checks.`, { label: file }),
+)
+
+return audits.filter(Boolean)
 </code></pre>
+
+<p>主体是带有顶级 `await` 的纯 JavaScript。`agent()` 生成一个<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>，`pipeline()` 为列表中的每个项目运行一个。如果您想手动编辑脚本，要求 Claude 引导您完成更改，或查看 <a class="kw" onclick="showKw('Agent SDK 参考')" title="点击查看解释">Agent SDK 参考</a>中的 Workflow 工具条目以获取完整的选项集。</p>
+
+<h3 id="sec-workflows-20">工作流如何运行</h3>
+
+<p><a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>运行时在隔离环境中执行脚本，与您的对话分开。中间结果保留在脚本变量中，而不是进入 Claude 的上下文。</p>
+
+<p>每次运行都会将其脚本写入您<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>目录下 `~/.claude/projects/` 中的文件。运行开始时 Claude 会收到该路径，因此您可以要求它提供。您可以打开该文件来读取 Claude 编写的编排脚本，将其与之前运行的脚本进行对比，或编辑它并要求 Claude 从编辑后的版本重新启动。</p>
+
+<p>运行时在运行进行时跟踪每个代理的结果，这是使运行在同一<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中<a class="kw" onclick="showKw('可恢复')" title="点击查看解释">可恢复</a>的原因。</p>
+
+<h4 id="sec-workflows-21">行为和限制</h4>
+
+<p>运行时应用以下约束：</p>
+
+<div class='table-wrap'><table>
+<tr><th>约束</th><th>为什么</th></tr>
+<tr><td>无中途用户输入</td><td>仅代理<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>提示可以暂停运行。对于阶段之间的签署，将每个阶段作为其自己的<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>运行</td></tr>
+<tr><td>无来自<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>本身的直接文件系统或 shell 访问</td><td>代理读取、写入和运行命令。脚本协调代理</td></tr>
+<tr><td>最多 16 个并发代理，在 CPU 核心有限的机器上更少</td><td>限制本地资源使用</td></tr>
+<tr><td>每次运行 1,000 个代理总数</td><td>防止失控循环</td></tr>
+</table></div>
+
+<h3 id="sec-workflows-22">管理运行</h3>
+
+<p>运行启动后，您可以从 `/workflows` 视图管理它，或通过展开输入框下方任务面板中的其进度行来管理。</p>
+
+<h4 id="sec-workflows-23">暂停后恢复</h4>
+
+<p>如果您停止运行，您可以恢复它：已完成的代理返回其缓存结果，其余的实时运行。从 `/workflows` 恢复暂停的运行，选择它并按 `p`，或要求 Claude 使用相同脚本重新启动<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>。</p>
+
+<p>恢复在同一 Claude Code <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中工作。如果您在<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>运行时退出 Claude Code，下一个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>将从头启动<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>。</p>
+
+<h4 id="sec-workflows-24">成本</h4>
+
+<p><a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>生成许多代理，所以单次运行可以使用比在对话中处理相同任务更多的令牌。运行计入您的计划使用和速率限制，如任何其他<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。</p>
+
+<p>要在提交大型任务前评估支出，请先在小范围上运行<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>：一个目录而不是整个仓库，或一个狭窄的问题而不是一个宽泛的问题。`/workflows` 视图显示每个代理的令牌使用情况，随着运行进行，您可以随时在那里停止运行而不会丢失已完成的工作。运行时的<a class="kw" onclick="showKw('代理上限')" title="点击查看解释">代理上限</a>限制单次运行可以生成多少个代理，这限制了失控脚本的成本。要默认保持每次运行更小，在 `<a class="kw" onclick="showKw('/config')" title="点击查看解释">/config</a>` 中<a class="kw" onclick="showKw('设置大小指南')" title="点击查看解释">设置大小指南</a>。</p>
+
+<p>Claude Code 还会标记增长异常大的运行。当<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>调度超过 25 个代理，或其预计令牌总数超过 150 万时，输入框下方任务面板中的其进度行显示 `Large workflow` 警告。警告指向您可以停止运行的 <a class="kw" onclick="showKw('/workflows')" title="点击查看解释">/workflows</a>。需要 Claude Code v2.1.203 或更高版本。</p>
+
+<p>警告是建议性的：它不会暂停或限制运行。当您看到它时，两个<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>会改变：</p>
+
+<p>* 如果您<a class="kw" onclick="showKw('设置大小指南')" title="点击查看解释">设置大小指南</a>，指南的代理计数替换 25 个代理的阈值。</p>
+<p>* 启用<a class="kw" onclick="showKw('ultracode')" title="点击查看解释">ultracode</a>的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>不显示警告，因为打开 ultracode 已经让您选择加入大型运行。</p>
+
+<p><a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>中的每个代理使用您的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>模型，除非脚本将阶段路由到不同的模型，或<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>了 <a class="kw" onclick="showKw('CLAUDE_CODE_SUBAGENT_MODEL')" title="点击查看解释">CLAUDE_CODE_SUBAGENT_MODEL</a> <a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>，该变量会覆盖两者。要控制模型成本：</p>
+
+<p>* 在大型运行前检查 `/model`，如果您通常为日常工作切换到较小的模型</p>
+<p>* 当您描述任务时，要求 Claude 为不需要最强模型的阶段使用较小的模型</p>
+
+<h4 id="sec-workflows-25">设置大小指南</h4>
+
+<p>`<a class="kw" onclick="showKw('/config')" title="点击查看解释">/config</a>` 中的 Dynamic workflow size <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>使 Claude 编写的<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>默认保持在较小规模。Claude Code 将该<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>作为建议发送给 Claude，所以调用不同规模的提示仍然会覆盖它。需要 Claude Code v2.1.202 或更高版本。</p>
+
+<p>每个值<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> Claude 在其编写的脚本中针对的代理计数。</p>
+
+<div class='table-wrap'><table>
+<tr><th>值</th><th>发送给 Claude 的指导</th></tr>
+<tr><td>`unrestricted`</td><td>无指南。这是默认值。</td></tr>
+<tr><td>`small`</td><td>目标少于 5 个代理。</td></tr>
+<tr><td>`medium`</td><td>目标少于 15 个代理。</td></tr>
+<tr><td>`large`</td><td>目标少于 50 个代理。</td></tr>
+</table></div>
+
+<p>更改在下一个提示时生效。<a class="kw" onclick="showKw('运行时代理上限')" title="点击查看解释">运行时代理上限</a>仍然适用，无论<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>如何。</p>
+
+<h4 id="sec-workflows-26">关闭工作流</h4>
+
+<p><a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>在 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a>、<a class="kw" onclick="showKw('桌面应用')" title="点击查看解释">桌面应用</a>、IDE 扩展、<a class="kw" onclick="showKw('非交互模式')" title="点击查看解释">非交互模式</a>与 `claude -p` 和 <a class="kw" onclick="showKw('Agent SDK')" title="点击查看解释">Agent SDK</a> 中可用。相同的禁用<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>在每个表面上应用。</p>
+
+<p>要为自己关闭<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>：</p>
+
+<p>* 在 `<a class="kw" onclick="showKw('/config')" title="点击查看解释">/config</a>` 中切换&quot;Dynamic workflows&quot;关闭。在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中持续。</p>
+<p>* 在 `~/.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 中<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> `&quot;disable<a class="kw" onclick="showKw('Workflows')" title="点击查看解释">Workflows</a>&quot;: true`。在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中持续。</p>
+<p>* <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> `CLAUDE_CODE_DISABLE_WORKFLOWS=1`。在启动时读取，所以它在您<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>它的任何地方应用。</p>
+
+<p>要为整个组织关闭<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>，在<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>中<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> `&quot;disable<a class="kw" onclick="showKw('Workflows')" title="点击查看解释">Workflows</a>&quot;: true`，或使用<a class="kw" onclick="showKw('Claude Code 管理员设置')" title="点击查看解释">Claude Code 管理员设置</a>页面上的切换。</p>
+
+<p>当<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>被禁用时，捆绑<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>命令不可用，`ultracode` 关键字不再触发运行，`ultracode` 从 `/effort` 菜单中移除。</p>
+
+<h3 id="sec-workflows-27">相关资源</h3>
+
+<p>* <a class="kw" onclick="showKw('并行运行代理')" title="点击查看解释">并行运行代理</a>：比较<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>、<a class="kw" onclick="showKw('代理视图')" title="点击查看解释">代理视图</a>、代理团队和<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a></p>
+<p>* <a class="kw" onclick="showKw('创建自定义子代理')" title="点击查看解释">创建自定义子代理</a>：<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>编排的工作者原语</p>
+<p>* <a class="kw" onclick="showKw('管理成本')" title="点击查看解释">管理成本</a>：多代理运行如何计入使用限制</p>
+
   </main>
 </div>
 

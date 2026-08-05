@@ -102,20 +102,30 @@ for f in files:
 
 
 def clean_mdx(text):
-    """移除export const代码块"""
+    """移除export const代码块（括号匹配，正确处理内含markdown示例的JS块）"""
     lines = text.split("\n")
     out = []
-    in_export = False
-    for line in lines:
-        if line.startswith("export const"):
-            in_export = True
-            continue
-        if in_export:
-            if line.startswith("#"):
-                in_export = False
-                out.append(line)
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if line.strip().startswith("export const"):
+            depth = 0
+            started = False
+            j = i
+            while j < len(lines):
+                for ch in lines[j]:
+                    if ch == "{":
+                        depth += 1
+                        started = True
+                    elif ch == "}":
+                        depth -= 1
+                if started and depth <= 0:
+                    break
+                j += 1
+            i = j + 1
             continue
         out.append(line)
+        i += 1
     return "\n".join(out)
 
 def convert_mdx_blocks(text):

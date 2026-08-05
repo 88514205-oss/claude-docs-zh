@@ -26,6 +26,33 @@ class DocSearch:
         """按标题切分文档为小节"""
         # 清理HTML标签残留和MDX组件
         text = re.sub(r"</?[a-zA-Z][^>]*>", "\n", text)
+        # 移除 export const JS代码块（官方交互组件残留）
+        # 移除 export const JS代码块（括号匹配，兼容内含markdown示例的JS）
+        def _strip_export_blocks(t):
+            lines = t.split("\n")
+            out = []
+            i = 0
+            while i < len(lines):
+                if lines[i].strip().startswith("export const"):
+                    depth = 0
+                    started = False
+                    j = i
+                    while j < len(lines):
+                        for ch in lines[j]:
+                            if ch == "{":
+                                depth += 1
+                                started = True
+                            elif ch == "}":
+                                depth -= 1
+                        if started and depth <= 0:
+                            break
+                        j += 1
+                    i = j + 1
+                    continue
+                out.append(lines[i])
+                i += 1
+            return "\n".join(out)
+        text = _strip_export_blocks(text)
         lines = text.split("\n")
         sections = []
         cur_heading = "概述"

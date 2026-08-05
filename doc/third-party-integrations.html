@@ -176,6 +176,19 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
   </nav>
   <div style="margin:14px 20px 6px;font-size:12px;color:var(--muted);letter-spacing:1px;">本文目录</div>
   <a href="#sec-third-party-integrations-1" style="padding-left:0px;font-size:13px;">企业部署概览</a>
+<a href="#sec-third-party-integrations-2" style="padding-left:14px;font-size:13.5px;">比较部署选项</a>
+<a href="#sec-third-party-integrations-3" style="padding-left:14px;font-size:13.5px;">配置代理和网关</a>
+<a href="#sec-third-party-integrations-4" style="padding-left:28px;font-size:13px;">Amazon Bedrock</a>
+<a href="#sec-third-party-integrations-5" style="padding-left:28px;font-size:13px;">Microsoft Foundry</a>
+<a href="#sec-third-party-integrations-6" style="padding-left:28px;font-size:13px;">Google Cloud&#x27;s Agent Platform</a>
+<a href="#sec-third-party-integrations-7" style="padding-left:14px;font-size:13.5px;">组织的最佳实践</a>
+<a href="#sec-third-party-integrations-8" style="padding-left:28px;font-size:13px;">投资文档和内存</a>
+<a href="#sec-third-party-integrations-9" style="padding-left:28px;font-size:13px;">简化部署</a>
+<a href="#sec-third-party-integrations-10" style="padding-left:28px;font-size:13px;">从引导式使用开始</a>
+<a href="#sec-third-party-integrations-11" style="padding-left:28px;font-size:13px;">为云提供商固定模型版本</a>
+<a href="#sec-third-party-integrations-12" style="padding-left:28px;font-size:13px;">配置安全策略</a>
+<a href="#sec-third-party-integrations-13" style="padding-left:28px;font-size:13px;">利用 MCP 进行集成</a>
+<a href="#sec-third-party-integrations-14" style="padding-left:14px;font-size:13.5px;">后续步骤</a>
 </aside>
 <div class="overlay" id="overlay" onclick="closeDrawer()"></div>
 
@@ -183,12 +196,443 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
   <aside class="toc-side">
     <h3>本文目录</h3>
     <a href="#sec-third-party-integrations-1" style="padding-left:0px;font-size:13px;">企业部署概览</a>
+<a href="#sec-third-party-integrations-2" style="padding-left:14px;font-size:13.5px;">比较部署选项</a>
+<a href="#sec-third-party-integrations-3" style="padding-left:14px;font-size:13.5px;">配置代理和网关</a>
+<a href="#sec-third-party-integrations-4" style="padding-left:28px;font-size:13px;">Amazon Bedrock</a>
+<a href="#sec-third-party-integrations-5" style="padding-left:28px;font-size:13px;">Microsoft Foundry</a>
+<a href="#sec-third-party-integrations-6" style="padding-left:28px;font-size:13px;">Google Cloud&#x27;s Agent Platform</a>
+<a href="#sec-third-party-integrations-7" style="padding-left:14px;font-size:13.5px;">组织的最佳实践</a>
+<a href="#sec-third-party-integrations-8" style="padding-left:28px;font-size:13px;">投资文档和内存</a>
+<a href="#sec-third-party-integrations-9" style="padding-left:28px;font-size:13px;">简化部署</a>
+<a href="#sec-third-party-integrations-10" style="padding-left:28px;font-size:13px;">从引导式使用开始</a>
+<a href="#sec-third-party-integrations-11" style="padding-left:28px;font-size:13px;">为云提供商固定模型版本</a>
+<a href="#sec-third-party-integrations-12" style="padding-left:28px;font-size:13px;">配置安全策略</a>
+<a href="#sec-third-party-integrations-13" style="padding-left:28px;font-size:13px;">利用 MCP 进行集成</a>
+<a href="#sec-third-party-integrations-14" style="padding-left:14px;font-size:13.5px;">后续步骤</a>
   </aside>
 
   <main class="article">
     <h2 id="sec-third-party-integrations-1">企业部署概览</h2>
 
 <blockquote>了解 Claude Code 如何与各种第三方服务和基础设施集成，以满足企业部署需求。</blockquote>
+
+<p>组织可以直接通过 Anthropic 或通过云提供商部署 Claude Code。本页面帮助您选择正确的配置。</p>
+
+<p>&lt;ContactSalesCard surface=&quot;third_party_overview&quot; /&gt;</p>
+
+<h3 id="sec-third-party-integrations-2">比较部署选项</h3>
+
+<p>对于大多数组织，Claude for Teams 或 Claude for Enterprise 提供最佳体验。团队成员可以通过单一订阅访问 Claude Code 和网页版 Claude，具有集中计费和无需基础设施<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>的优势。</p>
+
+<p>**Claude for Teams** 是自助服务，包括协作功能、管理工具和计费管理。最适合需要快速启动的小型团队。</p>
+
+<p>**Claude for Enterprise** 增加了 SSO 和域名捕获、基于角色的<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>、合规性 API 访问以及用于部署组织范围内 Claude Code 配置的托管策略<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>。最适合具有安全和合规性要求的大型组织。</p>
+
+<p>了解更多关于 <a class="kw" onclick="showKw('Team 计划')" title="点击查看解释">Team 计划</a> 和 <a class="kw" onclick="showKw('Enterprise 计划')" title="点击查看解释">Enterprise 计划</a>。</p>
+
+<p>如果您的组织有特定的基础设施要求，请比较以下选项：</p>
+
+<p>  </p>
+
+<p>    </p>
+
+<p>      </p>
+<p>功能</p>
+
+<p>      </p>
+<p>Claude for Teams/Enterprise</p>
+
+<p>      </p>
+<p>Anthropic Console</p>
+
+<p>      </p>
+<p>Amazon Bedrock</p>
+
+<p>      </p>
+<p>Claude Platform on AWS</p>
+
+<p>      </p>
+<p>Google Cloud&#x27;s <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> Platform，原名 Vertex AI</p>
+
+<p>      </p>
+<p>Microsoft Foundry</p>
+
+<p>    </p>
+
+<p>  </p>
+
+<p>  </p>
+
+<p>    </p>
+
+<p>      </p>
+<p>最适合</p>
+
+<p>      </p>
+<p>大多数组织（推荐）</p>
+
+<p>      </p>
+<p>个人开发者</p>
+
+<p>      </p>
+<p>AWS 原生部署</p>
+
+<p>      </p>
+<p>AWS <a class="kw" onclick="showKw('Marketplace')" title="点击查看解释">Marketplace</a> 计费与 Claude API 功能</p>
+
+<p>      </p>
+<p>GCP 原生部署</p>
+
+<p>      </p>
+<p>Azure 原生部署</p>
+
+<p>    </p>
+
+<p>    </p>
+
+<p>      </p>
+<p>计费</p>
+
+<p>      </p>
+<p>&lt;strong&gt;Teams：&lt;/strong&gt; \$150/座位（Premium）提供按使用量付费选项</p>
+<p>&lt;strong&gt;Enterprise：&lt;/strong&gt; &lt;a href=&quot;https://claude.com/contact-sales?utm_source=claude_code&amp;utm_medium=docs&amp;utm_content=third_party_enterprise&quot;&gt;联系销售&lt;/a&gt;</p>
+
+<p>      </p>
+<p>按使用量付费</p>
+
+<p>      </p>
+<p>通过 AWS 按使用量付费</p>
+
+<p>      </p>
+<p>通过 AWS <a class="kw" onclick="showKw('Marketplace')" title="点击查看解释">Marketplace</a> 按使用量付费</p>
+
+<p>      </p>
+<p>通过 GCP 按使用量付费</p>
+
+<p>      </p>
+<p>通过 Azure 按使用量付费</p>
+
+<p>    </p>
+
+<p>    </p>
+
+<p>      </p>
+<p>地区</p>
+
+<p>      </p>
+<p>支持的<a class="kw" onclick="showKw('国家/地区')" title="点击查看解释">国家/地区</a></p>
+
+<p>      </p>
+<p>支持的<a class="kw" onclick="showKw('国家/地区')" title="点击查看解释">国家/地区</a></p>
+
+<p>      </p>
+<p>多个 AWS <a class="kw" onclick="showKw('地区')" title="点击查看解释">地区</a></p>
+
+<p>      </p>
+<p>多个 AWS 地区</p>
+
+<p>      </p>
+<p>多个 GCP <a class="kw" onclick="showKw('地区')" title="点击查看解释">地区</a></p>
+
+<p>      </p>
+<p>多个 Azure <a class="kw" onclick="showKw('地区')" title="点击查看解释">地区</a></p>
+
+<p>    </p>
+
+<p>    </p>
+
+<p>      </p>
+<p>prompt caching</p>
+
+<p>      </p>
+<p>默认启用</p>
+
+<p>      </p>
+<p>默认启用</p>
+
+<p>      </p>
+<p>默认启用</p>
+
+<p>      </p>
+<p>默认启用</p>
+
+<p>      </p>
+<p>默认启用</p>
+
+<p>      </p>
+<p>默认启用</p>
+
+<p>    </p>
+
+<p>    </p>
+
+<p>      </p>
+<p>身份验证</p>
+
+<p>      </p>
+<p>Claude.ai SSO 或电子邮件</p>
+
+<p>      </p>
+<p>API 密钥</p>
+
+<p>      </p>
+<p>API 密钥或 AWS 凭证</p>
+
+<p>      </p>
+<p>API 密钥或 AWS 凭证</p>
+
+<p>      </p>
+<p>GCP 凭证</p>
+
+<p>      </p>
+<p>API 密钥或 Microsoft Entra ID</p>
+
+<p>    </p>
+
+<p>    </p>
+
+<p>      </p>
+<p>成本跟踪</p>
+
+<p>      </p>
+<p>使用情况仪表板</p>
+
+<p>      </p>
+<p>使用情况仪表板</p>
+
+<p>      </p>
+<p>AWS Cost Explorer</p>
+
+<p>      </p>
+<p>AWS Cost Explorer</p>
+
+<p>      </p>
+<p>GCP Billing</p>
+
+<p>      </p>
+<p>Azure Cost Management</p>
+
+<p>    </p>
+
+<p>    </p>
+
+<p>      </p>
+<p>包括网页版 Claude</p>
+
+<p>      </p>
+<p>是</p>
+
+<p>      </p>
+<p>否</p>
+
+<p>      </p>
+<p>否</p>
+
+<p>      </p>
+<p>否</p>
+
+<p>      </p>
+<p>否</p>
+
+<p>      </p>
+<p>否</p>
+
+<p>    </p>
+
+<p>    </p>
+
+<p>      </p>
+<p>企业功能</p>
+
+<p>      </p>
+<p>团队管理、SSO、使用情况监控</p>
+
+<p>      </p>
+<p>无</p>
+
+<p>      </p>
+<p>IAM 策略、CloudTrail</p>
+
+<p>      </p>
+<p>IAM 策略、CloudTrail</p>
+
+<p>      </p>
+<p>IAM 角色、Cloud Audit Logs</p>
+
+<p>      </p>
+<p>RBAC 策略、Azure Monitor</p>
+
+<p>    </p>
+
+<p>  </p>
+
+<p>有关每个选项上可用功能的逐项细分，请参阅<a class="kw" onclick="showKw('功能可用性')" title="点击查看解释">功能可用性</a>。</p>
+
+<p>选择部署选项以查看<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>说明：</p>
+
+<p>* <a class="kw" onclick="showKw('Claude for Teams 或 Enterprise')" title="点击查看解释">Claude for Teams 或 Enterprise</a></p>
+<p>* <a class="kw" onclick="showKw('Anthropic Console')" title="点击查看解释">Anthropic Console</a></p>
+<p>* <a class="kw" onclick="showKw('Claude 应用网关')" title="点击查看解释">Claude 应用网关</a>，一个自托管网关，在 Amazon Bedrock、Claude Platform on AWS、Google Cloud&#x27;s <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> Platform、Microsoft Foundry 或 Anthropic API 前面添加 IdP 登录</p>
+<p>* <a class="kw" onclick="showKw('Amazon Bedrock')" title="点击查看解释">Amazon Bedrock</a></p>
+<p>* <a class="kw" onclick="showKw('Claude Platform on AWS')" title="点击查看解释">Claude Platform on AWS</a></p>
+<p>* <a class="kw" onclick="showKw('Google Cloud&#x27;s Agent Platform')" title="点击查看解释">Google Cloud&#x27;s Agent Platform</a></p>
+<p>* <a class="kw" onclick="showKw('Microsoft Foundry')" title="点击查看解释">Microsoft Foundry</a></p>
+
+<p>对于 Amazon Bedrock 和 Google Vertex AI，您也可以运行 `claude` 并在登录提示处选择 **3rd-party platform** 来启动交互式<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>向导。</p>
+
+<h3 id="sec-third-party-integrations-3">配置代理和网关</h3>
+
+<p>大多数组织可以直接使用云提供商，无需额外配置。但是，如果您的组织有特定的网络或管理要求，您可能需要配置企业代理或 LLM 网关。这些是可以一起使用的不同配置：</p>
+
+<p>* **企业代理**：通过 HTTP/HTTPS 代理路由流量。如果您的组织要求所有出站流量通过代理服务器以进行安全监控、合规性或网络策略执行，请使用此选项。使用 `HTTPS_PROXY` 或 `HTTP_PROXY` <a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>进行配置。在<a class="kw" onclick="showKw('企业网络配置')" title="点击查看解释">企业网络配置</a>中了解更多。</p>
+<p>* **LLM 网关**：位于 Claude Code 和云提供商之间的服务，用于处理身份验证和路由。如果您需要跨团队的集中使用情况跟踪、自定义速率限制或预算或集中身份验证管理，请使用此选项。使用 `ANTHROPIC_BASE_URL`、`ANTHROPIC_BEDROCK_BASE_URL`、`ANTHROPIC_AWS_BASE_URL`、`ANTHROPIC_VERTEX_BASE_URL` 或 `ANTHROPIC_FOUNDRY_BASE_URL` <a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>进行配置。在<a class="kw" onclick="showKw('LLM 网关')" title="点击查看解释">LLM 网关</a>中了解更多。</p>
+
+<p>以下示例显示在 shell 或 shell 配置文件（`.bashrc`、`.zshrc`）中<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>的<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>。有关其他配置方法，请参阅<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>。</p>
+
+<h4 id="sec-third-party-integrations-4">Amazon Bedrock</h4>
+
+<div class="tabs">
+<div class="tab-item"><div class="tab-label">企业代理</div><div class="tab-body">
+<p>    通过<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>以下<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>，将 Amazon Bedrock 流量路由通过您的企业代理：</p>
+
+<p>    ```bash theme={null}</p>
+<p>    # 启用 Bedrock</p>
+<p>    export CLAUDE_CODE_USE_BEDROCK=1</p>
+<p>    export AWS_REGION=us-east-1</p>
+
+<p>    # 配置企业代理</p>
+<p>    export HTTPS_PROXY=&#x27;https://proxy.example.com:8080&#x27;</p>
+<p>    ```</p>
+  </div></div>
+<div class="tab-item"><div class="tab-label">LLM 网关</div><div class="tab-body">
+<p>    通过<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>以下<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>，将 Amazon Bedrock 流量路由通过您的 LLM 网关：</p>
+
+<p>    ```bash theme={null}</p>
+<p>    # 启用 Bedrock</p>
+<p>    export CLAUDE_CODE_USE_BEDROCK=1</p>
+
+<p>    # 配置 LLM 网关</p>
+<p>    export ANTHROPIC_BEDROCK_BASE_URL=&#x27;https://your-llm-gateway.com/bedrock&#x27;</p>
+<p>    export CLAUDE_CODE_SKIP_BEDROCK_AUTH=1  # 如果网关处理 AWS 身份验证</p>
+<p>    ```</p>
+  </div></div>
+</div>
+
+<h4 id="sec-third-party-integrations-5">Microsoft Foundry</h4>
+
+<div class="tabs">
+<div class="tab-item"><div class="tab-label">企业代理</div><div class="tab-body">
+<p>    通过<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>以下<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>，将 Microsoft Foundry 流量路由通过您的企业代理：</p>
+
+<p>    ```bash theme={null}</p>
+<p>    # 启用 Microsoft Foundry</p>
+<p>    export CLAUDE_CODE_USE_FOUNDRY=1</p>
+<p>    export ANTHROPIC_FOUNDRY_RESOURCE=your-resource</p>
+<p>    export ANTHROPIC_FOUNDRY_API_KEY=your-api-key  # 或省略以使用 Entra ID 身份验证</p>
+
+<p>    # 配置企业代理</p>
+<p>    export HTTPS_PROXY=&#x27;https://proxy.example.com:8080&#x27;</p>
+<p>    ```</p>
+  </div></div>
+<div class="tab-item"><div class="tab-label">LLM 网关</div><div class="tab-body">
+<p>    通过<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>以下<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>，将 Microsoft Foundry 流量路由通过您的 LLM 网关：</p>
+
+<p>    ```bash theme={null}</p>
+<p>    # 启用 Microsoft Foundry</p>
+<p>    export CLAUDE_CODE_USE_FOUNDRY=1</p>
+
+<p>    # 配置 LLM 网关</p>
+<p>    export ANTHROPIC_FOUNDRY_BASE_URL=&#x27;https://your-llm-gateway.com&#x27;</p>
+<p>    export ANTHROPIC_FOUNDRY_API_KEY=your-gateway-key  # 作为 x-api-key 发送</p>
+<p>    ```</p>
+  </div></div>
+</div>
+
+<h4 id="sec-third-party-integrations-6">Google Cloud&#x27;s Agent Platform</h4>
+
+<div class="tabs">
+<div class="tab-item"><div class="tab-label">企业代理</div><div class="tab-body">
+<p>    通过<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>以下<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>，将 Google Cloud&#x27;s <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> Platform 流量路由通过您的企业代理：</p>
+
+<p>    ```bash theme={null}</p>
+<p>    # 启用 <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> Platform</p>
+<p>    export CLAUDE_CODE_USE_VERTEX=1</p>
+<p>    export CLOUD_ML_REGION=us-east5</p>
+<p>    export ANTHROPIC_VERTEX_PROJECT_ID=your-project-id</p>
+
+<p>    # 配置企业代理</p>
+<p>    export HTTPS_PROXY=&#x27;https://proxy.example.com:8080&#x27;</p>
+<p>    ```</p>
+  </div></div>
+<div class="tab-item"><div class="tab-label">LLM 网关</div><div class="tab-body">
+<p>    通过<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>以下<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>，将 Google Cloud&#x27;s <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> Platform 流量路由通过您的 LLM 网关：</p>
+
+<p>    ```bash theme={null}</p>
+<p>    # 启用 <a class="kw" onclick="showKw('Agent')" title="点击查看解释">Agent</a> Platform</p>
+<p>    export CLAUDE_CODE_USE_VERTEX=1</p>
+
+<p>    # 配置 LLM 网关</p>
+<p>    export ANTHROPIC_VERTEX_BASE_URL=&#x27;https://your-llm-gateway.com/vertex&#x27;</p>
+<p>    export CLAUDE_CODE_SKIP_VERTEX_AUTH=1  # 如果网关处理 GCP 身份验证</p>
+<p>    export ANTHROPIC_VERTEX_PROJECT_ID=your-gcp-project-id</p>
+<p>    export CLOUD_ML_REGION=us-east5</p>
+<p>    ```</p>
+  </div></div>
+</div>
+
+<div class="callout callout-tip">
+<p>  在 Claude Code 中使用 `/status` 来验证您的代理和网关配置是否正确应用。例如，使用上面的 Bedrock 网关配置，输出包括以下行：</p>
+
+<p>  ```</p>
+<p>  API provider: Amazon Bedrock</p>
+<p>  Bedrock base URL: https://your-llm-gateway.com/bedrock</p>
+<p>  AWS region: us-east-1</p>
+<p>  AWS auth skipped</p>
+<p>  ```</p>
+
+<p>  如果您配置了企业代理，`/status` 也会显示一条 `Proxy` 行，其中包含您的代理 URL。</p>
+</div>
+
+<h3 id="sec-third-party-integrations-7">组织的最佳实践</h3>
+
+<h4 id="sec-third-party-integrations-8">投资文档和内存</h4>
+
+<p>我们强烈建议投资文档，以便 Claude Code 理解您的代码库。组织可以在多个级别部署 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 文件：</p>
+
+<p>* **组织范围**：部署到系统目录，如 `/Library/Application Support/ClaudeCode/<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>`（macOS）、`/etc/claude-code/<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>`（Linux 和 WSL）或 `C:\Program Files\ClaudeCode\<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>`（Windows），用于公司范围的标准</p>
+<p>* **存储库级别**：在存储库根目录中创建 `<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>` 文件，包含项目架构、构建命令和贡献指南。将这些检入源代码控制，以便所有用户受益</p>
+
+<p>在<a class="kw" onclick="showKw('内存和 CLAUDE.md 文件')" title="点击查看解释">内存和 CLAUDE.md 文件</a>中了解更多。</p>
+
+<h4 id="sec-third-party-integrations-9">简化部署</h4>
+
+<p>如果您有自定义开发环境，我们发现创建一种&quot;一键&quot;安装 Claude Code 的方式是在组织中增加采用率的关键。</p>
+
+<h4 id="sec-third-party-integrations-10">从引导式使用开始</h4>
+
+<p>鼓励新用户尝试使用 Claude Code 进行代码库问答，或在较小的错误修复或功能请求上使用。要求 Claude Code 制定计划。检查 Claude 的建议，如果偏离轨道，请提供反馈。随着时间的推移，当用户更好地理解这种新范式时，他们将更有效地让 Claude Code 更自主地运行。</p>
+
+<h4 id="sec-third-party-integrations-11">为云提供商固定模型版本</h4>
+
+<p>如果您通过 <a class="kw" onclick="showKw('Amazon Bedrock')" title="点击查看解释">Amazon Bedrock</a>、<a class="kw" onclick="showKw('Google Cloud 的 Agent Platform')" title="点击查看解释">Google Cloud 的 Agent Platform</a>、<a class="kw" onclick="showKw('Microsoft Foundry')" title="点击查看解释">Microsoft Foundry</a> 或 <a class="kw" onclick="showKw('Claude Platform on AWS')" title="点击查看解释">Claude Platform on AWS</a> 部署，请使用 `ANTHROPIC_DEFAULT_FABLE_MODEL`、`ANTHROPIC_DEFAULT_OPUS_MODEL`、`ANTHROPIC_DEFAULT_SONNET_MODEL` 和 `ANTHROPIC_DEFAULT_HAIKU_MODEL` 固定特定模型版本。如果不固定，模型别名会解析为 Claude Code 为该提供商内置的默认值，这可能滞后于最新版本，并且可能尚未在您的账户中启用。固定让您可以控制用户何时迁移到新模型。有关每个提供商在默认值不可用时的行为，请参阅<a class="kw" onclick="showKw('模型配置')" title="点击查看解释">模型配置</a>。</p>
+
+<h4 id="sec-third-party-integrations-12">配置安全策略</h4>
+
+<p>安全团队可以配置托管<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>，定义 Claude Code 允许和不允许做什么，这不能被本地配置覆盖。<a class="kw" onclick="showKw('了解更多')" title="点击查看解释">了解更多</a>。</p>
+
+<h4 id="sec-third-party-integrations-13">利用 MCP 进行集成</h4>
+
+<p><a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 是为 Claude Code 提供更多信息的好方法，例如连接到票证管理系统或错误日志。我们建议一个中央团队配置 <a class="kw" onclick="showKw('MCP server')" title="点击查看解释">MCP server</a>s 并将 `.mcp.json` 配置检入代码库，以便所有用户受益。<a class="kw" onclick="showKw('了解更多')" title="点击查看解释">了解更多</a>。</p>
+
+<p>在 Anthropic，我们信任 Claude Code 在每个 Anthropic 代码库中推动开发。我们希望您像我们一样享受使用 Claude Code。</p>
+
+<h3 id="sec-third-party-integrations-14">后续步骤</h3>
+
+<p>选择部署选项并为您的团队配置访问<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>后：</p>
+
+<p>1. **向您的团队推出**：分享安装说明，让团队成员<a class="kw" onclick="showKw('安装 Claude Code')" title="点击查看解释">安装 Claude Code</a> 并使用其凭证进行身份验证。</p>
+<p>2. **<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>共享配置**：在您的存储库中创建 <a class="kw" onclick="showKw('CLAUDE.md 文件')" title="点击查看解释">CLAUDE.md 文件</a>，以帮助 Claude Code 理解您的代码库和编码标准。</p>
+<p>3. **配置<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>**：查看<a class="kw" onclick="showKw('安全设置')" title="点击查看解释">安全设置</a>以定义 Claude Code 在您的环境中可以和不能做什么。</p>
 
   </main>
 </div>

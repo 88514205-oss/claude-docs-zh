@@ -1566,7 +1566,6 @@ export const ContextWindow = () => {
 
 Claude Code 的上下文窗口包含 Claude 在您的会话中了解的所有内容：您的指令、它读取的文件、它自己的响应以及从不在您的终端中出现的内容。下面的时间线展示了从启动到压缩的完整会话：在您输入之前加载的内容、每个文件读取、规则和 hook 在 Claude 工作时添加的内容，以及子代理如何将大型读取保留在您的上下文之外。有关相同内容的列表形式，请参阅[书面分解](#what-the-timeline-shows)。
 
-<ContextWindow />
 
 <h2 id="what-the-timeline-shows">
   时间线显示的内容

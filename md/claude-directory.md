@@ -1438,7 +1438,6 @@ Claude Code 从您的项目目录和主目录中的 `~/.claude` 读取指令、�
 
 单击树中的文件以查看每个文件的作用、何时加载以及示例。
 
-<ClaudeExplorer />
 
 <h2 id="what’s-not-shown">
   未显示的内容

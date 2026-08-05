@@ -176,6 +176,9 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
   </nav>
   <div style="margin:14px 20px 6px;font-size:12px;color:var(--muted);letter-spacing:1px;">本文目录</div>
   <a href="#sec-prompt-library-1" style="padding-left:0px;font-size:13px;">提示词库</a>
+<a href="#sec-prompt-library-2" style="padding-left:14px;font-size:13.5px;">这些提示词为什么有效</a>
+<a href="#sec-prompt-library-3" style="padding-left:14px;font-size:13.5px;">这些来自哪里</a>
+<a href="#sec-prompt-library-4" style="padding-left:14px;font-size:13.5px;">相关资源</a>
 </aside>
 <div class="overlay" id="overlay" onclick="closeDrawer()"></div>
 
@@ -183,12 +186,80 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
   <aside class="toc-side">
     <h3>本文目录</h3>
     <a href="#sec-prompt-library-1" style="padding-left:0px;font-size:13px;">提示词库</a>
+<a href="#sec-prompt-library-2" style="padding-left:14px;font-size:13.5px;">这些提示词为什么有效</a>
+<a href="#sec-prompt-library-3" style="padding-left:14px;font-size:13.5px;">这些来自哪里</a>
+<a href="#sec-prompt-library-4" style="padding-left:14px;font-size:13.5px;">相关资源</a>
   </aside>
 
   <main class="article">
     <h2 id="sec-prompt-library-1">提示词库</h2>
 
 <blockquote>复制粘贴提示词到 Claude Code，按任务和角色标记。</blockquote>
+
+<p>这是一个<a class="kw" onclick="showKw('提示词库')" title="点击查看解释">提示词库</a>，可以复制到 Claude Code 中使用。使用它来探索你还没有尝试过的工作方式，或者当你不确定从哪里开始时。</p>
+
+<p>这些<a class="kw" onclick="showKw('提示词')" title="点击查看解释">提示词</a>来自各种 Anthropic 指南，包括<a class="kw" onclick="showKw('常见工作流')" title="点击查看解释">常见工作流</a>、<a class="kw" onclick="showKw('最佳实践')" title="点击查看解释">最佳实践</a>和<a class="kw" onclick="showKw('Anthropic 团队如何使用 Claude Code')" title="点击查看解释">Anthropic 团队如何使用 Claude Code</a>。它们是起点而不是脚本。打开任何<a class="kw" onclick="showKw('提示词')" title="点击查看解释">提示词</a>下的**为什么这样做有效**来查看其背后的模式，这样你可以编写自己的<a class="kw" onclick="showKw('提示词')" title="点击查看解释">提示词</a>。</p>
+
+<p>&lt;PromptLibrary text={text} labels={labels} tagLabels={tagLabels} phaseLabels={phaseLabels} sourceLabels={sourceLabels} catLabels={catLabels} /&gt;</p>
+
+<h3 id="sec-prompt-library-2">这些提示词为什么有效</h3>
+
+<p>上面的<a class="kw" onclick="showKw('提示词')" title="点击查看解释">提示词</a>共享一些模式。识别它们有助于你将此处的任何<a class="kw" onclick="showKw('提示词')" title="点击查看解释">提示词</a>调整到你自己的任务。</p>
+
+<p>**描述结果，而不是步骤。** 说出你想要的内容，让 Claude 找到文件。下面的<a class="kw" onclick="showKw('提示词')" title="点击查看解释">提示词</a>无需命名单个文件路径即可工作。</p>
+
+<pre><code>
+add rate limiting to the public API and make sure existing tests still pass
+</code></pre>
+
+<p>**给它一种检查自己工作的方式。** 在同一<a class="kw" onclick="showKw('提示词')" title="点击查看解释">提示词</a>中要求运行、测试、比较或验证，以便 Claude 迭代而不是在一次尝试后停止。</p>
+
+<pre><code>
+write the migration, run it against the dev database, and confirm the schema matches
+</code></pre>
+
+<p>**指向参考。** 命名现有文件、测试或模式以匹配，以便新代码与你已有的内容一致。</p>
+
+<pre><code>
+add a settings page that follows the same layout as the profile page
+</code></pre>
+
+<p>**说明可测量的目标。** 当目标是性能或覆盖率时，给出指标和阈值，以便完成是明确的。</p>
+
+<pre><code>
+get the bundle size under 200KB and show me what you removed
+</code></pre>
+
+<p>**给它工件。** 直接在<a class="kw" onclick="showKw('提示词')" title="点击查看解释">提示词</a>中粘贴错误、日志、屏幕截图和计划输出，或键入 `@` 来引用文件。Claude 读取源而不是你对它的描述。</p>
+
+<pre><code>
+why is the build failing? @build.log
+</code></pre>
+
+<p>**说出你想要答案的方式。** 命名格式、长度或受众，以便解释适合你将如何使用它。要使格式成为每个响应的默认值，请<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> <a class="kw" onclick="showKw('输出样式')" title="点击查看解释">输出样式</a>。</p>
+
+<pre><code>
+explain how the payment retry logic works as an HTML page with a diagram, then open it in my browser
+</code></pre>
+
+<p>有关每个模式的更多信息，请参阅<a class="kw" onclick="showKw('最佳实践')" title="点击查看解释">最佳实践</a>。</p>
+
+<h3 id="sec-prompt-library-3">这些来自哪里</h3>
+
+<p>这些<a class="kw" onclick="showKw('提示词')" title="点击查看解释">提示词</a>基于已发布的 Anthropic 资源中的模式。每张卡片都链接到其来源：</p>
+
+<p>* <a class="kw" onclick="showKw('常见工作流')" title="点击查看解释">常见工作流</a>：核心任务的分步指南</p>
+<p>* <a class="kw" onclick="showKw('最佳实践')" title="点击查看解释">最佳实践</a>：<a class="kw" onclick="showKw('提示词')" title="点击查看解释">提示词</a>模式和项目<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a></p>
+<p>* <a class="kw" onclick="showKw('Anthropic 团队如何使用 Claude Code')" title="点击查看解释">Anthropic 团队如何使用 Claude Code</a>：来自工程、产品、设计和数据团队的真实<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>，深入探讨<a class="kw" onclick="showKw('法律')" title="点击查看解释">法律</a>、<a class="kw" onclick="showKw('营销')" title="点击查看解释">营销</a>和<a class="kw" onclick="showKw('网络安全')" title="点击查看解释">网络安全</a></p>
+<p>* <a class="kw" onclick="showKw('扩展代理编码指南')" title="点击查看解释">扩展代理编码指南</a>：企业采用指南</p>
+
+<p>有关这些模式的视频演练，请参阅 Anthropic Academy 上的免费 <a class="kw" onclick="showKw('Claude Code in Action')" title="点击查看解释">Claude Code in Action</a> 课程。</p>
+
+<h3 id="sec-prompt-library-4">相关资源</h3>
+
+<p>此页面上的<a class="kw" onclick="showKw('提示词')" title="点击查看解释">提示词</a>是起点。一旦一个对你的项目有效，下一步是使其可重复：将其保存为 <a class="kw" onclick="showKw('技能')" title="点击查看解释">技能</a>，以便团队中的任何人都可以将其作为 `/command` 运行，并在 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 中记录 Claude 学到的约定，以便每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>都以该上下文开始，而不是 Claude 重新学习它。对于更大或更危险的更改，<a class="kw" onclick="showKw('Plan Mode')" title="点击查看解释">Plan Mode</a> 在任何编辑发生前显示文件列表。</p>
+
+<p>如果你在团队中引入 Claude Code，请参阅<a class="kw" onclick="showKw('管理')" title="点击查看解释">管理</a>以获取<a class="kw" onclick="showKw('托管设置')" title="点击查看解释">托管设置</a>和策略，以及<a class="kw" onclick="showKw('成本和使用')" title="点击查看解释">成本和使用</a>以了解此工作如何在你的计划上计费。</p>
 
   </main>
 </div>
