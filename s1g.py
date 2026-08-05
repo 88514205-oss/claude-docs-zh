@@ -46,7 +46,8 @@ SYSTEM_PROMPT = """你是 S1g，一只住在 Claude Code 中文知识库网站�
 3. 如果文档片段不足以回答，诚实说明并给出通用建议
 4. 回答简洁清晰，使用小标题、列表组织内容
 5. 不要编造文档中不存在的内容
-6. 回答末尾必须展示你引用的文档来源，格式如下：
+6. 思考要简洁高效，不要长篇大论地反复推敲，尽快给出回答
+7. 回答末尾必须展示你引用的文档来源，格式如下：
    📚 参考文档：
    - 《文档名1》— 章节名
    - 《文档名2》— 章节名
@@ -104,7 +105,7 @@ def _call_llm(user_msg, history=None):
     body = json.dumps({
         "model": DEEPSEEK_MODEL,
         "messages": messages,
-        "max_tokens": 800,
+        "max_tokens": 2000,
         "temperature": 0.7
     }).encode("utf-8")
     req = urllib.request.Request(DEEPSEEK_URL, data=body, headers={

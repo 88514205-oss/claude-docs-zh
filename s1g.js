@@ -320,17 +320,20 @@
     full = full.replace(/`([^`]+)`/g, "<code>$1</code>");
     var plain = text;
     var i = 0;
+    // 动态速度：短回答慢慢打（有打字机感），长回答加快（总时长约12秒）
+    var len = plain.length;
+    var speed = len > 1500 ? 4 : len > 600 ? 8 : len > 200 ? 14 : 22;
     var timer = setInterval(function () {
       if (i <= plain.length) {
         m.textContent = plain.slice(0, i);
-        i++;
+        i += (len > 1500 ? 3 : 1);
         msgs.scrollTop = msgs.scrollHeight;
       } else {
         clearInterval(timer);
         m.innerHTML = full;
         msgs.scrollTop = msgs.scrollHeight;
       }
-    }, 24);
+    }, speed);
   }
   function clearMsgs() {
     msgs.innerHTML = "";
