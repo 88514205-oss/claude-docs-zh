@@ -86,7 +86,14 @@
       face = FACES[name] || FACES.idle[0];
     }
     var f = ball.querySelector("#s1gFace");
-    if (f) f.textContent = face;
+    if (f) {
+      f.textContent = face;
+      // 长表情自动缩小字号，避免溢出球体
+      var len = face.length;
+      f.style.fontSize = (len > 11 ? 12 : len > 9 ? 14 : 17) + "px";
+      f.style.lineHeight = "1";
+      f.style.whiteSpace = "nowrap";
+    }
     var logo = document.querySelector(".s1g-logo-face");
     if (logo) logo.textContent = face;
     var emptyFace = document.querySelector(".s1g-empty-face");

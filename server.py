@@ -124,8 +124,8 @@ def inject_s1g(html):
     footer = (
         '<div class="s1g-footer">'
         '<div class="s1g-footer-title">🐾 CLAUDE CODE 中文知识库</div>'
-        '<div>本项目开源 · <a href="https://github.com/88514205-oss" target="_blank" rel="noopener">'
-        'GitHub: MasterKuma (88514205-oss)</a></div>'
+        '<div>本项目开源 · <a href="https://github.com/88514205-oss/claude-docs-zh" target="_blank" rel="noopener">'
+        'GitHub: 88514205-oss/claude-docs-zh</a></div>'
         '<div style="font-size:12px;color:#666;margin-top:6px;">Powered by S1g 猫娘助手 (・ω・)</div>'
         '</div>'
     )
