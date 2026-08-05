@@ -17,7 +17,9 @@
 | 3 | 填写名称（随意）→ 点击创建 |
 | 4 | **立即复制保存**（关闭后不再显示完整 Key） |
 
-- 模型：`deepseek-chat`（V3）、`deepseek-reasoner`（R1）
+- 模型：`deepseek-v4-flash`（快速/高性价比）、`deepseek-v4-pro`（更强推理）
+- 价格：约 ¥1~2 / 百万 token，新用户有免费额度
+- 注：DeepSeek V3/R1 系列 API 已下线，当前仅提供 V4 系列
 - 价格：约 ¥1~2 / 百万 token，新用户有免费额度
 - 充值：控制台「充值」页面，支持支付宝/微信
 
