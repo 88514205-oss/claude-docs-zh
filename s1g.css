@@ -179,3 +179,27 @@
   transition: color 0.15s;
 }
 .s1g-footer a:hover { color: var(--accent, #8b7cff); text-decoration: underline; }
+
+/* 雨云友情链接（醒目） */
+.s1g-rainyun {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #a99dff;
+}
+.s1g-rainyun a {
+  display: inline-block;
+  padding: 4px 14px;
+  border: 1px solid rgba(169,157,255,0.5);
+  border-radius: 14px;
+  background: rgba(139,124,255,0.12);
+  color: #c4b5fd;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.s1g-rainyun a:hover {
+  background: rgba(139,124,255,0.3);
+  border-color: #a99dff;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(139,124,255,0.4);
+}

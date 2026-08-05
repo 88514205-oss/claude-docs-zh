@@ -167,7 +167,7 @@ def inject_s1g(html):
         '<div>本项目开源 · <a href="https://github.com/88514205-oss/claude-docs-zh" target="_blank" rel="noopener">'
         'GitHub: 88514205-oss/claude-docs-zh</a></div>'
         '<div style="font-size:12px;color:#666;margin-top:6px;">Powered by S1g 猫娘助手 (・ω・)</div>'
-        '<div style="font-size:12px;color:#666;margin-top:8px;">本站由 <a href="https://www.rainyun.com" target="_blank" rel="noopener" onclick="trackClick(\'rainyun\')" style="color:#a99dff;text-decoration:none;border-bottom:1px dotted #a99dff;">雨云</a> 提供计算服务</div>'
+        '<div class="s1g-rainyun">本站由 <a href="https://www.rainyun.com" target="_blank" rel="noopener" onclick="trackClick(\'rainyun\')">☁️ 雨云</a> 提供计算服务</div>'
         '</div>'
     )
     if "</body>" in html:
