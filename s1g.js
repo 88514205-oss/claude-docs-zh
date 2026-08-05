@@ -161,12 +161,12 @@
       if (posX >= window.innerWidth - BALL) { posX = window.innerWidth - BALL; velX = -Math.abs(velX) * (0.8 + Math.random() * 0.4); }
       if (posY <= 0) { posY = 0; velY = Math.abs(velY) * (0.8 + Math.random() * 0.4); }
       if (posY >= window.innerHeight - BALL) { posY = window.innerHeight - BALL; velY = -Math.abs(velY) * (0.8 + Math.random() * 0.4); }
-      // 表情随方向变化（限频）
+      // 表情随方向变化（每5秒更新一次）
       if (!faceTimer) {
         faceTimer = setTimeout(function () {
           faceTimer = null;
           setFace(pickFace());
-        }, 600);
+        }, 5000);
       }
       applyPos();
     }
