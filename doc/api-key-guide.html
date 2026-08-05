@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0f1117">
-<title>Claude Code 最佳实践 - Claude Code 知识库</title>
+<title>如何获取各个提供商的 API Key - Claude Code 知识库</title>
 <style>
 :root {
   --bg: #0f1117; --bg2: #16181f; --card: #1b1e26; --card2: #20242e;
@@ -163,7 +163,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
 <div class="progress-bar" id="progressBar"></div>
 <header class="topbar">
   <span class="logo"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6l0 13" /> <path d="M12 6l0 13" /> <path d="M21 6l0 13" /> </svg></span>Claude Code 知识库</span>
-  <div class="tb-title">Claude Code 最佳实践</div>
+  <div class="tb-title">如何获取各个提供商的 API Key</div>
   <button class="hamburger" onclick="toggleDrawer()" aria-label="菜单"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M4 6l16 0" /> <path d="M4 12l16 0" /> <path d="M4 18l16 0" /> </svg></span></button>
 </header>
 <aside class="drawer" id="drawer">
@@ -175,691 +175,224 @@ body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Mi
     <a href="#" onclick="closeDrawer();openRpt()"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9 9v-1a3 3 0 0 1 6 0v1" /> <path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /> <path d="M3 13l4 0" /> <path d="M17 13l4 0" /> <path d="M12 20l0 -6" /> <path d="M4 19l3.35 -2" /> <path d="M20 19l-3.35 -2" /> <path d="M4 7l3.75 2.4" /> <path d="M20 7l-3.75 2.4" /> </svg></span>文档有误？汇报</a>
   </nav>
   <div style="margin:14px 20px 6px;font-size:12px;color:var(--muted);letter-spacing:1px;">本文目录</div>
-  <a href="#sec-best-practices-1" style="padding-left:0px;font-size:13px;">Claude Code 最佳实践</a>
-<a href="#sec-best-practices-2" style="padding-left:14px;font-size:13.5px;">给 Claude 一种验证其工作的方式</a>
-<a href="#sec-best-practices-3" style="padding-left:14px;font-size:13.5px;">先探索，再规划，最后编码</a>
-<a href="#sec-best-practices-4" style="padding-left:14px;font-size:13.5px;">在提示中提供具体的上下文</a>
-<a href="#sec-best-practices-5" style="padding-left:28px;font-size:13px;">提供丰富的内容</a>
-<a href="#sec-best-practices-6" style="padding-left:14px;font-size:13.5px;">配置你的环境</a>
-<a href="#sec-best-practices-7" style="padding-left:28px;font-size:13px;">编写有效的 CLAUDE.md</a>
-<a href="#sec-best-practices-8" style="padding-left:28px;font-size:13px;">配置权限</a>
-<a href="#sec-best-practices-9" style="padding-left:28px;font-size:13px;">使用 CLI 工具</a>
-<a href="#sec-best-practices-10" style="padding-left:28px;font-size:13px;">连接 MCP 服务器</a>
-<a href="#sec-best-practices-11" style="padding-left:28px;font-size:13px;">设置 hooks</a>
-<a href="#sec-best-practices-12" style="padding-left:28px;font-size:13px;">创建 skills</a>
-<a href="#sec-best-practices-13" style="padding-left:28px;font-size:13px;">创建自定义 subagents</a>
-<a href="#sec-best-practices-14" style="padding-left:28px;font-size:13px;">安装 plugins</a>
-<a href="#sec-best-practices-15" style="padding-left:14px;font-size:13.5px;">有效沟通</a>
-<a href="#sec-best-practices-16" style="padding-left:28px;font-size:13px;">提出代码库问题</a>
-<a href="#sec-best-practices-17" style="padding-left:28px;font-size:13px;">让 Claude 采访你</a>
-<a href="#sec-best-practices-18" style="padding-left:14px;font-size:13.5px;">管理你的会话</a>
-<a href="#sec-best-practices-19" style="padding-left:28px;font-size:13px;">尽早且经常改正方向</a>
-<a href="#sec-best-practices-20" style="padding-left:28px;font-size:13px;">积极管理 context</a>
-<a href="#sec-best-practices-21" style="padding-left:28px;font-size:13px;">使用 subagents 进行调查</a>
-<a href="#sec-best-practices-22" style="padding-left:28px;font-size:13px;">使用检查点进行 Rewind</a>
-<a href="#sec-best-practices-23" style="padding-left:28px;font-size:13px;">恢复对话</a>
-<a href="#sec-best-practices-24" style="padding-left:14px;font-size:13.5px;">自动化和扩展</a>
-<a href="#sec-best-practices-25" style="padding-left:28px;font-size:13px;">运行非交互模式</a>
-<a href="#sec-best-practices-26" style="padding-left:28px;font-size:13px;">运行多个 Claude 会话</a>
-<a href="#sec-best-practices-27" style="padding-left:28px;font-size:13px;">跨文件扇出</a>
-<a href="#sec-best-practices-28" style="padding-left:28px;font-size:13px;">使用 auto mode 自主运行</a>
-<a href="#sec-best-practices-29" style="padding-left:28px;font-size:13px;">添加对抗性审查步骤</a>
-<a href="#sec-best-practices-30" style="padding-left:14px;font-size:13.5px;">避免常见失败模式</a>
-<a href="#sec-best-practices-31" style="padding-left:14px;font-size:13.5px;">培养你的直觉</a>
-<a href="#sec-best-practices-32" style="padding-left:14px;font-size:13.5px;">相关资源</a>
+  <a href="#sec-api-key-guide-1" style="padding-left:0px;font-size:13px;">如何获取各个提供商的 API Key</a>
+<a href="#sec-api-key-guide-2" style="padding-left:14px;font-size:13.5px;">DeepSeek（深度求索）</a>
+<a href="#sec-api-key-guide-3" style="padding-left:14px;font-size:13.5px;">硅基流动（SiliconFlow）</a>
+<a href="#sec-api-key-guide-4" style="padding-left:14px;font-size:13.5px;">OpenAI（GPT）</a>
+<a href="#sec-api-key-guide-5" style="padding-left:14px;font-size:13.5px;">Anthropic（Claude）</a>
+<a href="#sec-api-key-guide-6" style="padding-left:14px;font-size:13.5px;">Google Gemini</a>
+<a href="#sec-api-key-guide-7" style="padding-left:14px;font-size:13.5px;">通义千问（阿里云百炼）</a>
+<a href="#sec-api-key-guide-8" style="padding-left:14px;font-size:13.5px;">智谱 AI（GLM）</a>
+<a href="#sec-api-key-guide-9" style="padding-left:14px;font-size:13.5px;">月之暗面（Kimi / Moonshot）</a>
+<a href="#sec-api-key-guide-10" style="padding-left:14px;font-size:13.5px;">OpenRouter（聚合平台）</a>
+<a href="#sec-api-key-guide-11" style="padding-left:14px;font-size:13.5px;">💡 通用注意事项</a>
+<a href="#sec-api-key-guide-12" style="padding-left:14px;font-size:13.5px;">🔗 相关章节</a>
 </aside>
 <div class="overlay" id="overlay" onclick="closeDrawer()"></div>
 
 <div class="reader">
   <aside class="toc-side">
     <h3>本文目录</h3>
-    <a href="#sec-best-practices-1" style="padding-left:0px;font-size:13px;">Claude Code 最佳实践</a>
-<a href="#sec-best-practices-2" style="padding-left:14px;font-size:13.5px;">给 Claude 一种验证其工作的方式</a>
-<a href="#sec-best-practices-3" style="padding-left:14px;font-size:13.5px;">先探索，再规划，最后编码</a>
-<a href="#sec-best-practices-4" style="padding-left:14px;font-size:13.5px;">在提示中提供具体的上下文</a>
-<a href="#sec-best-practices-5" style="padding-left:28px;font-size:13px;">提供丰富的内容</a>
-<a href="#sec-best-practices-6" style="padding-left:14px;font-size:13.5px;">配置你的环境</a>
-<a href="#sec-best-practices-7" style="padding-left:28px;font-size:13px;">编写有效的 CLAUDE.md</a>
-<a href="#sec-best-practices-8" style="padding-left:28px;font-size:13px;">配置权限</a>
-<a href="#sec-best-practices-9" style="padding-left:28px;font-size:13px;">使用 CLI 工具</a>
-<a href="#sec-best-practices-10" style="padding-left:28px;font-size:13px;">连接 MCP 服务器</a>
-<a href="#sec-best-practices-11" style="padding-left:28px;font-size:13px;">设置 hooks</a>
-<a href="#sec-best-practices-12" style="padding-left:28px;font-size:13px;">创建 skills</a>
-<a href="#sec-best-practices-13" style="padding-left:28px;font-size:13px;">创建自定义 subagents</a>
-<a href="#sec-best-practices-14" style="padding-left:28px;font-size:13px;">安装 plugins</a>
-<a href="#sec-best-practices-15" style="padding-left:14px;font-size:13.5px;">有效沟通</a>
-<a href="#sec-best-practices-16" style="padding-left:28px;font-size:13px;">提出代码库问题</a>
-<a href="#sec-best-practices-17" style="padding-left:28px;font-size:13px;">让 Claude 采访你</a>
-<a href="#sec-best-practices-18" style="padding-left:14px;font-size:13.5px;">管理你的会话</a>
-<a href="#sec-best-practices-19" style="padding-left:28px;font-size:13px;">尽早且经常改正方向</a>
-<a href="#sec-best-practices-20" style="padding-left:28px;font-size:13px;">积极管理 context</a>
-<a href="#sec-best-practices-21" style="padding-left:28px;font-size:13px;">使用 subagents 进行调查</a>
-<a href="#sec-best-practices-22" style="padding-left:28px;font-size:13px;">使用检查点进行 Rewind</a>
-<a href="#sec-best-practices-23" style="padding-left:28px;font-size:13px;">恢复对话</a>
-<a href="#sec-best-practices-24" style="padding-left:14px;font-size:13.5px;">自动化和扩展</a>
-<a href="#sec-best-practices-25" style="padding-left:28px;font-size:13px;">运行非交互模式</a>
-<a href="#sec-best-practices-26" style="padding-left:28px;font-size:13px;">运行多个 Claude 会话</a>
-<a href="#sec-best-practices-27" style="padding-left:28px;font-size:13px;">跨文件扇出</a>
-<a href="#sec-best-practices-28" style="padding-left:28px;font-size:13px;">使用 auto mode 自主运行</a>
-<a href="#sec-best-practices-29" style="padding-left:28px;font-size:13px;">添加对抗性审查步骤</a>
-<a href="#sec-best-practices-30" style="padding-left:14px;font-size:13.5px;">避免常见失败模式</a>
-<a href="#sec-best-practices-31" style="padding-left:14px;font-size:13.5px;">培养你的直觉</a>
-<a href="#sec-best-practices-32" style="padding-left:14px;font-size:13.5px;">相关资源</a>
+    <a href="#sec-api-key-guide-1" style="padding-left:0px;font-size:13px;">如何获取各个提供商的 API Key</a>
+<a href="#sec-api-key-guide-2" style="padding-left:14px;font-size:13.5px;">DeepSeek（深度求索）</a>
+<a href="#sec-api-key-guide-3" style="padding-left:14px;font-size:13.5px;">硅基流动（SiliconFlow）</a>
+<a href="#sec-api-key-guide-4" style="padding-left:14px;font-size:13.5px;">OpenAI（GPT）</a>
+<a href="#sec-api-key-guide-5" style="padding-left:14px;font-size:13.5px;">Anthropic（Claude）</a>
+<a href="#sec-api-key-guide-6" style="padding-left:14px;font-size:13.5px;">Google Gemini</a>
+<a href="#sec-api-key-guide-7" style="padding-left:14px;font-size:13.5px;">通义千问（阿里云百炼）</a>
+<a href="#sec-api-key-guide-8" style="padding-left:14px;font-size:13.5px;">智谱 AI（GLM）</a>
+<a href="#sec-api-key-guide-9" style="padding-left:14px;font-size:13.5px;">月之暗面（Kimi / Moonshot）</a>
+<a href="#sec-api-key-guide-10" style="padding-left:14px;font-size:13.5px;">OpenRouter（聚合平台）</a>
+<a href="#sec-api-key-guide-11" style="padding-left:14px;font-size:13.5px;">💡 通用注意事项</a>
+<a href="#sec-api-key-guide-12" style="padding-left:14px;font-size:13.5px;">🔗 相关章节</a>
   </aside>
 
   <main class="article">
-    <blockquote>## Documentation Index</blockquote>
-<blockquote>Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt</blockquote>
-<blockquote>Use this file to discover all available pages before exploring further.</blockquote>
+    <h2 id="sec-api-key-guide-1">如何获取各个提供商的 API Key</h2>
 
-<h2 id="sec-best-practices-1">Claude Code 最佳实践</h2>
+<p>本指南介绍如何注册并获取各大 AI 模型提供商的 API Key，用于配置 Claude Code、S1g 助手或其他 AI 应用。</p>
 
-<blockquote>从配置环境到跨并行会话扩展，充分利用 Claude Code 的提示和模式。</blockquote>
+<blockquote>**通用流程**：注册账号 → 实名认证（国内服务商）→ 充值（部分）→ 创建 API Key → 复制保存</blockquote>
 
-<p>Claude Code 是一个代理式编码环境。与等待回答问题的聊天机器人不同，Claude Code 可以读取你的文件、运行命令、进行更改，并在你观看、重定向或完全离开的情况下自主解决问题。</p>
+<p>---</p>
 
-<p>这改变了你的工作方式。与其自己编写代码并要求 Claude 审查，不如描述你想要什么，让 Claude 弄清楚如何构建它。Claude 会探索、规划和实现。</p>
+<h3 id="sec-api-key-guide-2">DeepSeek（深度求索）</h3>
 
-<p>但这种自主性仍然伴随着学习曲线。Claude 在某些约束条件下工作，你需要理解这些约束。</p>
-
-<p>本指南涵盖了在 Anthropic 内部团队和在各种代码库、语言和环境中使用 Claude Code 的工程师中已被证明有效的模式。有关代理循环如何在幕后工作的信息，请参阅 <a class="kw" onclick="showKw('Claude Code 如何工作')" title="点击查看解释">Claude Code 如何工作</a>。</p>
-
-<p>***</p>
-
-<p>大多数<a class="kw" onclick="showKw('最佳实践')" title="点击查看解释">最佳实践</a>都基于一个约束：Claude 的 context window 填充速度很快，随着填充，性能会下降。</p>
-
-<p>Claude 的 context window 保存你的整个对话，包括每条消息、Claude 读取的每个文件和每个命令输出。但这可能会很快填满。单个调试<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>或代码库探索可能会生成并消耗数万个 token。</p>
-
-<p>这很重要，因为当 context 填充时，LLM 性能会下降。当 context window 即将满时，Claude 可能会开始&quot;遗忘&quot;早期的指令或犯更多错误。context window 是最重要的资源。要查看<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>在实践中如何填充，请 <a class="kw" onclick="showKw('观看交互式演练')" title="点击查看解释">观看交互式演练</a>，了解启动时加载的内容以及每个文件读取的成本。使用 <a class="kw" onclick="showKw('自定义状态行')" title="点击查看解释">自定义状态行</a> 持续跟踪 context 使用情况，并查看 <a class="kw" onclick="showKw('减少 token 使用')" title="点击查看解释">减少 token 使用</a> 了解减少 token 使用的策略。</p>
-
-<p>***</p>
-
-<h3 id="sec-best-practices-2">给 Claude 一种验证其工作的方式</h3>
-
-<div class="callout callout-tip">
-<p>  给 Claude 一个它可以运行的检查：测试、构建、屏幕截图进行比较。这是你观看的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>和你可以离开的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>之间的区别。</p>
-</div>
-
-<p>当工作看起来完成时，Claude 会停止。没有它可以运行的检查，&quot;看起来完成&quot;是唯一可用的信号，你成为验证循环：每个错误都在等待你注意到它。给 Claude 一些能产生通过或失败的东西，循环就会自动关闭。Claude 完成工作，运行检查，读取结果，并迭代直到检查通过。</p>
-
-<p>检查是任何返回 Claude 可以在对话中读取的信号的东西：测试套件、构建退出代码、linter、针对固定装置比较输出的脚本，或与设计进行比较的<a class="kw" onclick="showKw('浏览器屏幕截图')" title="点击查看解释">浏览器屏幕截图</a>。</p>
+<p>**官网**：https://platform.deepseek.com</p>
 
 <div class='table-wrap'><table>
-<tr><th>策略</th><th>之前</th><th>之后</th></tr>
-<tr><td>**提供验证标准**</td><td>*&quot;实现一个验证电子邮件地址的函数&quot;*</td><td>*&quot;编写一个 validateEmail 函数。示例测试用例：<a class="kw" onclick="showKw('user@example.com')" title="点击查看解释">user@example.com</a> 为真，invalid 为假，<a class="kw" onclick="showKw('user@.com')" title="点击查看解释">user@.com</a> 为假。实现后运行测试&quot;*</td></tr>
-<tr><td>**以视觉方式验证 UI 更改**</td><td>*&quot;让仪表板看起来更好&quot;*</td><td>*&quot;\[粘贴屏幕截图] 实现此设计。对结果进行屏幕截图并与原始设计进行比较。列出差异并修复它们&quot;*</td></tr>
-<tr><td>**解决根本原因，而不是症状**</td><td>*&quot;构建失败&quot;*</td><td>*&quot;构建失败，出现此错误：\[粘贴错误]。修复它并验证构建成功。解决根本原因，不要抑制错误&quot;*</td></tr>
+<tr><th>步骤</th><th>操作</th></tr>
+<tr><td>1</td><td>打开 platform.deepseek.com，用手机号注册</td></tr>
+<tr><td>2</td><td>左侧菜单 → 「API Keys」→「创建 API Key」</td></tr>
+<tr><td>3</td><td>填写名称（随意）→ 点击创建</td></tr>
+<tr><td>4</td><td>**立即复制保存**（关闭后不再显示完整 Key）</td></tr>
 </table></div>
 
-<p>一旦检查存在，决定它对停止的限制有多严格：</p>
+<li>模型：`deepseek-chat`（V3）、`deepseek-reasoner`（R1）</li>
+<li>价格：约 ¥1~2 / 百万 token，新用户有免费额度</li>
+<li>充值：控制台「充值」页面，支持支付宝/微信</li>
 
-<p>* **在一个提示中**：要求 Claude 运行检查并在同一消息中迭代，如上表所示。</p>
-<p>* **在整个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中**：将检查<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>为 <a class="kw" onclick="showKw('/goal 条件')" title="点击查看解释">/goal 条件</a>。单独的评估器在每次转换后重新检查它，Claude 继续工作直到它成立。</p>
-<p>* **作为确定性门**：<a class="kw" onclick="showKw('Stop hook')" title="点击查看解释">Stop hook</a> 作为脚本运行你的检查，并阻止转换结束直到它通过。Claude Code 覆盖 hook 并在 8 次连续阻止后结束转换。</p>
-<p>* **通过第二意见**：<a class="kw" onclick="showKw('验证子代理')" title="点击查看解释">验证子代理</a>或<a class="kw" onclick="showKw('动态工作流')" title="点击查看解释">动态工作流</a>检查自己的发现，有一个新鲜的模型尝试反驳结果，所以做工作的代理不是给它评分的。</p>
+<p>---</p>
 
-<p>每一步都用<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>换取关注。提示版本适用于今天的任何任务。`/goal` 和 Stop hook 版本是让无人值守运行正确完成而无需你的东西。</p>
+<h3 id="sec-api-key-guide-3">硅基流动（SiliconFlow）</h3>
 
-<p>让 Claude 显示证据而不是声称成功：测试输出、它运行的命令及其返回的内容，或结果的屏幕截图。审查证据比自己重新运行验证要快，并且它适用于你没有观看的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。</p>
-
-<p>***</p>
-
-<h3 id="sec-best-practices-3">先探索，再规划，最后编码</h3>
-
-<div class="callout callout-tip">
-<p>  将研究和规划与实现分开，以避免解决错误的问题。</p>
-</div>
-
-<p>让 Claude 直接跳到编码可能会产生解决错误问题的代码。使用 <a class="kw" onclick="showKw('Plan Mode')" title="点击查看解释">Plan Mode</a> 将探索与执行分开。</p>
-
-<p>推荐的<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>有四个阶段：</p>
-
-<ol class="steps">
-<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;探索&lt;/div&gt;</p>
-<p>    进入 Plan Mode。Claude 读取文件并回答问题，不进行任何更改。</p>
-
-<p>    ```txt claude (plan mode) theme={null}</p>
-<p>    read /src/auth and understand how we handle sessions and login.</p>
-<p>    also look at how we manage environment variables for secrets.</p>
-<p>    ```</p>
-<p>  &lt;/li&gt;</p>
-<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;规划&lt;/div&gt;</p>
-<p>    要求 Claude 创建详细的实现计划。</p>
-
-<p>    ```txt claude (plan mode) theme={null}</p>
-<p>    I want to add Google <a class="kw" onclick="showKw('OAuth')" title="点击查看解释">OAuth</a>. What files need to change?</p>
-<p>    What&#x27;s the session flow? Create a plan.</p>
-<p>    ```</p>
-
-<p>    按 `Ctrl+G` 在文本编辑器中打开计划进行直接编辑，然后 Claude 继续。</p>
-<p>  &lt;/li&gt;</p>
-<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;实现&lt;/div&gt;</p>
-<p>    切换出 Plan Mode 并让 Claude 编码，根据其计划进行验证。</p>
-
-<p>    ```txt claude (default mode) theme={null}</p>
-<p>    implement the <a class="kw" onclick="showKw('OAuth')" title="点击查看解释">OAuth</a> flow from your plan. write tests for the</p>
-<p>    callback handler, run the test suite and fix any failures.</p>
-<p>    ```</p>
-<p>  &lt;/li&gt;</p>
-<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;提交&lt;/div&gt;</p>
-<p>    要求 Claude 使用描述性消息进行提交并创建 PR。</p>
-
-<p>    ```txt claude (default mode) theme={null}</p>
-<p>    commit with a descriptive message and open a PR</p>
-<p>    ```</p>
-<p>  &lt;/li&gt;</p>
-<p>&lt;/ol&gt;</p>
-
-<div class="callout">
-<p>  Plan Mode 很有用，但也增加了开销。</p>
-
-<p>  对于范围明确且修复很小的任务（如修复拼写错误、添加日志行或重命名变量），要求 Claude 直接执行。</p>
-
-<p>  当你对方法不确定、更改修改多个文件或你不熟悉被修改的代码时，规划最有用。如果你能用一句话描述 diff，跳过计划。</p>
-</div>
-
-<p>***</p>
-
-<h3 id="sec-best-practices-4">在提示中提供具体的上下文</h3>
-
-<div class="callout callout-tip">
-<p>  你的指令越精确，你需要的更正就越少。</p>
-</div>
-
-<p>Claude 可以推断意图，但它不能读心术。引用特定文件、提及约束，并指出示例模式。</p>
+<p>**官网**：https://siliconflow.cn</p>
 
 <div class='table-wrap'><table>
-<tr><th>策略</th><th>之前</th><th>之后</th></tr>
-<tr><td>**限定任务范围。** 指定哪个文件、什么场景和测试偏好。</td><td>*&quot;为 foo.py 添加测试&quot;*</td><td>*&quot;为 foo.py 编写测试，涵盖用户已注销的边界情况。避免 mock。&quot;*</td></tr>
-<tr><td>**指向来源。** 指导 Claude 到可以回答问题的来源。</td><td>*&quot;为什么 ExecutionFactory 有这样奇怪的 api？&quot;*</td><td>*&quot;查看 ExecutionFactory 的 git 历史并总结其 api 是如何形成的&quot;*</td></tr>
-<tr><td>**参考现有模式。** 指向代码库中的模式。</td><td>*&quot;添加日历小部件&quot;*</td><td>*&quot;查看主页上现有小部件的实现方式以了解模式。HotDogWidget.php 是一个很好的例子。按照模式实现一个新的日历小部件，让用户选择月份并向前/向后分页以选择年份。从头开始构建，除了代码库中已使用的库外，不使用其他库。&quot;*</td></tr>
-<tr><td>**描述症状。** 提供症状、可能的位置以及&quot;修复&quot;的样子。</td><td>*&quot;修复登录错误&quot;*</td><td>*&quot;用户报告<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>超时后登录失败。检查 src/auth/ 中的身份验证流程，特别是 token 刷新。编写一个失败的测试来重现问题，然后修复它&quot;*</td></tr>
+<tr><th>步骤</th><th>操作</th></tr>
+<tr><td>1</td><td>注册账号（支持手机号/GitHub）</td></tr>
+<tr><td>2</td><td>左侧「API 密钥」→「新建 API 密钥」</td></tr>
+<tr><td>3</td><td>复制生成的 `sk-...` 密钥</td></tr>
 </table></div>
 
-<p>当你在探索并能够改正方向时，模糊的提示可能很有用。像 `&quot;你会改进这个文件的什么？&quot;` 这样的提示可以表面你不会想到要问的东西。</p>
+<li>特点：聚合大量开源模型（Qwen、DeepSeek、GLM、Llama 等）</li>
+<li>新用户注册送 14 元体验金</li>
+<li>免费模型：部分模型可 0 元使用</li>
 
-<h4 id="sec-best-practices-5">提供丰富的内容</h4>
+<p>---</p>
 
-<div class="callout callout-tip">
-<p>  使用 `@` 引用文件、粘贴屏幕截图/图像或直接管道数据。</p>
-</div>
+<h3 id="sec-api-key-guide-4">OpenAI（GPT）</h3>
 
-<p>你可以通过多种方式向 Claude 提供丰富的数据：</p>
-
-<p>* **使用 `@` 引用文件**，而不是描述代码的位置。Claude 在响应前读取文件。</p>
-<p>* **直接粘贴图像**。复制/粘贴或拖放图像到提示中。</p>
-<p>* **提供 URL** 用于文档和 API 参考。使用 `<a class="kw" onclick="showKw('/permissions')" title="点击查看解释">/permissions</a>` 来允许列表经常使用的域。</p>
-<p>* **管道数据** 通过运行 `cat error.log | claude` 直接发送文件内容。</p>
-<p>* **让 Claude 获取它需要的东西**。告诉 Claude 使用 Bash 命令、<a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 工具或通过读取文件来自己拉取上下文。</p>
-
-<p>***</p>
-
-<h3 id="sec-best-practices-6">配置你的环境</h3>
-
-<p>一些<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>步骤使 Claude Code 在所有<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中显著更有效。有关扩展功能的完整<a class="kw" onclick="showKw('概述')" title="点击查看解释">概述</a>和何时使用每个功能，请参阅 <a class="kw" onclick="showKw('扩展 Claude Code')" title="点击查看解释">扩展 Claude Code</a>。</p>
-
-<h4 id="sec-best-practices-7">编写有效的 CLAUDE.md</h4>
-
-<div class="callout callout-tip">
-<p>  运行 `/init` 根据你的当前项目结构生成启动 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 文件，然后随时间精化。</p>
-</div>
-
-<p><a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 是一个特殊文件，Claude 在每次对话开始时读取。包括 Bash 命令、代码风格和<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>规则。这给 Claude 提供了它无法从代码中推断的持久上下文。</p>
-
-<p>`/init` 命令分析你的代码库以检测构建系统、测试框架和代码模式，为你提供坚实的基础来精化。</p>
-
-<p><a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 文件没有必需的格式，但保持简短和易读。例如：</p>
-
-<pre><code>
-# Code style
-- Use ES modules (import/export) syntax, not CommonJS (require)
-- Destructure imports when possible (eg. import { foo } from &#x27;bar&#x27;)
-
-# Workflow
-- Be sure to typecheck when you&#x27;re done making a series of code changes
-- Prefer running single tests, and not the whole test suite, for performance
-</code></pre>
-
-<p><a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 在每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中加载，所以只包括广泛适用的东西。对于仅有时相关的域知识或<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>，改用 <a class="kw" onclick="showKw('skills')" title="点击查看解释">skills</a>。Claude 按需加载它们，不会使每次对话都膨胀。</p>
-
-<p>保持简洁。对于每一行，问自己：*&quot;删除这个会导致 Claude 犯错吗？&quot;* 如果不会，删除它。膨胀的 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 文件会导致 Claude 忽略你的实际指令！</p>
+<p>**官网**：https://platform.openai.com</p>
 
 <div class='table-wrap'><table>
-<tr><th><span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 12l5 5l10 -10" /> </svg></span> 包括</th><th><span class="icon inline-emoji" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M18 6l-12 12" /> <path d="M6 6l12 12" /> </svg></span> 排除</th></tr>
-<tr><td>Claude 无法猜测的 Bash 命令</td><td>Claude 可以通过读取代码弄清楚的任何东西</td></tr>
-<tr><td>与默认值不同的代码风格规则</td><td>Claude 已经知道的标准语言约定</td></tr>
-<tr><td>测试指令和首选测试运行器</td><td>详细的 API 文档（改为链接到文档）</td></tr>
-<tr><td>存储库礼仪（分支命名、PR 约定）</td><td>经常变化的信息</td></tr>
-<tr><td>特定于你的项目的架构决策</td><td>长解释或教程</td></tr>
-<tr><td>开发者环境怪癖（必需的<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>）</td><td>自明的实践，如&quot;编写干净的代码&quot;</td></tr>
-<tr><td>常见陷阱或非显而易见的行为</td><td>文件逐个描述代码库</td></tr>
+<tr><th>步骤</th><th>操作</th></tr>
+<tr><td>1</td><td>注册 OpenAI 账号（需海外网络/手机号）</td></tr>
+<tr><td>2</td><td>登录后进入 platform.openai.com</td></tr>
+<tr><td>3</td><td>右上角头像 →「API keys」→「Create new secret key」</td></tr>
+<tr><td>4</td><td>复制 `sk-...` 开头的 Key</td></tr>
 </table></div>
 
-<p>如果 Claude 继续做你不想要的事情，尽管有反对的规则，该文件可能太长，规则被遗漏了。如果 Claude 问你在 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 中回答的问题，措辞可能不明确。像对待代码一样对待 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>：当事情出错时审查它，定期修剪它，并通过观察 Claude 的行为是否实际改变来测试更改。</p>
+<li>模型：`gpt-4o`、`gpt-4o-mini` 等</li>
+<li>计费：按量付费，需绑定信用卡充值</li>
+<li>⚠️ 国内直连不稳定，需要代理</li>
 
-<p>你可以通过添加强调（例如&quot;IMPORTANT&quot;或&quot;YOU MUST&quot;）来调整指令以改进遵守。将文件检入 git，以便你的团队可以贡献。该文件随时间增加价值。</p>
+<p>---</p>
 
-<p><a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 文件可以使用 `@path/to/import` 语法导入其他文件：</p>
+<h3 id="sec-api-key-guide-5">Anthropic（Claude）</h3>
 
-<pre><code>
-See @README.md for project overview and @package.json for available npm commands.
-
-# Additional Instructions
-- Git workflow: @docs/git-instructions.md
-- Personal overrides: @~/.claude/my-project-instructions.md
-</code></pre>
-
-<p>你可以在多个位置放置 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 文件：</p>
-
-<p>* **主文件夹（`~/.claude/<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>`）**：适用于所有 Claude <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a></p>
-<p>* **项目根目录（`./<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>`）**：检入 git 以与你的团队共享</p>
-<p>* **项目根目录（`./CLAUDE.local.md`）**：个人项目特定的笔记；将此文件添加到你的 `.gitignore`，以便它不会与你的团队共享</p>
-<p>* **父目录**：对于 monorepos 有用，其中 `root/<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>` 和 `root/foo/<a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>` 都会自动拉入</p>
-<p>* **子目录**：当处理这些目录中的文件时，Claude 按需拉入子 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 文件</p>
-
-<h4 id="sec-best-practices-8">配置权限</h4>
-
-<div class="callout callout-tip">
-<p>  使用 <a class="kw" onclick="showKw('auto mode')" title="点击查看解释">auto mode</a> 让分类器处理批准，使用 `<a class="kw" onclick="showKw('/permissions')" title="点击查看解释">/permissions</a>` 来允许列表特定命令，或使用 `/sandbox` 进行操作系统级隔离。每种方式都减少中断，同时让你保持控制。</p>
-</div>
-
-<p>默认情况下，Claude Code 请求可能修改你的系统的操作的<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>：文件写入、Bash 命令、<a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 工具等。这是安全的但繁琐。在第十次批准后，你不是真的在审查，你只是点击通过。有三种方式来减少这些中断：</p>
-
-<p>* **Auto mode**：一个单独的分类器模型审查命令并仅阻止看起来有风险的东西：范围升级、未知基础设施或由敌对内容驱动的操作。最适合当你信任任务的总体方向但不想点击通过每一步时</p>
-<p>* **<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>允许列表**：允许你知道是安全的特定工具，如 `npm run lint` 或 `git commit`</p>
-<p>* **沙箱**：启用操作系统级隔离，限制文件系统和网络访问，允许 Claude 在定义的边界内更自由地工作</p>
-
-<p>阅读更多关于 <a class="kw" onclick="showKw('权限模式')" title="点击查看解释">权限模式</a>、<a class="kw" onclick="showKw('权限规则')" title="点击查看解释">权限规则</a> 和 <a class="kw" onclick="showKw('沙箱')" title="点击查看解释">沙箱</a>。</p>
-
-<h4 id="sec-best-practices-9">使用 CLI 工具</h4>
-
-<div class="callout callout-tip">
-<p>  告诉 Claude Code 在与外部服务交互时使用 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 工具，如 `gh`、`aws`、`gcloud` 和 `sentry-cli`。</p>
-</div>
-
-<p><a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 工具是与外部服务交互的最 context 高效的方式。如果你使用 GitHub，安装 `gh` <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a>。Claude 知道如何使用它来创建问题、打开拉取请求和读取评论。没有 `gh`，Claude 仍然可以使用 GitHub API，但未认证的请求经常会触发速率限制。</p>
-
-<p>Claude 也有效地学习它不知道的 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> 工具。尝试像 `Use &#x27;foo-cli-tool --help&#x27; to learn about foo tool, then use it to solve A, B, C.` 这样的提示。</p>
-
-<h4 id="sec-best-practices-10">连接 MCP 服务器</h4>
-
-<div class="callout callout-tip">
-<p>  运行 `claude mcp add` 来连接外部工具，如 Notion、Figma 或你的数据库。</p>
-</div>
-
-<p>使用 <a class="kw" onclick="showKw('MCP servers')" title="点击查看解释">MCP servers</a>，你可以要求 Claude 从问题跟踪器实现功能、查询数据库、分析监控数据、集成来自 Figma 的设计并自动化<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>。</p>
-
-<h4 id="sec-best-practices-11">设置 hooks</h4>
-
-<div class="callout callout-tip">
-<p>  使用 hooks 来处理必须每次发生且没有例外的操作。</p>
-</div>
-
-<p><a class="kw" onclick="showKw('Hooks')" title="点击查看解释">Hooks</a> 在 Claude <a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>中的特定点自动运行脚本。与 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 指令不同，hooks 是确定性的，保证操作发生。</p>
-
-<p>Claude 可以为你编写 hooks。尝试像 *&quot;编写一个在每次文件编辑后运行 eslint 的 hook&quot;* 或 *&quot;编写一个阻止写入迁移文件夹的 hook&quot;* 这样的提示。编辑 `.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 直接配置 hooks，并运行 `<a class="kw" onclick="showKw('/hooks')" title="点击查看解释">/hooks</a>` 来浏览配置的内容。</p>
-
-<h4 id="sec-best-practices-12">创建 skills</h4>
-
-<div class="callout callout-tip">
-<p>  在 `.claude/skills/` 中创建 `SKILL.md` 文件，为 Claude 提供域知识和可重用<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>。</p>
-</div>
-
-<p><a class="kw" onclick="showKw('Skills')" title="点击查看解释">Skills</a> 使用特定于你的项目、团队或域的信息扩展 Claude 的知识。Claude 在相关时自动应用它们，或者你可以使用 `/skill-name` 直接调用它们。</p>
-
-<p>通过向 `.claude/skills/` 添加带有 `SKILL.md` 的目录来创建 skill：</p>
-
-<pre><code>
----
-name: api-conventions
-description: REST API design conventions for our services
----
-# API Conventions
-- Use kebab-case for URL paths
-- Use camelCase for JSON properties
-- Always include pagination for list endpoints
-- Version APIs in the URL path (/v1/, /v2/)
-</code></pre>
-
-<p><a class="kw" onclick="showKw('Skill')" title="点击查看解释">Skill</a>s 也可以定义你直接调用的可重复<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>：</p>
-
-<pre><code>
----
-name: fix-issue
-description: Fix a GitHub issue
-disable-model-invocation: true
----
-Analyze and fix the GitHub issue: $ARGUMENTS.
-
-1. Use `gh issue view` to get the issue details
-2. Understand the problem described in the issue
-3. Search the codebase for relevant files
-4. Implement the necessary changes to fix the issue
-5. Write and run tests to verify the fix
-6. Ensure code passes linting and type checking
-7. Create a descriptive commit message
-8. Push and create a PR
-</code></pre>
-
-<p>运行 `/fix-issue 1234` 来调用它。对于具有你想手动触发的副作用的<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>，使用 `disable-model-invocation: true`。</p>
-
-<h4 id="sec-best-practices-13">创建自定义 subagents</h4>
-
-<div class="callout callout-tip">
-<p>  在 `.claude<a class="kw" onclick="showKw('/agents')" title="点击查看解释">/agents</a>/` 中定义专门的助手，Claude 可以委托给它们来处理隔离的任务。</p>
-</div>
-
-<p><a class="kw" onclick="showKw('Subagents')" title="点击查看解释">Subagents</a> 在自己的 context 中运行，拥有自己的一组允许的工具。它们对于读取许多文件或需要专门关注而不会使你的主对话混乱的任务很有用。</p>
-
-<pre><code>
----
-name: security-reviewer
-description: Reviews code for security vulnerabilities
-tools: Read, Grep, Glob, Bash
-model: opus
----
-You are a senior security engineer. Review code for:
-- Injection vulnerabilities (SQL, XSS, command injection)
-- Authentication and authorization flaws
-- Secrets or credentials in code
-- Insecure data handling
-
-Provide specific line references and suggested fixes.
-</code></pre>
-
-<p>明确告诉 Claude 使用 subagents：*&quot;使用 subagent 来审查此代码的安全问题。&quot;*</p>
-
-<h4 id="sec-best-practices-14">安装 plugins</h4>
-
-<div class="callout callout-tip">
-<p>  运行 `<a class="kw" onclick="showKw('/plugin')" title="点击查看解释">/plugin</a>` 来浏览<a class="kw" onclick="showKw('市场')" title="点击查看解释">市场</a>。<a class="kw" onclick="showKw('Plugin')" title="点击查看解释">Plugin</a>s 添加 skills、工具和集成，无需配置。</p>
-</div>
-
-<p><a class="kw" onclick="showKw('Plugins')" title="点击查看解释">Plugins</a> 将 skills、hooks、subagents 和 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 服务器捆绑到来自社区和 Anthropic 的单个可安装单元中。如果你使用类型化语言，安装 <a class="kw" onclick="showKw('代码智能 plugin')" title="点击查看解释">代码智能 plugin</a> 来为 Claude 提供精确的符号导航和编辑后的自动错误检测。</p>
-
-<p>有关在 skills、subagents、hooks 和 <a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a> 之间选择的指导，请参阅 <a class="kw" onclick="showKw('扩展 Claude Code')" title="点击查看解释">扩展 Claude Code</a>。</p>
-
-<p>***</p>
-
-<h3 id="sec-best-practices-15">有效沟通</h3>
-
-<p>你与 Claude Code 沟通的方式显著影响结果的质量。</p>
-
-<h4 id="sec-best-practices-16">提出代码库问题</h4>
-
-<div class="callout callout-tip">
-<p>  问 Claude 你会问资深工程师的问题。</p>
-</div>
-
-<p>当加入新代码库时，使用 Claude Code 进行学习和探索。你可以问 Claude 你会问另一个工程师的相同类型的问题：</p>
-
-<p>* 日志如何工作？</p>
-<p>* 我如何创建新的 API 端点？</p>
-<p>* `foo.rs` 第 134 行的 `async move { ... }` 做什么？</p>
-<p>* `CustomerOnboardingFlowImpl` 处理哪些边界情况？</p>
-<p>* 为什么这段代码在第 333 行调用 `foo()` 而不是 `bar()`？</p>
-
-<p>以这种方式使用 Claude Code 是一个有效的入职<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>，改进了加入时间并减少了对其他工程师的负担。无需特殊提示：直接提问。</p>
-
-<h4 id="sec-best-practices-17">让 Claude 采访你</h4>
-
-<div class="callout callout-tip">
-<p>  对于更大的功能，让 Claude 先采访你。从最小的提示开始，要求 Claude 使用 `AskUserQuestion` 工具采访你。</p>
-</div>
-
-<p>Claude 会问你可能还没有考虑过的东西，包括技术实现、UI/UX、边界情况和权衡。</p>
-
-<pre><code>
-I want to build [brief description]. Interview me in detail using the AskUserQuestion tool.
-
-Ask about technical implementation, UI/UX, edge cases, concerns, and tradeoffs. Don&#x27;t ask obvious questions, dig into the hard parts I might not have considered.
-
-Keep interviewing until we&#x27;ve covered everything, then write a complete spec to SPEC.md.
-</code></pre>
-
-<p>一旦规范完成，启动新<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>来执行它。新<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>有干净的 context，完全专注于实现，你有一个书面规范可以参考。</p>
-
-<p>最有用的规范是自包含的：它们命名涉及的文件和接口，说明什么在范围之外，并以端到端验证步骤结束，证明该功能有效。花在使规范精确上的时间比花在观看实现上的时间收益更大。</p>
-
-<p>***</p>
-
-<h3 id="sec-best-practices-18">管理你的会话</h3>
-
-<p>对话是持久的和可逆的。利用这一点！</p>
-
-<h4 id="sec-best-practices-19">尽早且经常改正方向</h4>
-
-<div class="callout callout-tip">
-<p>  一旦你注意到 Claude 偏离轨道，立即改正它。</p>
-</div>
-
-<p>最好的结果来自紧密的反馈循环。虽然 Claude 有时会在第一次尝试时完美地解决问题，但快速改正它通常会更快地产生更好的解决方案。</p>
-
-<p>* **`Esc`**：使用 `Esc` 键在中途停止 Claude。Context 被保留，所以你可以重定向。</p>
-<p>* **`Esc + Esc` 或 `/rewind`**：按 `Esc` 两次或运行 `/rewind` 来打开 rewind 菜单并恢复之前的对话和代码状态，或从选定的消息进行总结。</p>
-<p>* **`&quot;撤销那个&quot;`**：让 Claude 恢复其更改。</p>
-<p>* **`<a class="kw" onclick="showKw('/clear')" title="点击查看解释">/clear</a>`**：在不相关的任务之间重置 context。长<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>与无关的 context 可能会降低性能。</p>
-
-<p>如果你在一个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中对同一问题改正了 Claude 两次以上，context 就充满了失败的方法。运行 `<a class="kw" onclick="showKw('/clear')" title="点击查看解释">/clear</a>` 并使用更具体的提示重新开始，该提示包含你学到的东西。干净的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>与更好的提示几乎总是优于长<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>与累积的改正。</p>
-
-<h4 id="sec-best-practices-20">积极管理 context</h4>
-
-<div class="callout callout-tip">
-<p>  在不相关的任务之间频繁运行 `<a class="kw" onclick="showKw('/clear')" title="点击查看解释">/clear</a>` 来重置 context。</p>
-</div>
-
-<p>Claude Code 在你接近 context 限制时自动压缩对话历史，这保留了重要的代码和决策，同时释放空间。</p>
-
-<p>在长<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中，Claude 的 context window 可能会充满无关的对话、文件内容和命令。这可能会降低性能，有时会分散 Claude 的注意力。</p>
-
-<p>* 在任务之间频繁使用 `<a class="kw" onclick="showKw('/clear')" title="点击查看解释">/clear</a>` 来完全重置 context window</p>
-<p>* 当自动压缩触发时，Claude 总结最重要的东西，包括代码模式、文件状态和关键决策</p>
-<p>* 为了更多控制，运行 `<a class="kw" onclick="showKw('/compact')" title="点击查看解释">/compact</a> &lt;instructions&gt;`，如 `<a class="kw" onclick="showKw('/compact')" title="点击查看解释">/compact</a> Focus on the API changes`</p>
-<p>* 要仅压缩对话的一部分，使用 `Esc + Esc` 或 `/rewind`，选择消息<a class="kw" onclick="showKw('检查点')" title="点击查看解释">检查点</a>，并选择 **从这里总结** 或 **总结到这里**。第一个会压缩从该点开始的消息，同时保持早期 context 完整；第二个会压缩早期消息，同时保持最近的消息完整。请参阅 <a class="kw" onclick="showKw('恢复与总结')" title="点击查看解释">恢复与总结</a>。</p>
-<p>* 在 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 中使用像 `&quot;When compacting, always preserve the full list of modified files and any test commands&quot;` 这样的指令来自定义压缩行为，以确保关键 context 在总结中存活</p>
-<p>* 对于不需要留在 context 中的快速问题，使用 <a class="kw" onclick="showKw('/btw')" title="点击查看解释">/btw</a>。答案出现在可关闭的覆盖层中，永远不会进入对话历史，所以你可以检查细节而不增加 context。</p>
-
-<h4 id="sec-best-practices-21">使用 subagents 进行调查</h4>
-
-<div class="callout callout-tip">
-<p>  使用 `&quot;use subagents to investigate X&quot;` 委托研究。它们在单独的 context 中探索，为实现保持你的主对话干净。</p>
-</div>
-
-<p>由于 context 是你的基本约束，subagents 是可用的最强大的工具之一。当 Claude 研究代码库时，它读取许多文件，所有这些都消耗你的 context。<a class="kw" onclick="showKw('Subagent')" title="点击查看解释">Subagent</a>s 在单独的 context windows 中运行并报告摘要：</p>
-
-<pre><code>
-Use subagents to investigate how our authentication system handles token
-refresh, and whether we have any existing OAuth utilities I should reuse.
-</code></pre>
-
-<p>subagent 探索代码库、读取相关文件并报告发现，所有这些都不会使你的主对话混乱。</p>
-
-<p>你也可以在 Claude 实现某些东西后使用 subagents 进行验证：</p>
-
-<pre><code>
-use a subagent to review this code for edge cases
-</code></pre>
-
-<h4 id="sec-best-practices-22">使用检查点进行 Rewind</h4>
-
-<div class="callout callout-tip">
-<p>  Claude 进行的每个提示都会创建一个<a class="kw" onclick="showKw('检查点')" title="点击查看解释">检查点</a>。你可以将对话、代码或两者恢复到任何之前的<a class="kw" onclick="showKw('检查点')" title="点击查看解释">检查点</a>。</p>
-</div>
-
-<p>Claude 在每次更改前自动对文件进行快照，以便<a class="kw" onclick="showKw('检查点')" title="点击查看解释">检查点</a>可以恢复它们。双击 `Escape` 或运行 `/rewind` 来打开 rewind 菜单。你可以仅恢复对话、仅恢复代码、恢复两者或从选定的消息进行总结。有关详细信息，请参阅 <a class="kw" onclick="showKw('Checkpointing')" title="点击查看解释">Checkpointing</a>。</p>
-
-<p>与其仔细规划每一步，你可以告诉 Claude 尝试一些冒险的事情。如果不起作用，rewind 并尝试不同的方法。<a class="kw" onclick="showKw('检查点')" title="点击查看解释">检查点</a>在<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>中持续，所以你可以关闭你的终端并稍后仍然 rewind。</p>
-
-<div class="callout callout-warning">
-<p>  <a class="kw" onclick="showKw('检查点')" title="点击查看解释">检查点</a>仅跟踪 Claude 进行的更改，不跟踪外部进程。这不是 git 的替代品。</p>
-</div>
-
-<h4 id="sec-best-practices-23">恢复对话</h4>
-
-<div class="callout callout-tip">
-<p>  使用 `/rename` 给<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>命名，并像对待分支一样对待它们：每个<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>都有自己的持久 context。</p>
-</div>
-
-<p>Claude Code 在本地保存对话，所以当任务跨越多个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>时，你不必重新解释 context。运行 `claude --continue` 来继续最近的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，或 `claude --resume` 来从列表中选择。给<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>起描述性名称，如 `oauth-migration`，以便你稍后可以找到它们。有关完整的恢复、分支和命名控制集，请参阅 <a class="kw" onclick="showKw('管理会话')" title="点击查看解释">管理会话</a>。</p>
-
-<p>***</p>
-
-<h3 id="sec-best-practices-24">自动化和扩展</h3>
-
-<p>一旦你对一个 Claude 有效，通过并行<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>、非<a class="kw" onclick="showKw('交互模式')" title="点击查看解释">交互模式</a>和扇出模式来增加你的输出。</p>
-
-<p>到目前为止，一切都假设一个人、一个 Claude 和一个对话。但 Claude Code 水平扩展。本部分中的技术展示了你如何能做更多。</p>
-
-<h4 id="sec-best-practices-25">运行非交互模式</h4>
-
-<div class="callout callout-tip">
-<p>  在 CI、pre-commit hooks 或脚本中使用 `claude -p &quot;prompt&quot;`。添加 `--output-format stream-json --verbose` 用于流式 JSON 输出。</p>
-</div>
-
-<p>使用 `claude -p &quot;your prompt&quot;`，你可以非交互地运行 Claude，不需要交互式提示。该运行仍然会创建一个可恢复的<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，除非你传递 `--no-session-persistence`。<a class="kw" onclick="showKw('非交互模式')" title="点击查看解释">非交互模式</a>是你将 Claude 集成到 CI 管道、pre-commit hooks 或任何自动化<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>中的方式。输出格式让你以编程方式解析结果：纯文本、JSON 或流式 JSON。</p>
-
-<pre><code>
-# One-off queries
-claude -p &quot;Explain what this project does&quot;
-
-# Structured output for scripts
-claude -p &quot;List all API endpoints&quot; --output-format json
-
-# Streaming for real-time processing
-claude -p &quot;Analyze this log file&quot; --output-format stream-json --verbose
-</code></pre>
-
-<h4 id="sec-best-practices-26">运行多个 Claude 会话</h4>
-
-<div class="callout callout-tip">
-<p>  并行运行多个 Claude <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>以加快开发、运行隔离的实验或启动复杂的<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>。</p>
-</div>
-
-<p>选择适合你想要自己进行多少协调的并行方法：</p>
-
-<p>* <a class="kw" onclick="showKw('Worktrees')" title="点击查看解释">Worktrees</a>：在隔离的 git 检出中运行单独的 <a class="kw" onclick="showKw('CLI')" title="点击查看解释">CLI</a> <a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，以便编辑不会冲突</p>
-<p>* <a class="kw" onclick="showKw('桌面应用')" title="点击查看解释">桌面应用</a>：以视觉方式管理多个本地<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>，每个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>都在自己的 worktree 中</p>
-<p>* <a class="kw" onclick="showKw('Claude Code 在网络上')" title="点击查看解释">Claude Code 在网络上</a>：在 Anthropic 管理的云基础设施中的隔离虚拟机上运行<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a></p>
-<p>* <a class="kw" onclick="showKw('Agent teams')" title="点击查看解释">Agent teams</a>：具有共享任务、消息和团队主管的多个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>的自动协调</p>
-
-<p>除了并行化工作，多个<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>启用了质量关注的<a class="kw" onclick="showKw('工作流')" title="点击查看解释">工作流</a>。新鲜的 context 改进了<a class="kw" onclick="showKw('代码审查')" title="点击查看解释">代码审查</a>，因为 Claude 不会偏向于它刚刚编写的代码。</p>
-
-<p>例如，使用 Writer/Reviewer 模式：</p>
+<p>**官网**：https://console.anthropic.com</p>
 
 <div class='table-wrap'><table>
-<tr><th><a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a> A（Writer）</th><th><a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a> B（Reviewer）</th></tr>
-<tr><td>`为我们的 API 端点实现速率限制器`</td><td></td></tr>
-<tr><td></td><td>`审查 @src/middleware/rateLimiter.ts 中的速率限制器实现。查找边界情况、竞态条件和与我们现有中间件模式的一致性。`</td></tr>
-<tr><td>`这是审查反馈：[<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a> B 输出]。解决这些问题。`</td><td></td></tr>
+<tr><th>步骤</th><th>操作</th></tr>
+<tr><td>1</td><td>注册 Anthropic 账号</td></tr>
+<tr><td>2</td><td>console.anthropic.com →「API Keys」→「Create Key」</td></tr>
+<tr><td>3</td><td>复制 `sk-ant-...` 开头的 Key</td></tr>
 </table></div>
 
-<p>你可以用测试做类似的事情：让一个 Claude 编写测试，然后另一个编写代码来通过它们。</p>
+<li>模型：`claude-sonnet-4`、`claude-opus-4` 等</li>
+<li>计费：按量付费，需海外信用卡</li>
+<li>⚠️ 国内直连不稳定，需要代理</li>
 
-<h4 id="sec-best-practices-27">跨文件扇出</h4>
+<p>---</p>
 
-<div class="callout callout-tip">
-<p>  循环遍历任务，为每个调用 `claude -p`。使用 `--allowedTools` 来限定批量操作的<a class="kw" onclick="showKw('权限')" title="点击查看解释">权限</a>。</p>
-</div>
+<h3 id="sec-api-key-guide-6">Google Gemini</h3>
 
-<p>对于大型迁移或分析，你可以跨许多并行 Claude 调用分配工作：</p>
+<p>**官网**：https://aistudio.google.com</p>
 
-<ol class="steps">
-<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;生成任务列表&lt;/div&gt;</p>
-<p>    让 Claude 列出所有需要迁移的文件（例如，`list all 2,000 Python files that need migrating`）</p>
-<p>  &lt;/li&gt;</p>
-<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;编写脚本来循环遍历列表&lt;/div&gt;</p>
-<p>    ```bash theme={null}</p>
-<p>    for file in $(cat files.txt); do</p>
-<p>      claude -p &quot;Migrate $file from React to Vue. Return OK or FAIL.&quot; \</p>
-<p>        --allowedTools &quot;Edit,Bash(git commit *)&quot;</p>
-<p>    done</p>
-<p>    ```</p>
-<p>  &lt;/li&gt;</p>
-<p>&lt;li&gt;&lt;div class=&quot;step-title&quot;&gt;在几个文件上测试，然后大规模运行&lt;/div&gt;</p>
-<p>    根据前 2-3 个文件出错的情况精化你的提示，然后在完整集合上运行。`--allowedTools` 标志限制 Claude 能做什么，这在你无人值守运行时很重要。</p>
-<p>  &lt;/li&gt;</p>
-<p>&lt;/ol&gt;</p>
+<div class='table-wrap'><table>
+<tr><th>步骤</th><th>操作</th></tr>
+<tr><td>1</td><td>登录 Google 账号 → aistudio.google.com</td></tr>
+<tr><td>2</td><td>左侧「Get API key」→「Create API key」</td></tr>
+<tr><td>3</td><td>选择项目或新建 → 复制 Key</td></tr>
+</table></div>
 
-<p>你也可以将 Claude 集成到现有的数据/处理管道中：</p>
+<li>模型：`gemini-2.5-pro`、`gemini-2.5-flash` 等</li>
+<li>免费额度：Gemini Flash 系列有免费层</li>
+<li>⚠️ 国内直连不稳定</li>
 
-<pre><code>
-claude -p &quot;&lt;your prompt&gt;&quot; --output-format json | your_command
-</code></pre>
+<p>---</p>
 
-<p>在开发期间使用 `--verbose` 进行调试，在生产中关闭它。</p>
+<h3 id="sec-api-key-guide-7">通义千问（阿里云百炼）</h3>
 
-<h4 id="sec-best-practices-28">使用 auto mode 自主运行</h4>
+<p>**官网**：https://dashscope.aliyun.com</p>
 
-<p>为了不间断的执行和后台安全检查，使用 <a class="kw" onclick="showKw('auto mode')" title="点击查看解释">auto mode</a>。分类器模型在命令运行前审查它们，阻止范围升级、未知基础设施和由敌对内容驱动的操作，同时让常规工作无提示进行。</p>
+<div class='table-wrap'><table>
+<tr><th>步骤</th><th>操作</th></tr>
+<tr><td>1</td><td>用支付宝/淘宝账号登录阿里云</td></tr>
+<tr><td>2</td><td>进入「百炼」（DashScope）控制台</td></tr>
+<tr><td>3</td><td>右上角头像 →「API-KEY」→「创建新的 API-KEY」</td></tr>
+<tr><td>4</td><td>复制 `sk-...` 开头的 Key</td></tr>
+</table></div>
 
-<pre><code>
-claude --permission-mode auto -p &quot;fix all lint errors&quot;
-</code></pre>
+<li>模型：`qwen-max`、`qwen-plus`、`qwen-turbo`</li>
+<li>新用户有免费额度</li>
+<li>国内直连，无需代理</li>
 
-<p>对于使用 `-p` 标志的非交互运行，如果分类器重复阻止操作，<a class="kw" onclick="showKw('auto mode')" title="点击查看解释">auto mode</a> 会中止，因为没有用户可以回退到。请参阅 <a class="kw" onclick="showKw('auto mode 何时回退')" title="点击查看解释">auto mode 何时回退</a> 了解阈值。</p>
+<p>---</p>
 
-<h4 id="sec-best-practices-29">添加对抗性审查步骤</h4>
+<h3 id="sec-api-key-guide-8">智谱 AI（GLM）</h3>
 
-<div class="callout callout-tip">
-<p>  在将任务视为完成之前，让一个<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>在新鲜的 context 中审查差异并报告缺陷。</p>
-</div>
+<p>**官网**：https://open.bigmodel.cn</p>
 
-<p>Claude 无人值守工作的时间越长，在你将工作视为完成之前进行独立检查就越重要。在新鲜的 <a class="kw" onclick="showKw('subagent')" title="点击查看解释">subagent</a> context 中运行的审查者只看到差异和你给它的标准，而不是产生更改的推理，所以它按自己的条件评估结果。</p>
+<div class='table-wrap'><table>
+<tr><th>步骤</th><th>操作</th></tr>
+<tr><td>1</td><td>注册智谱账号（手机号）</td></tr>
+<tr><td>2</td><td>登录后进入「API Keys」页面</td></tr>
+<tr><td>3</td><td>「添加 API Key」→ 填写名称 → 创建</td></tr>
+<tr><td>4</td><td>复制 `xxx.xxx` 格式的 Key</td></tr>
+</table></div>
 
-<p>对于正确性检查，运行捆绑的 <a class="kw" onclick="showKw('/code-review skill')" title="点击查看解释">/code-review skill</a>，它在新鲜的<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>中审查当前差异以查找错误，并将发现返回到<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。要检查差异是否符合你的计划，请自己编写审查提示。命名要检查的工作、要检查的计划以及什么算作发现：</p>
+<li>模型：`glm-4-plus`、`glm-4-flash`（免费）</li>
+<li>国内直连，新用户有体验额度</li>
 
-<pre><code>
-使用子代理根据 PLAN.md 审查速率限制器差异。检查每个要求是否已实现、列出的边界情况是否有测试，以及任务范围之外是否有任何更改。报告缺陷，而不是风格偏好。
-</code></pre>
+<p>---</p>
 
-<p>因为审查者作为<a class="kw" onclick="showKw('子代理')" title="点击查看解释">子代理</a>运行，实现<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>直接接收缺陷，可以修复它们并重新审查，而无需你在窗口之间复制发现。对于更长的自主运行，<a class="kw" onclick="showKw('agent team')" title="点击查看解释">agent team</a> 可以在许多任务中保持这个循环进行，而你可以对记录的发现进行抽查。</p>
+<h3 id="sec-api-key-guide-9">月之暗面（Kimi / Moonshot）</h3>
 
-<div class="callout">
-<p>  被提示查找缺陷的审查者通常会报告一些，即使工作是健全的，因为那是它被要求做的。追逐每个发现会导致过度工程：额外的抽象层、防御性代码和针对无法发生的情况的测试。告诉审查者只标记影响正确性或陈述要求的缺陷，将其余的视为可选。</p>
-</div>
+<p>**官网**：https://platform.moonshot.cn</p>
 
-<p>***</p>
+<div class='table-wrap'><table>
+<tr><th>步骤</th><th>操作</th></tr>
+<tr><td>1</td><td>注册 Moonshot 账号</td></tr>
+<tr><td>2</td><td>控制台 →「API Key 管理」→「新建 API Key」</td></tr>
+<tr><td>3</td><td>复制 `sk-...` 开头的 Key</td></tr>
+</table></div>
 
-<h3 id="sec-best-practices-30">避免常见失败模式</h3>
+<li>模型：`moonshot-v1-8k`、`kimi-k2` 等</li>
+<li>超长上下文（200万汉字）</li>
+<li>国内直连</li>
 
-<p>这些是常见的错误。尽早识别它们可以节省时间：</p>
+<p>---</p>
 
-<p>* **厨房水槽<a class="kw" onclick="showKw('会话')" title="点击查看解释">会话</a>。** 你从一个任务开始，然后问 Claude 一些不相关的东西，然后回到第一个任务。Context 充满了无关的信息。</p>
-<p>  &gt; **修复**：在不相关的任务之间 `<a class="kw" onclick="showKw('/clear')" title="点击查看解释">/clear</a>`。</p>
-<p>* **一次又一次地改正。** Claude 做错了什么，你改正它，它仍然是错的，你再改正。Context 被失败的方法污染。</p>
-<p>  &gt; **修复**：在两次失败的改正后，`<a class="kw" onclick="showKw('/clear')" title="点击查看解释">/clear</a>` 并编写一个更好的初始提示，包含你学到的东西。</p>
-<p>* **过度指定的 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>。** 如果你的 <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a> 太长，Claude 会忽略一半，因为重要的规则在噪音中丢失。</p>
-<p>  &gt; **修复**：无情地修剪。如果 Claude 已经在没有指令的情况下正确地做某事，删除它或将其转换为 hook。</p>
-<p>* **信任然后验证的差距。** Claude 产生一个看起来合理的实现，但不处理边界情况。</p>
-<p>  &gt; **修复**：始终提供验证（测试、脚本、屏幕截图）。如果你不能验证它，不要发布它。</p>
-<p>* **无限探索。** 你要求 Claude &quot;调查&quot;某些东西而不限定范围。Claude 读取数百个文件，填充 context。</p>
-<p>  &gt; **修复**：狭隘地限定调查或使用 subagents，以便探索不会消耗你的主 context。</p>
+<h3 id="sec-api-key-guide-10">OpenRouter（聚合平台）</h3>
 
-<p>***</p>
+<p>**官网**：https://openrouter.ai</p>
 
-<h3 id="sec-best-practices-31">培养你的直觉</h3>
+<div class='table-wrap'><table>
+<tr><th>步骤</th><th>操作</th></tr>
+<tr><td>1</td><td>注册账号（Google/GitHub 登录）</td></tr>
+<tr><td>2</td><td>右上角头像 →「Keys」→「Create Key」</td></tr>
+<tr><td>3</td><td>复制 Key</td></tr>
+</table></div>
 
-<p>本指南中的模式不是一成不变的。它们是通常效果很好的起点，但可能不是每种情况的最优选择。</p>
+<li>特点：一个 Key 访问所有主流模型（Claude/GPT/Gemini/DeepSeek 等）</li>
+<li>按量计费，支持充值</li>
 
-<p>有时你\_应该\_让 context 累积，因为你深入一个复杂的问题，历史很有价值。有时你应该跳过规划，让 Claude 弄清楚，因为任务是探索性的。有时模糊的提示正是你想要的，因为你想看看 Claude 如何解释问题，然后再限制它。</p>
+<p>---</p>
 
-<p>注意什么有效。当 Claude 产生很好的输出时，注意你做了什么：提示结构、你提供的 context、你所在的模式。当 Claude 遇到困难时，问为什么。Context 太嘈杂了吗？提示太模糊了吗？任务对于一次通过来说太大了吗？</p>
+<h3 id="sec-api-key-guide-11">💡 通用注意事项</h3>
 
-<p>随着时间的推移，你会培养没有指南能捕捉的直觉。你会知道何时具体，何时开放，何时规划，何时探索，何时清除 context，何时让它累积。</p>
+<p>1. **Key 只显示一次**：绝大多数平台创建后只显示一次完整 Key，务必立即复制保存</p>
+<p>2. **妥善保管**：Key 等同密码，不要发到公开场合（群聊/仓库/GitHub）</p>
+<p>3. **限额管理**：建议在平台<a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a>用量上限，防止被盗刷</p>
+<p>4. **定期轮换**：怀疑泄露时立即在控制台删除并重建 Key</p>
+<p>5. **Claude Code 配置**：获取 Key 后通过<a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>或 `~/.claude/<a class="kw" onclick="showKw('settings.json')" title="点击查看解释">settings.json</a>` 配置，详见「使用第三方 API」章节</p>
 
-<h3 id="sec-best-practices-32">相关资源</h3>
+<p>---</p>
 
-<p>* <a class="kw" onclick="showKw('Claude Code 如何工作')" title="点击查看解释">Claude Code 如何工作</a>：代理循环、工具和 context 管理</p>
-<p>* <a class="kw" onclick="showKw('扩展 Claude Code')" title="点击查看解释">扩展 Claude Code</a>：skills、hooks、<a class="kw" onclick="showKw('MCP')" title="点击查看解释">MCP</a>、subagents 和 plugins</p>
-<p>* <a class="kw" onclick="showKw('常见工作流')" title="点击查看解释">常见工作流</a>：调试、测试、PR 等的分步配方</p>
-<p>* <a class="kw" onclick="showKw('CLAUDE.md')" title="点击查看解释">CLAUDE.md</a>：存储项目约定和持久 context</p>
+<h3 id="sec-api-key-guide-12">🔗 相关章节</h3>
+
+<p>* <a class="kw" onclick="showKw('快速开始')" title="点击查看解释">快速开始</a> — Claude Code 快速上手</p>
+<p>* <a class="kw" onclick="showKw('使用第三方 API')" title="点击查看解释">使用第三方 API</a> — <a class="kw" onclick="showKw('环境变量')" title="点击查看解释">环境变量</a>/配置文件接入方式</p>
+<p>* <a class="kw" onclick="showKw('设置')" title="点击查看解释">设置</a> — 全局配置说明</p>
 
   </main>
 </div>
 
 <nav class="pager">
-  <a href="api-key-guide.html"><span class="dir">← 上一篇</span><span class="ptitle">如何获取各个提供商的 API Key</span></a>
-  <a class="next" href="channels.html"><span class="dir">下一篇 →</span><span class="ptitle">使用 channels 将事件推送到运行中的会话</span></a>
+  <a href="agents.html"><span class="dir">← 上一篇</span><span class="ptitle">并行运行代理</span></a>
+  <a class="next" href="best-practices.html"><span class="dir">下一篇 →</span><span class="ptitle">Claude Code 最佳实践</span></a>
 </nav>
 
 <button class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="返回顶部"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 5l0 14" /> <path d="M18 11l-6 -6" /> <path d="M6 11l6 -6" /> </svg></span></button>

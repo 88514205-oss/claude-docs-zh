@@ -47,11 +47,18 @@ class DocSearch:
         for name, doc in self.docs.items():
             for sec in doc["sections"]:
                 score = 0
+                text_lower = sec["text"].lower()
+                heading_lower = sec["heading"].lower()
+                hit_count = 0
                 for kw in keywords:
                     if not kw:
                         continue
-                    score += sec["text"].count(kw) * 2
-                    score += sec["heading"].count(kw) * 3
+                    c = text_lower.count(kw) * 2 + heading_lower.count(kw) * 5
+                    if c > 0:
+                        score += c
+                        hit_count += 1
+                # 命中的关键词越多，相关性越强（AND倾向）
+                score *= (1 + hit_count * 0.5)
                 if score > 0:
                     results.append({
                         "doc": name, "heading": sec["heading"],
@@ -74,9 +81,22 @@ class DocSearch:
                 continue
             freq[wl] = freq.get(wl, 0) + 1
         # 排除常见停用词
-        stop = {"claude", "code", "使用", "一个", "可以", "文档", "页面", "这个", "那个", "什么", "怎么", "为什么", "如何", "以及", "或者", "不是", "没有", "进行", "通过", "相关", "内容", "信息"}
+        stop = {"claude", "code", "使用", "一个", "可以", "文档", "页面", "这个", "那个", "什么", "怎么", "为什么", "如何", "以及", "或者", "不是", "没有", "进行", "通过", "相关", "内容", "信息", "获取", "申请", "注册", "哪里", "多少", "哪些", "哪个", "需要", "应该", "能否", "有没有", "api", "key", "api key", "apikey", "密钥"}
+        q_markers = ["怎么", "如何", "哪里", "什么", "为什么", "哪些", "哪个", "多少", "能否", "有没有", "是不是", "怎么办"]
         ranked = sorted(freq.items(), key=lambda x: -x[1])
-        kws = [w for w, c in ranked if w not in stop][:max_kw]
+        kws = []
+        for w, c in ranked:
+            if w in stop:
+                continue
+            # 过滤疑问词开头的词组（如"怎么获取"）
+            if any(w.startswith(q) or q in w[:4] for q in q_markers):
+                continue
+            kws.append(w)
+            if len(kws) >= max_kw:
+                break
+        # 兜底：无有效关键词时用主题词
+        if not kws:
+            kws = ["claude"]
         return kws
 
 if __name__ == "__main__":
